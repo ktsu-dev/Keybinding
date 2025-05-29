@@ -2,9 +2,8 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
-using ktsu.Keybinding.Core.Models;
-
 namespace ktsu.Keybinding.Core.Contracts;
+using ktsu.Keybinding.Core.Models;
 
 /// <summary>
 /// Contract for managing keybinding profiles
@@ -16,52 +15,52 @@ public interface IProfileManager
 	/// </summary>
 	/// <param name="profile">The profile to create</param>
 	/// <returns>True if the profile was created, false if it already exists</returns>
-	bool CreateProfile(Profile profile);
+	public bool CreateProfile(Profile profile);
 
 	/// <summary>
 	/// Deletes a profile
 	/// </summary>
 	/// <param name="profileId">The ID of the profile to delete</param>
 	/// <returns>True if the profile was deleted, false if it didn't exist</returns>
-	bool DeleteProfile(string profileId);
+	public bool DeleteProfile(string profileId);
 
 	/// <summary>
 	/// Gets a profile by its ID
 	/// </summary>
 	/// <param name="profileId">The profile ID</param>
 	/// <returns>The profile if found, null otherwise</returns>
-	Profile? GetProfile(string profileId);
+	public Profile? GetProfile(string profileId);
 
 	/// <summary>
 	/// Gets all profiles
 	/// </summary>
 	/// <returns>Collection of all profiles</returns>
-	IReadOnlyCollection<Profile> GetAllProfiles();
+	public IReadOnlyCollection<Profile> GetAllProfiles();
 
 	/// <summary>
 	/// Gets the currently active profile
 	/// </summary>
 	/// <returns>The active profile, or null if none is set</returns>
-	Profile? GetActiveProfile();
+	public Profile? GetActiveProfile();
 
 	/// <summary>
 	/// Sets the active profile
 	/// </summary>
 	/// <param name="profileId">The ID of the profile to make active</param>
 	/// <returns>True if the profile was set as active, false if it doesn't exist</returns>
-	bool SetActiveProfile(string profileId);
+	public bool SetActiveProfile(string profileId);
 
 	/// <summary>
 	/// Clears the active profile (no profile will be active)
 	/// </summary>
-	void ClearActiveProfile();
+	public void ClearActiveProfile();
 
 	/// <summary>
 	/// Checks if a profile exists
 	/// </summary>
 	/// <param name="profileId">The profile ID</param>
 	/// <returns>True if the profile exists, false otherwise</returns>
-	bool ProfileExists(string profileId);
+	public bool ProfileExists(string profileId);
 
 	/// <summary>
 	/// Duplicates an existing profile with a new ID and name
@@ -71,7 +70,7 @@ public interface IProfileManager
 	/// <param name="newProfileName">The name for the new profile</param>
 	/// <param name="newDescription">Optional description for the new profile</param>
 	/// <returns>The duplicated profile if successful, null if source doesn't exist or new ID already exists</returns>
-	Profile? DuplicateProfile(string sourceProfileId, string newProfileId, string newProfileName, string? newDescription = null);
+	public Profile? DuplicateProfile(string sourceProfileId, string newProfileId, string newProfileName, string? newDescription = null);
 
 	/// <summary>
 	/// Renames a profile
@@ -80,5 +79,5 @@ public interface IProfileManager
 	/// <param name="newName">The new name for the profile</param>
 	/// <param name="newDescription">Optional new description for the profile</param>
 	/// <returns>True if the profile was renamed, false if it doesn't exist</returns>
-	bool RenameProfile(string profileId, string newName, string? newDescription = null);
+	public bool RenameProfile(string profileId, string newName, string? newDescription = null);
 }

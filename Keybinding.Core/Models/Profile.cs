@@ -19,14 +19,19 @@ public sealed class Profile : IEquatable<Profile>
 	public Profile(string id, string name, string? description = null)
 	{
 		if (string.IsNullOrWhiteSpace(id))
+		{
 			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(id));
+		}
+
 		if (string.IsNullOrWhiteSpace(name))
+		{
 			throw new ArgumentException("Profile name cannot be null or whitespace", nameof(name));
+		}
 
 		Id = id.Trim();
 		Name = name.Trim();
 		Description = description?.Trim();
-		Keybindings = new Dictionary<string, KeyCombination>();
+		Keybindings = [];
 	}
 
 	/// <summary>
@@ -59,7 +64,10 @@ public sealed class Profile : IEquatable<Profile>
 	public void SetKeybinding(string commandId, KeyCombination keyCombination)
 	{
 		if (string.IsNullOrWhiteSpace(commandId))
+		{
 			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+		}
+
 		ArgumentNullException.ThrowIfNull(keyCombination);
 
 		Keybindings[commandId.Trim()] = keyCombination;
@@ -73,10 +81,9 @@ public sealed class Profile : IEquatable<Profile>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	public bool RemoveKeybinding(string commandId)
 	{
-		if (string.IsNullOrWhiteSpace(commandId))
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
-
-		return Keybindings.Remove(commandId.Trim());
+		return string.IsNullOrWhiteSpace(commandId)
+			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
+			: Keybindings.Remove(commandId.Trim());
 	}
 
 	/// <summary>
@@ -87,10 +94,9 @@ public sealed class Profile : IEquatable<Profile>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	public KeyCombination? GetKeybinding(string commandId)
 	{
-		if (string.IsNullOrWhiteSpace(commandId))
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
-
-		return Keybindings.TryGetValue(commandId.Trim(), out var keyCombination)
+		return string.IsNullOrWhiteSpace(commandId)
+			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
+			: Keybindings.TryGetValue(commandId.Trim(), out KeyCombination? keyCombination)
 			? keyCombination
 			: null;
 	}
@@ -103,17 +109,16 @@ public sealed class Profile : IEquatable<Profile>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	public bool HasKeybinding(string commandId)
 	{
-		if (string.IsNullOrWhiteSpace(commandId))
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
-
-		return Keybindings.ContainsKey(commandId.Trim());
+		return string.IsNullOrWhiteSpace(commandId)
+			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
+			: Keybindings.ContainsKey(commandId.Trim());
 	}
 
 	/// <summary>
 	/// Gets all command IDs that have keybindings in this profile
 	/// </summary>
 	/// <returns>Collection of command IDs</returns>
-	public IReadOnlyCollection<string> GetBoundCommands() => Keybindings.Keys;
+	public IReadOnlyCollection<string> BoundCommands => Keybindings.Keys;
 
 	/// <summary>
 	/// Clears all keybindings from this profile
@@ -127,12 +132,7 @@ public sealed class Profile : IEquatable<Profile>
 	public override string ToString() => $"{Id}: {Name}";
 
 	/// <inheritdoc/>
-	public bool Equals(Profile? other)
-	{
-		if (other is null) return false;
-		if (ReferenceEquals(this, other)) return true;
-		return Id == other.Id;
-	}
+	public bool Equals(Profile? other) => other is not null && (ReferenceEquals(this, other) || Id == other.Id);
 
 	/// <inheritdoc/>
 	public override bool Equals(object? obj) => obj is Profile other && Equals(other);

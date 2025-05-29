@@ -2,10 +2,7 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
-using System.ComponentModel;
-
 namespace ktsu.Keybinding.Core.Models;
-
 /// <summary>
 /// Represents the modifier keys for a key combination
 /// </summary>
@@ -52,7 +49,9 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 	public KeyCombination(string key, ModifierKeys modifiers = ModifierKeys.None)
 	{
 		if (string.IsNullOrWhiteSpace(key))
+		{
 			throw new ArgumentException("Key cannot be null or whitespace", nameof(key));
+		}
 
 		Key = key.Trim().ToUpperInvariant();
 		Modifiers = modifiers;
@@ -74,16 +73,27 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 	/// <returns>String representation in format "Ctrl+Alt+Key"</returns>
 	public override string ToString()
 	{
-		var parts = new List<string>();
+		List<string> parts = [];
 
 		if (Modifiers.HasFlag(ModifierKeys.Ctrl))
+		{
 			parts.Add("Ctrl");
+		}
+
 		if (Modifiers.HasFlag(ModifierKeys.Alt))
+		{
 			parts.Add("Alt");
+		}
+
 		if (Modifiers.HasFlag(ModifierKeys.Shift))
+		{
 			parts.Add("Shift");
+		}
+
 		if (Modifiers.HasFlag(ModifierKeys.Meta))
+		{
 			parts.Add("Meta");
+		}
 
 		parts.Add(Key);
 
@@ -99,21 +109,23 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 	public static KeyCombination Parse(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
+		{
 			throw new ArgumentException("Value cannot be null or whitespace", nameof(value));
+		}
 
-		var parts = value.Split('+', StringSplitOptions.RemoveEmptyEntries)
-			.Select(p => p.Trim())
-			.ToList();
+		List<string> parts = [.. value.Split('+', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim())];
 
 		if (parts.Count == 0)
+		{
 			throw new ArgumentException("Invalid key combination format", nameof(value));
+		}
 
-		var modifiers = ModifierKeys.None;
-		var key = parts.Last();
+		ModifierKeys modifiers = ModifierKeys.None;
+		string key = parts.Last();
 
 		for (int i = 0; i < parts.Count - 1; i++)
 		{
-			var modifier = parts[i].ToUpperInvariant() switch
+			ModifierKeys modifier = parts[i].ToUpperInvariant() switch
 			{
 				"CTRL" or "CONTROL" => ModifierKeys.Ctrl,
 				"ALT" => ModifierKeys.Alt,
@@ -149,12 +161,7 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 	}
 
 	/// <inheritdoc/>
-	public bool Equals(KeyCombination? other)
-	{
-		if (other is null) return false;
-		if (ReferenceEquals(this, other)) return true;
-		return Key == other.Key && Modifiers == other.Modifiers;
-	}
+	public bool Equals(KeyCombination? other) => other is not null && (ReferenceEquals(this, other) || (Key == other.Key && Modifiers == other.Modifiers));
 
 	/// <inheritdoc/>
 	public override bool Equals(object? obj) => obj is KeyCombination other && Equals(other);

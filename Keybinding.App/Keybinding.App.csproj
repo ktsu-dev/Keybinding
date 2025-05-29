@@ -1,5 +1,0 @@
-<Project Sdk="ktsu.Sdk.App">
-  <ItemGroup>
-    <ProjectReference Include="..\Keybinding.Core\Keybinding.Core.csproj" />
-  </ItemGroup>
-</Project>

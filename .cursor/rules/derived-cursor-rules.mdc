@@ -14,6 +14,7 @@ globs: *
 ## TECH STACK
 
 *   .NET
+*   CommandLineParser (to be used in the console app demo)
 
 ## PROJECT STRUCTURE
 
@@ -27,6 +28,8 @@ globs: *
 *   Follow DRY principle (Don't Repeat Yourself).
 
 ## WORKFLOW & RELEASE RULES
+
+*   The Keybinding.ConsoleApp should serve as a demo of the library's functionality.
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 

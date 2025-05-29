@@ -2,11 +2,10 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.CLI;
 using System.CommandLine;
 using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Models;
-
-namespace ktsu.Keybinding.CLI;
 
 /// <summary>
 /// Command-line interface for the Keybinding library
@@ -33,29 +32,29 @@ public static class Program
 		};
 
 		// Profile commands
-		var profileCommand = new Command("profile", "Manage keybinding profiles");
-		var profileListCommand = new Command("list", "List all profiles");
-		var profileCreateCommand = new Command("create", "Create a new profile");
-		var profileDeleteCommand = new Command("delete", "Delete a profile");
-		var profileActivateCommand = new Command("activate", "Activate a profile");
-		var profileRenameCommand = new Command("rename", "Rename a profile");
-		var profileDuplicateCommand = new Command("duplicate", "Duplicate a profile");
+		Command profileCommand = new("profile", "Manage keybinding profiles");
+		Command profileListCommand = new("list", "List all profiles");
+		Command profileCreateCommand = new("create", "Create a new profile");
+		Command profileDeleteCommand = new("delete", "Delete a profile");
+		Command profileActivateCommand = new("activate", "Activate a profile");
+		Command profileRenameCommand = new("rename", "Rename a profile");
+		Command profileDuplicateCommand = new("duplicate", "Duplicate a profile");
 
 		// Command management commands
-		var commandCommand = new Command("command", "Manage commands");
-		var commandListCommand = new Command("list", "List all commands");
-		var commandRegisterCommand = new Command("register", "Register a new command");
-		var commandUnregisterCommand = new Command("unregister", "Unregister a command");
+		Command commandCommand = new("command", "Manage commands");
+		Command commandListCommand = new("list", "List all commands");
+		Command commandRegisterCommand = new("register", "Register a new command");
+		Command commandUnregisterCommand = new("unregister", "Unregister a command");
 
 		// Keybinding commands
-		var keybindingCommand = new Command("keybinding", "Manage keybindings");
-		var keybindingListCommand = new Command("list", "List all keybindings");
-		var keybindingSetCommand = new Command("set", "Set a keybinding");
-		var keybindingRemoveCommand = new Command("remove", "Remove a keybinding");
-		var keybindingFindCommand = new Command("find", "Find command by key combination");
+		Command keybindingCommand = new("keybinding", "Manage keybindings");
+		Command keybindingListCommand = new("list", "List all keybindings");
+		Command keybindingSetCommand = new("set", "Set a keybinding");
+		Command keybindingRemoveCommand = new("remove", "Remove a keybinding");
+		Command keybindingFindCommand = new("find", "Find command by key combination");
 
 		// Status command
-		var statusCommand = new Command("status", "Show current status");
+		Command statusCommand = new("status", "Show current status");
 
 		// Add options to commands
 		AddProfileOptions(profileCreateCommand, profileDeleteCommand, profileActivateCommand, profileRenameCommand, profileDuplicateCommand);
@@ -102,7 +101,7 @@ public static class Program
 		var newProfileIdOption = new Option<string>("--new-id", "New profile ID");
 		var newProfileNameOption = new Option<string>("--new-name", "New profile name");
 
-		foreach (var command in commands)
+		foreach (Command command in commands)
 		{
 			switch (command.Name)
 			{
@@ -135,7 +134,7 @@ public static class Program
 		var commandDescriptionOption = new Option<string>("--description", "Command description");
 		var commandCategoryOption = new Option<string>("--category", "Command category");
 
-		foreach (var command in commands)
+		foreach (Command command in commands)
 		{
 			switch (command.Name)
 			{
@@ -157,7 +156,7 @@ public static class Program
 		var commandIdOption = new Option<string>("--command", "Command ID") { IsRequired = true };
 		var keyOption = new Option<string>("--key", "Key combination (e.g., 'Ctrl+S', 'Alt+F4')") { IsRequired = true };
 
-		foreach (var command in commands)
+		foreach (Command command in commands)
 		{
 			switch (command.Name)
 			{
@@ -177,22 +176,22 @@ public static class Program
 
 	private static void SetupHandlers(Option<string> dataDirectoryOption, params Command[] commands)
 	{
-		foreach (var command in commands)
+		foreach (Command command in commands)
 		{
 			command.SetHandler(async (context) =>
 			{
 				var dataDirectory = context.ParseResult.GetValueForOption(dataDirectoryOption)!;
-				await InitializeManager(dataDirectory);
+				await InitializeManager(dataDirectory).ConfigureAwait(false);
 
 				try
 				{
-					await HandleCommand(command, context);
+					await HandleCommand(command, context).ConfigureAwait(false);
 				}
 				finally
 				{
 					if (_manager != null)
 					{
-						await _manager.SaveAsync();
+						await _manager.SaveAsync().ConfigureAwait(false);
 						_manager.Dispose();
 						_manager = null;
 					}
@@ -204,7 +203,7 @@ public static class Program
 	private static async Task InitializeManager(string dataDirectory)
 	{
 		_manager = new KeybindingManager(dataDirectory);
-		await _manager.InitializeAsync();
+		await _manager.InitializeAsync().ConfigureAwait(false);
 
 		// Create default profile if none exist
 		if (!_manager.Profiles.GetAllProfiles().Any())
@@ -217,83 +216,87 @@ public static class Program
 	private static async Task HandleCommand(Command command, InvocationContext context)
 	{
 		if (_manager == null)
+		{
 			throw new InvalidOperationException("Manager not initialized");
+		}
 
-		var commandPath = GetCommandPath(command);
+		string commandPath = GetCommandPath(command);
 
 		switch (commandPath)
 		{
 			case "profile list":
-				await HandleProfileList();
+				await HandleProfileList().ConfigureAwait(false);
 				break;
 			case "profile create":
-				await HandleProfileCreate(context);
+				await HandleProfileCreate(context).ConfigureAwait(false);
 				break;
 			case "profile delete":
-				await HandleProfileDelete(context);
+				await HandleProfileDelete(context).ConfigureAwait(false);
 				break;
 			case "profile activate":
-				await HandleProfileActivate(context);
+				await HandleProfileActivate(context).ConfigureAwait(false);
 				break;
 			case "profile rename":
-				await HandleProfileRename(context);
+				await HandleProfileRename(context).ConfigureAwait(false);
 				break;
 			case "profile duplicate":
-				await HandleProfileDuplicate(context);
+				await HandleProfileDuplicate(context).ConfigureAwait(false);
 				break;
 			case "command list":
-				await HandleCommandList();
+				await HandleCommandList().ConfigureAwait(false);
 				break;
 			case "command register":
-				await HandleCommandRegister(context);
+				await HandleCommandRegister(context).ConfigureAwait(false);
 				break;
 			case "command unregister":
-				await HandleCommandUnregister(context);
+				await HandleCommandUnregister(context).ConfigureAwait(false);
 				break;
 			case "keybinding list":
-				await HandleKeybindingList();
+				await HandleKeybindingList().ConfigureAwait(false);
 				break;
 			case "keybinding set":
-				await HandleKeybindingSet(context);
+				await HandleKeybindingSet(context).ConfigureAwait(false);
 				break;
 			case "keybinding remove":
-				await HandleKeybindingRemove(context);
+				await HandleKeybindingRemove(context).ConfigureAwait(false);
 				break;
 			case "keybinding find":
-				await HandleKeybindingFind(context);
+				await HandleKeybindingFind(context).ConfigureAwait(false);
 				break;
 			case "status":
-				await HandleStatus();
+				await HandleStatus().ConfigureAwait(false);
 				break;
 		}
 	}
 
 	private static string GetCommandPath(Command command)
 	{
-		var parts = new List<string>();
-		var current = command;
+		List<string> parts = [];
+		Command current = command;
 		while (current != null && current.Name != "keybinding-cli")
 		{
 			parts.Insert(0, current.Name);
 			current = current.Parents.OfType<Command>().FirstOrDefault();
 		}
+
 		return string.Join(" ", parts);
 	}
 
 	private static async Task HandleProfileList()
 	{
-		var profiles = _manager!.Profiles.GetAllProfiles();
-		var activeProfile = _manager.Profiles.GetActiveProfile();
+		IReadOnlyCollection<Profile> profiles = _manager!.Profiles.GetAllProfiles();
+		Profile? activeProfile = _manager.Profiles.GetActiveProfile();
 
 		Console.WriteLine("Profiles:");
-		foreach (var profile in profiles.OrderBy(p => p.Name))
+		foreach (Profile? profile in profiles.OrderBy(p => p.Name))
 		{
-			var isActive = profile.Id == activeProfile?.Id ? " (active)" : "";
+			string isActive = profile.Id == activeProfile?.Id ? " (active)" : "";
 			Console.WriteLine($"  {profile.Id}: {profile.Name}{isActive}");
 			if (!string.IsNullOrEmpty(profile.Description))
 			{
 				Console.WriteLine($"    Description: {profile.Description}");
 			}
+
 			Console.WriteLine($"    Keybindings: {profile.GetAllKeybindings().Count()}");
 		}
 	}
@@ -304,7 +307,7 @@ public static class Program
 		var name = context.ParseResult.GetValueForOption<string>("--name") ?? id;
 		var description = context.ParseResult.GetValueForOption<string>("--description") ?? "";
 
-		var profile = new Profile(id, name, description);
+		Profile profile = new(id, name, description);
 		if (_manager!.Profiles.CreateProfile(profile))
 		{
 			Console.WriteLine($"Created profile '{name}' with ID '{id}'");
@@ -364,7 +367,7 @@ public static class Program
 		var newId = context.ParseResult.GetValueForOption<string>("--new-id")!;
 		var newName = context.ParseResult.GetValueForOption<string>("--new-name") ?? newId;
 
-		var newProfile = _manager!.Profiles.DuplicateProfile(sourceId, newId, newName);
+		Profile newProfile = _manager!.Profiles.DuplicateProfile(sourceId, newId, newName);
 		if (newProfile != null)
 		{
 			Console.WriteLine($"Duplicated profile '{sourceId}' to '{newId}' ('{newName}')");
@@ -377,12 +380,12 @@ public static class Program
 
 	private static async Task HandleCommandList()
 	{
-		var commands = _manager!.Commands.GetAllCommands();
+		IReadOnlyCollection<Command> commands = _manager!.Commands.GetAllCommands();
 
 		Console.WriteLine("Commands:");
-		foreach (var cmd in commands.OrderBy(c => c.Category).ThenBy(c => c.Name))
+		foreach (Command? cmd in commands.OrderBy(c => c.Category).ThenBy(c => c.Name))
 		{
-			var category = string.IsNullOrEmpty(cmd.Category) ? "General" : cmd.Category;
+			string category = string.IsNullOrEmpty(cmd.Category) ? "General" : cmd.Category;
 			Console.WriteLine($"  [{category}] {cmd.Id}: {cmd.Name}");
 			if (!string.IsNullOrEmpty(cmd.Description))
 			{
@@ -398,7 +401,7 @@ public static class Program
 		var description = context.ParseResult.GetValueForOption<string>("--description") ?? "";
 		var category = context.ParseResult.GetValueForOption<string>("--category") ?? "";
 
-		var command = new Command(id, name, description, category);
+		Command command = new(id, name, description, category);
 		if (_manager!.Commands.RegisterCommand(command))
 		{
 			Console.WriteLine($"Registered command '{name}' with ID '{id}'");
@@ -425,7 +428,7 @@ public static class Program
 
 	private static async Task HandleKeybindingList()
 	{
-		var activeProfile = _manager!.Profiles.GetActiveProfile();
+		Profile? activeProfile = _manager!.Profiles.GetActiveProfile();
 		if (activeProfile == null)
 		{
 			Console.WriteLine("No active profile set.");
@@ -437,7 +440,7 @@ public static class Program
 
 		foreach (var kvp in keybindings.OrderBy(k => k.Value.ToString()))
 		{
-			var command = _manager.Commands.GetCommand(kvp.Key);
+			Command command = _manager.Commands.GetCommand(kvp.Key);
 			var commandName = command?.Name ?? kvp.Key;
 			Console.WriteLine($"  {kvp.Value}: {commandName}");
 		}
@@ -448,7 +451,7 @@ public static class Program
 		var commandId = context.ParseResult.GetValueForOption<string>("--command")!;
 		var keyString = context.ParseResult.GetValueForOption<string>("--key")!;
 
-		if (!KeyCombination.TryParse(keyString, out var keyCombination))
+		if (!KeyCombination.TryParse(keyString, out KeyCombination keyCombination))
 		{
 			Console.WriteLine($"Invalid key combination: {keyString}");
 			return;
@@ -482,7 +485,7 @@ public static class Program
 	{
 		var keyString = context.ParseResult.GetValueForOption<string>("--key")!;
 
-		if (!KeyCombination.TryParse(keyString, out var keyCombination))
+		if (!KeyCombination.TryParse(keyString, out KeyCombination keyCombination))
 		{
 			Console.WriteLine($"Invalid key combination: {keyString}");
 			return;
@@ -505,7 +508,7 @@ public static class Program
 
 	private static async Task HandleStatus()
 	{
-		var summary = _manager!.GetSummary();
+		KeybindingSummary summary = _manager!.GetSummary();
 		Console.WriteLine("Keybinding Manager Status:");
 		Console.WriteLine($"  Total Commands: {summary.TotalCommands}");
 		Console.WriteLine($"  Total Profiles: {summary.TotalProfiles}");

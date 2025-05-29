@@ -20,9 +20,14 @@ public sealed class Command : IEquatable<Command>
 	public Command(string id, string name, string? description = null, string? category = null)
 	{
 		if (string.IsNullOrWhiteSpace(id))
+		{
 			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(id));
+		}
+
 		if (string.IsNullOrWhiteSpace(name))
+		{
 			throw new ArgumentException("Command name cannot be null or whitespace", nameof(name));
+		}
 
 		Id = id.Trim();
 		Name = name.Trim();
@@ -57,12 +62,9 @@ public sealed class Command : IEquatable<Command>
 	public override string ToString() => $"{Id}: {Name}";
 
 	/// <inheritdoc/>
-	public bool Equals(Command? other)
-	{
-		if (other is null) return false;
-		if (ReferenceEquals(this, other)) return true;
-		return Id == other.Id;
-	}
+	public bool Equals(Command? other) =>
+		other is not null
+		&& (ReferenceEquals(this, other) || Id == other.Id);
 
 	/// <inheritdoc/>
 	public override bool Equals(object? obj) => obj is Command other && Equals(other);

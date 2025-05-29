@@ -2,10 +2,9 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.Test;
 using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Models;
-
-namespace ktsu.Keybinding.Test;
 
 [TestClass]
 public class KeybindingManagerTests
@@ -32,10 +31,10 @@ public class KeybindingManagerTests
 	public async Task InitializeAsync_CreatesDataDirectory()
 	{
 		// Arrange
-		using var manager = new KeybindingManager(_testDataDirectory);
+		using KeybindingManager manager = new(_testDataDirectory);
 
 		// Act
-		await manager.InitializeAsync();
+		await manager.InitializeAsync().ConfigureAwait(false);
 
 		// Assert
 		Assert.IsTrue(Directory.Exists(_testDataDirectory));
@@ -45,18 +44,18 @@ public class KeybindingManagerTests
 	public async Task CreateDefaultProfile_CreatesAndSetsActiveProfile()
 	{
 		// Arrange
-		using var manager = new KeybindingManager(_testDataDirectory);
-		await manager.InitializeAsync();
+		using KeybindingManager manager = new(_testDataDirectory);
+		await manager.InitializeAsync().ConfigureAwait(false);
 
 		// Act
-		var profile = manager.CreateDefaultProfile();
+		Profile? profile = manager.CreateDefaultProfile();
 
 		// Assert
 		Assert.IsNotNull(profile);
 		Assert.AreEqual("default", profile.Id);
 		Assert.AreEqual("Default", profile.Name);
 
-		var activeProfile = manager.Profiles.GetActiveProfile();
+		Profile? activeProfile = manager.Profiles.GetActiveProfile();
 		Assert.IsNotNull(activeProfile);
 		Assert.AreEqual("default", activeProfile.Id);
 	}
@@ -65,17 +64,17 @@ public class KeybindingManagerTests
 	public async Task RegisterCommands_AddsCommandsToRegistry()
 	{
 		// Arrange
-		using var manager = new KeybindingManager(_testDataDirectory);
-		await manager.InitializeAsync();
+		using KeybindingManager manager = new(_testDataDirectory);
+		await manager.InitializeAsync().ConfigureAwait(false);
 
-		var commands = new[]
+		Command[] commands = new[]
 		{
 			new Command("copy", "Copy", "Copy content", "Edit"),
 			new Command("paste", "Paste", "Paste content", "Edit")
 		};
 
 		// Act
-		var registeredCount = manager.RegisterCommands(commands);
+		int registeredCount = manager.RegisterCommands(commands);
 
 		// Assert
 		Assert.AreEqual(2, registeredCount);
@@ -87,30 +86,30 @@ public class KeybindingManagerTests
 	public async Task SetKeybindings_WithActiveProfile_SetsKeybindings()
 	{
 		// Arrange
-		using var manager = new KeybindingManager(_testDataDirectory);
-		await manager.InitializeAsync();
+		using KeybindingManager manager = new(_testDataDirectory);
+		await manager.InitializeAsync().ConfigureAwait(false);
 		manager.CreateDefaultProfile();
 
-		var commands = new[]
+		Command[] commands = new[]
 		{
 			new Command("copy", "Copy", "Copy content", "Edit"),
 			new Command("paste", "Paste", "Paste content", "Edit")
 		};
 		manager.RegisterCommands(commands);
 
-		var keybindings = new Dictionary<string, KeyCombination>
+		Dictionary<string, KeyCombination> keybindings = new()
 		{
 			["copy"] = new KeyCombination("C", ModifierKeys.Ctrl),
 			["paste"] = new KeyCombination("V", ModifierKeys.Ctrl)
 		};
 
 		// Act
-		var setCount = manager.SetKeybindings(keybindings);
+		int setCount = manager.SetKeybindings(keybindings);
 
 		// Assert
 		Assert.AreEqual(2, setCount);
 
-		var copyKeybinding = manager.Keybindings.GetKeybinding("copy");
+		KeyCombination? copyKeybinding = manager.Keybindings.GetKeybinding("copy");
 		Assert.IsNotNull(copyKeybinding);
 		Assert.AreEqual("C", copyKeybinding.Key);
 		Assert.AreEqual(ModifierKeys.Ctrl, copyKeybinding.Modifiers);
@@ -120,18 +119,18 @@ public class KeybindingManagerTests
 	public async Task FindCommandByKeybinding_ExistingKeybinding_ReturnsCommandId()
 	{
 		// Arrange
-		using var manager = new KeybindingManager(_testDataDirectory);
-		await manager.InitializeAsync();
+		using KeybindingManager manager = new(_testDataDirectory);
+		await manager.InitializeAsync().ConfigureAwait(false);
 		manager.CreateDefaultProfile();
 
-		var command = new Command("save", "Save", "Save document", "File");
+		Command command = new("save", "Save", "Save document", "File");
 		manager.Commands.RegisterCommand(command);
 
-		var keyCombination = new KeyCombination("S", ModifierKeys.Ctrl);
+		KeyCombination keyCombination = new("S", ModifierKeys.Ctrl);
 		manager.Keybindings.SetKeybinding("save", keyCombination);
 
 		// Act
-		var commandId = manager.Keybindings.FindCommandByKeybinding(keyCombination);
+		string? commandId = manager.Keybindings.FindCommandByKeybinding(keyCombination);
 
 		// Assert
 		Assert.AreEqual("save", commandId);
@@ -146,37 +145,37 @@ public class KeybindingManagerTests
 
 		// Create and save data
 		{
-			using var manager = new KeybindingManager(_testDataDirectory);
-			await manager.InitializeAsync();
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
 
-			var profile = manager.CreateDefaultProfile();
+			Profile? profile = manager.CreateDefaultProfile();
 			profileId = profile!.Id;
 
-			var command = new Command(commandId, "Test Command", "Test description", "Test");
+			Command command = new(commandId, "Test Command", "Test description", "Test");
 			manager.Commands.RegisterCommand(command);
 
-			var keyCombination = new KeyCombination("T", ModifierKeys.Ctrl);
+			KeyCombination keyCombination = new("T", ModifierKeys.Ctrl);
 			manager.Keybindings.SetKeybinding(commandId, keyCombination);
 
-			await manager.SaveAsync();
+			await manager.SaveAsync().ConfigureAwait(false);
 		}
 
 		// Load and verify data
 		{
-			using var manager = new KeybindingManager(_testDataDirectory);
-			await manager.InitializeAsync();
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
 
-			var summary = manager.GetSummary();
+			KeybindingSummary summary = manager.GetSummary();
 			Assert.AreEqual(1, summary.TotalCommands);
 			Assert.AreEqual(1, summary.TotalProfiles);
 			Assert.AreEqual(profileId, summary.ActiveProfileId);
 			Assert.AreEqual(1, summary.ActiveKeybindings);
 
-			var command = manager.Commands.GetCommand(commandId);
+			Command? command = manager.Commands.GetCommand(commandId);
 			Assert.IsNotNull(command);
 			Assert.AreEqual("Test Command", command.Name);
 
-			var keybinding = manager.Keybindings.GetKeybinding(commandId);
+			KeyCombination? keybinding = manager.Keybindings.GetKeybinding(commandId);
 			Assert.IsNotNull(keybinding);
 			Assert.AreEqual("T", keybinding.Key);
 			Assert.AreEqual(ModifierKeys.Ctrl, keybinding.Modifiers);
@@ -187,11 +186,11 @@ public class KeybindingManagerTests
 	public async Task GetSummary_ReturnsCorrectInformation()
 	{
 		// Arrange
-		using var manager = new KeybindingManager(_testDataDirectory);
-		await manager.InitializeAsync();
+		using KeybindingManager manager = new(_testDataDirectory);
+		await manager.InitializeAsync().ConfigureAwait(false);
 		manager.CreateDefaultProfile();
 
-		var commands = new[]
+		Command[] commands = new[]
 		{
 			new Command("cmd1", "Command 1"),
 			new Command("cmd2", "Command 2"),
@@ -203,7 +202,7 @@ public class KeybindingManagerTests
 		manager.Keybindings.SetKeybinding("cmd2", new KeyCombination("B", ModifierKeys.Ctrl));
 
 		// Act
-		var summary = manager.GetSummary();
+		KeybindingSummary summary = manager.GetSummary();
 
 		// Assert
 		Assert.AreEqual(3, summary.TotalCommands);
@@ -217,28 +216,28 @@ public class KeybindingManagerTests
 	public async Task MultipleProfiles_WorkIndependently()
 	{
 		// Arrange
-		using var manager = new KeybindingManager(_testDataDirectory);
-		await manager.InitializeAsync();
+		using KeybindingManager manager = new(_testDataDirectory);
+		await manager.InitializeAsync().ConfigureAwait(false);
 
-		var command = new Command("test", "Test Command");
+		Command command = new("test", "Test Command");
 		manager.Commands.RegisterCommand(command);
 
 		// Create two profiles
-		var profile1 = new Profile("profile1", "Profile 1");
-		var profile2 = new Profile("profile2", "Profile 2");
+		Profile profile1 = new("profile1", "Profile 1");
+		Profile profile2 = new("profile2", "Profile 2");
 		manager.Profiles.CreateProfile(profile1);
 		manager.Profiles.CreateProfile(profile2);
 
 		// Set different keybindings for each profile
-		var key1 = new KeyCombination("A", ModifierKeys.Ctrl);
-		var key2 = new KeyCombination("B", ModifierKeys.Ctrl);
+		KeyCombination key1 = new("A", ModifierKeys.Ctrl);
+		KeyCombination key2 = new("B", ModifierKeys.Ctrl);
 
 		manager.Keybindings.SetKeybinding("profile1", "test", key1);
 		manager.Keybindings.SetKeybinding("profile2", "test", key2);
 
 		// Act & Assert
-		var keybinding1 = manager.Keybindings.GetKeybinding("profile1", "test");
-		var keybinding2 = manager.Keybindings.GetKeybinding("profile2", "test");
+		KeyCombination? keybinding1 = manager.Keybindings.GetKeybinding("profile1", "test");
+		KeyCombination? keybinding2 = manager.Keybindings.GetKeybinding("profile2", "test");
 
 		Assert.IsNotNull(keybinding1);
 		Assert.IsNotNull(keybinding2);

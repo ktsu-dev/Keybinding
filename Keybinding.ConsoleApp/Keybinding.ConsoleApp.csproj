@@ -1,0 +1,9 @@
+<Project Sdk="ktsu.Sdk.ConsoleApp">
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Keybinding.Core\Keybinding.Core.csproj" />
+  </ItemGroup>
+</Project>

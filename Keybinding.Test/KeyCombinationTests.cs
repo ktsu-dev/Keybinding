@@ -2,9 +2,8 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
-using ktsu.Keybinding.Core.Models;
-
 namespace ktsu.Keybinding.Test;
+using ktsu.Keybinding.Core.Models;
 
 [TestClass]
 public class KeyCombinationTests
@@ -13,7 +12,7 @@ public class KeyCombinationTests
 	public void Constructor_ValidInput_CreatesKeyCombination()
 	{
 		// Arrange & Act
-		var keyCombination = new KeyCombination("A", ModifierKeys.Ctrl);
+		KeyCombination keyCombination = new("A", ModifierKeys.Ctrl);
 
 		// Assert
 		Assert.AreEqual("A", keyCombination.Key);
@@ -38,10 +37,10 @@ public class KeyCombinationTests
 	public void ToString_SingleModifier_ReturnsCorrectFormat()
 	{
 		// Arrange
-		var keyCombination = new KeyCombination("A", ModifierKeys.Ctrl);
+		KeyCombination keyCombination = new("A", ModifierKeys.Ctrl);
 
 		// Act
-		var result = keyCombination.ToString();
+		string result = keyCombination.ToString();
 
 		// Assert
 		Assert.AreEqual("Ctrl+A", result);
@@ -51,10 +50,10 @@ public class KeyCombinationTests
 	public void ToString_MultipleModifiers_ReturnsCorrectFormat()
 	{
 		// Arrange
-		var keyCombination = new KeyCombination("S", ModifierKeys.Ctrl | ModifierKeys.Alt);
+		KeyCombination keyCombination = new("S", ModifierKeys.Ctrl | ModifierKeys.Alt);
 
 		// Act
-		var result = keyCombination.ToString();
+		string result = keyCombination.ToString();
 
 		// Assert
 		Assert.AreEqual("Ctrl+Alt+S", result);
@@ -64,10 +63,10 @@ public class KeyCombinationTests
 	public void ToString_NoModifiers_ReturnsKeyOnly()
 	{
 		// Arrange
-		var keyCombination = new KeyCombination("Escape", ModifierKeys.None);
+		KeyCombination keyCombination = new("Escape", ModifierKeys.None);
 
 		// Act
-		var result = keyCombination.ToString();
+		string result = keyCombination.ToString();
 
 		// Assert
 		Assert.AreEqual("Escape", result);
@@ -77,7 +76,7 @@ public class KeyCombinationTests
 	public void Parse_ValidString_ReturnsKeyCombination()
 	{
 		// Act
-		var result = KeyCombination.Parse("Ctrl+Alt+S");
+		KeyCombination result = KeyCombination.Parse("Ctrl+Alt+S");
 
 		// Assert
 		Assert.AreEqual("S", result.Key);
@@ -88,7 +87,7 @@ public class KeyCombinationTests
 	public void Parse_KeyOnly_ReturnsKeyCombinationWithNoModifiers()
 	{
 		// Act
-		var result = KeyCombination.Parse("Enter");
+		KeyCombination result = KeyCombination.Parse("Enter");
 
 		// Assert
 		Assert.AreEqual("ENTER", result.Key);
@@ -106,7 +105,7 @@ public class KeyCombinationTests
 	public void TryParse_ValidString_ReturnsTrue()
 	{
 		// Act
-		var success = KeyCombination.TryParse("Ctrl+C", out var result);
+		bool success = KeyCombination.TryParse("Ctrl+C", out KeyCombination? result);
 
 		// Assert
 		Assert.IsTrue(success);
@@ -119,7 +118,7 @@ public class KeyCombinationTests
 	public void TryParse_InvalidString_ReturnsFalse()
 	{
 		// Act
-		var success = KeyCombination.TryParse("Invalid+Format", out var result);
+		bool success = KeyCombination.TryParse("Invalid+Format", out KeyCombination? result);
 
 		// Assert
 		Assert.IsFalse(success);
@@ -130,8 +129,8 @@ public class KeyCombinationTests
 	public void Equals_SameKeyCombinations_ReturnsTrue()
 	{
 		// Arrange
-		var combo1 = new KeyCombination("A", ModifierKeys.Ctrl);
-		var combo2 = new KeyCombination("A", ModifierKeys.Ctrl);
+		KeyCombination combo1 = new("A", ModifierKeys.Ctrl);
+		KeyCombination combo2 = new("A", ModifierKeys.Ctrl);
 
 		// Act & Assert
 		Assert.AreEqual(combo1, combo2);
@@ -143,8 +142,8 @@ public class KeyCombinationTests
 	public void Equals_DifferentKeyCombinations_ReturnsFalse()
 	{
 		// Arrange
-		var combo1 = new KeyCombination("A", ModifierKeys.Ctrl);
-		var combo2 = new KeyCombination("B", ModifierKeys.Ctrl);
+		KeyCombination combo1 = new("A", ModifierKeys.Ctrl);
+		KeyCombination combo2 = new("B", ModifierKeys.Ctrl);
 
 		// Act & Assert
 		Assert.AreNotEqual(combo1, combo2);
@@ -156,8 +155,8 @@ public class KeyCombinationTests
 	public void GetHashCode_SameKeyCombinations_ReturnsSameHash()
 	{
 		// Arrange
-		var combo1 = new KeyCombination("A", ModifierKeys.Ctrl);
-		var combo2 = new KeyCombination("A", ModifierKeys.Ctrl);
+		KeyCombination combo1 = new("A", ModifierKeys.Ctrl);
+		KeyCombination combo2 = new("A", ModifierKeys.Ctrl);
 
 		// Act & Assert
 		Assert.AreEqual(combo1.GetHashCode(), combo2.GetHashCode());

@@ -2,11 +2,11 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.Core.Services;
 using System.Collections.Concurrent;
+using System.Threading;
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Models;
-
-namespace ktsu.Keybinding.Core.Services;
 
 /// <summary>
 /// Implementation of profile manager for managing keybinding profiles
@@ -14,7 +14,7 @@ namespace ktsu.Keybinding.Core.Services;
 public sealed class ProfileManager : IProfileManager
 {
 	private readonly ConcurrentDictionary<string, Profile> _profiles = new();
-	private readonly object _lock = new();
+	private readonly Lock _lock = new();
 	private volatile string? _activeProfileId;
 
 	/// <inheritdoc/>
@@ -29,10 +29,12 @@ public sealed class ProfileManager : IProfileManager
 	public bool DeleteProfile(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
+		{
 			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
+		}
 
-		var normalizedId = profileId.Trim();
-		var removed = _profiles.TryRemove(normalizedId, out _);
+		string normalizedId = profileId.Trim();
+		bool removed = _profiles.TryRemove(normalizedId, out _);
 
 		// Clear active profile if it was the one being deleted
 		if (removed && _activeProfileId == normalizedId)
@@ -46,10 +48,9 @@ public sealed class ProfileManager : IProfileManager
 	/// <inheritdoc/>
 	public Profile? GetProfile(string profileId)
 	{
-		if (string.IsNullOrWhiteSpace(profileId))
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
-
-		return _profiles.TryGetValue(profileId.Trim(), out var profile) ? profile : null;
+		return string.IsNullOrWhiteSpace(profileId)
+			? throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId))
+			: _profiles.TryGetValue(profileId.Trim(), out Profile? profile) ? profile : null;
 	}
 
 	/// <inheritdoc/>
@@ -64,7 +65,7 @@ public sealed class ProfileManager : IProfileManager
 	/// <inheritdoc/>
 	public Profile? GetActiveProfile()
 	{
-		var activeId = _activeProfileId;
+		string? activeId = _activeProfileId;
 		return activeId is not null ? GetProfile(activeId) : null;
 	}
 
@@ -72,54 +73,66 @@ public sealed class ProfileManager : IProfileManager
 	public bool SetActiveProfile(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
+		{
 			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
+		}
 
-		var normalizedId = profileId.Trim();
+		string normalizedId = profileId.Trim();
 
 		if (!_profiles.ContainsKey(normalizedId))
+		{
 			return false;
+		}
 
 		_activeProfileId = normalizedId;
 		return true;
 	}
 
 	/// <inheritdoc/>
-	public void ClearActiveProfile()
-	{
-		_activeProfileId = null;
-	}
+	public void ClearActiveProfile() => _activeProfileId = null;
 
 	/// <inheritdoc/>
 	public bool ProfileExists(string profileId)
 	{
-		if (string.IsNullOrWhiteSpace(profileId))
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
-
-		return _profiles.ContainsKey(profileId.Trim());
+		return string.IsNullOrWhiteSpace(profileId)
+			? throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId))
+			: _profiles.ContainsKey(profileId.Trim());
 	}
 
 	/// <inheritdoc/>
 	public Profile? DuplicateProfile(string sourceProfileId, string newProfileId, string newProfileName, string? newDescription = null)
 	{
 		if (string.IsNullOrWhiteSpace(sourceProfileId))
+		{
 			throw new ArgumentException("Source profile ID cannot be null or whitespace", nameof(sourceProfileId));
+		}
+
 		if (string.IsNullOrWhiteSpace(newProfileId))
+		{
 			throw new ArgumentException("New profile ID cannot be null or whitespace", nameof(newProfileId));
+		}
+
 		if (string.IsNullOrWhiteSpace(newProfileName))
+		{
 			throw new ArgumentException("New profile name cannot be null or whitespace", nameof(newProfileName));
+		}
 
-		var sourceProfile = GetProfile(sourceProfileId);
+		Profile? sourceProfile = GetProfile(sourceProfileId);
 		if (sourceProfile is null)
+		{
 			return null;
+		}
 
-		var normalizedNewId = newProfileId.Trim();
+		string normalizedNewId = newProfileId.Trim();
 		if (_profiles.ContainsKey(normalizedNewId))
+		{
 			return null;
+		}
 
-		var newProfile = new Profile(normalizedNewId, newProfileName.Trim(), newDescription);
+		Profile newProfile = new(normalizedNewId, newProfileName.Trim(), newDescription);
 
 		// Copy all keybindings from source profile
-		foreach (var kvp in sourceProfile.Keybindings)
+		foreach (KeyValuePair<string, KeyCombination> kvp in sourceProfile.Keybindings)
 		{
 			newProfile.SetKeybinding(kvp.Key, kvp.Value);
 		}
@@ -131,19 +144,26 @@ public sealed class ProfileManager : IProfileManager
 	public bool RenameProfile(string profileId, string newName, string? newDescription = null)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
+		{
 			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
-		if (string.IsNullOrWhiteSpace(newName))
-			throw new ArgumentException("New name cannot be null or whitespace", nameof(newName));
+		}
 
-		var profile = GetProfile(profileId);
+		if (string.IsNullOrWhiteSpace(newName))
+		{
+			throw new ArgumentException("New name cannot be null or whitespace", nameof(newName));
+		}
+
+		Profile? profile = GetProfile(profileId);
 		if (profile is null)
+		{
 			return false;
+		}
 
 		// Create a new profile with the same ID but new name/description
-		var updatedProfile = new Profile(profile.Id, newName.Trim(), newDescription);
+		Profile updatedProfile = new(profile.Id, newName.Trim(), newDescription);
 
 		// Copy all keybindings
-		foreach (var kvp in profile.Keybindings)
+		foreach (KeyValuePair<string, KeyCombination> kvp in profile.Keybindings)
 		{
 			updatedProfile.SetKeybinding(kvp.Key, kvp.Value);
 		}

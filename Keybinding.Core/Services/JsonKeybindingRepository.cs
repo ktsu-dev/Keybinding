@@ -2,12 +2,11 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.Core.Services;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Models;
-
-namespace ktsu.Keybinding.Core.Services;
 
 /// <summary>
 /// JSON file-based implementation of keybinding repository
@@ -28,7 +27,9 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	public JsonKeybindingRepository(string dataDirectory)
 	{
 		if (string.IsNullOrWhiteSpace(dataDirectory))
+		{
 			throw new ArgumentException("Data directory cannot be null or whitespace", nameof(dataDirectory));
+		}
 
 		_dataDirectory = dataDirectory.Trim();
 		_jsonOptions = new JsonSerializerOptions
@@ -44,17 +45,17 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	{
 		ArgumentNullException.ThrowIfNull(profile);
 
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync().ConfigureAwait(false);
 
-		var profiles = await LoadAllProfilesInternalAsync();
-		var profileList = profiles.ToList();
+		List<Profile> profiles = await LoadAllProfilesInternalAsync().ConfigureAwait(false);
+		List<Profile> profileList = [.. profiles];
 
 		// Remove existing profile with same ID if it exists
 		profileList.RemoveAll(p => p.Id == profile.Id);
 		profileList.Add(profile);
 
-		var profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
-		var profileDtos = profileList.Select(p => new ProfileDto
+		string profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
+		IEnumerable<ProfileDto> profileDtos = profileList.Select(p => new ProfileDto
 		{
 			Id = p.Id,
 			Name = p.Name,
@@ -68,54 +69,56 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 				})
 		});
 
-		var json = JsonSerializer.Serialize(profileDtos, _jsonOptions);
-		await File.WriteAllTextAsync(profilesPath, json);
+		string json = JsonSerializer.Serialize(profileDtos, _jsonOptions);
+		await File.WriteAllTextAsync(profilesPath, json).ConfigureAwait(false);
 	}
 
 	/// <inheritdoc/>
 	public async Task<Profile?> LoadProfileAsync(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
+		{
 			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
+		}
 
-		var profiles = await LoadAllProfilesAsync();
+		IReadOnlyCollection<Profile> profiles = await LoadAllProfilesAsync().ConfigureAwait(false);
 		return profiles.FirstOrDefault(p => p.Id == profileId.Trim());
 	}
 
 	/// <inheritdoc/>
-	public async Task<IReadOnlyCollection<Profile>> LoadAllProfilesAsync()
-	{
-		return await LoadAllProfilesInternalAsync();
-	}
+	public async Task<IReadOnlyCollection<Profile>> LoadAllProfilesAsync() => await LoadAllProfilesInternalAsync().ConfigureAwait(false);
 
 	private async Task<List<Profile>> LoadAllProfilesInternalAsync()
 	{
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync().ConfigureAwait(false);
 
-		var profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
+		string profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
 		if (!File.Exists(profilesPath))
-			return new List<Profile>();
+		{
+			return [];
+		}
 
 		try
 		{
-			var json = await File.ReadAllTextAsync(profilesPath);
-			var profileDtos = JsonSerializer.Deserialize<List<ProfileDto>>(json, _jsonOptions) ?? new List<ProfileDto>();
+			string json = await File.ReadAllTextAsync(profilesPath).ConfigureAwait(false);
+			List<ProfileDto> profileDtos = JsonSerializer.Deserialize<List<ProfileDto>>(json, _jsonOptions) ?? [];
 
-			return profileDtos.Select(dto =>
+			return [.. profileDtos.Select(dto =>
 			{
-				var profile = new Profile(dto.Id, dto.Name, dto.Description);
-				foreach (var kvp in dto.Keybindings ?? new Dictionary<string, KeyCombinationDto>())
+				Profile profile = new(dto.Id, dto.Name, dto.Description);
+				foreach (KeyValuePair<string, KeyCombinationDto> kvp in dto.Keybindings ?? [])
 				{
-					var keyCombination = new KeyCombination(kvp.Value.Key, kvp.Value.Modifiers);
+					KeyCombination keyCombination = new(kvp.Value.Key, kvp.Value.Modifiers);
 					profile.SetKeybinding(kvp.Key, keyCombination);
 				}
+
 				return profile;
-			}).ToList();
+			})];
 		}
 		catch (JsonException)
 		{
 			// If JSON is corrupted, return empty list
-			return new List<Profile>();
+			return [];
 		}
 	}
 
@@ -123,13 +126,15 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	public async Task DeleteProfileAsync(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
+		{
 			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
+		}
 
-		var profiles = await LoadAllProfilesInternalAsync();
+		List<Profile> profiles = await LoadAllProfilesInternalAsync().ConfigureAwait(false);
 		profiles.RemoveAll(p => p.Id == profileId.Trim());
 
-		var profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
-		var profileDtos = profiles.Select(p => new ProfileDto
+		string profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
+		IEnumerable<ProfileDto> profileDtos = profiles.Select(p => new ProfileDto
 		{
 			Id = p.Id,
 			Name = p.Name,
@@ -143,8 +148,8 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 				})
 		});
 
-		var json = JsonSerializer.Serialize(profileDtos, _jsonOptions);
-		await File.WriteAllTextAsync(profilesPath, json);
+		string json = JsonSerializer.Serialize(profileDtos, _jsonOptions);
+		await File.WriteAllTextAsync(profilesPath, json).ConfigureAwait(false);
 	}
 
 	/// <inheritdoc/>
@@ -152,10 +157,10 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	{
 		ArgumentNullException.ThrowIfNull(commands);
 
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync().ConfigureAwait(false);
 
-		var commandsPath = Path.Combine(_dataDirectory, CommandsFileName);
-		var commandDtos = commands.Select(c => new CommandDto
+		string commandsPath = Path.Combine(_dataDirectory, CommandsFileName);
+		IEnumerable<CommandDto> commandDtos = commands.Select(c => new CommandDto
 		{
 			Id = c.Id,
 			Name = c.Name,
@@ -163,23 +168,25 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			Category = c.Category
 		});
 
-		var json = JsonSerializer.Serialize(commandDtos, _jsonOptions);
-		await File.WriteAllTextAsync(commandsPath, json);
+		string json = JsonSerializer.Serialize(commandDtos, _jsonOptions);
+		await File.WriteAllTextAsync(commandsPath, json).ConfigureAwait(false);
 	}
 
 	/// <inheritdoc/>
 	public async Task<IReadOnlyCollection<Command>> LoadCommandsAsync()
 	{
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync().ConfigureAwait(false);
 
-		var commandsPath = Path.Combine(_dataDirectory, CommandsFileName);
+		string commandsPath = Path.Combine(_dataDirectory, CommandsFileName);
 		if (!File.Exists(commandsPath))
+		{
 			return new List<Command>().AsReadOnly();
+		}
 
 		try
 		{
-			var json = await File.ReadAllTextAsync(commandsPath);
-			var commandDtos = JsonSerializer.Deserialize<List<CommandDto>>(json, _jsonOptions) ?? new List<CommandDto>();
+			string json = await File.ReadAllTextAsync(commandsPath).ConfigureAwait(false);
+			List<CommandDto> commandDtos = JsonSerializer.Deserialize<List<CommandDto>>(json, _jsonOptions) ?? [];
 
 			return commandDtos
 				.Select(dto => new Command(dto.Id, dto.Name, dto.Description, dto.Category))
@@ -196,28 +203,31 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	/// <inheritdoc/>
 	public async Task SaveActiveProfileAsync(string? profileId)
 	{
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync().ConfigureAwait(false);
 
-		var activeProfilePath = Path.Combine(_dataDirectory, ActiveProfileFileName);
-		var dto = new ActiveProfileDto { ActiveProfileId = profileId };
+		string activeProfilePath = Path.Combine(_dataDirectory, ActiveProfileFileName);
+		ActiveProfileDto dto = new()
+		{ ActiveProfileId = profileId };
 
-		var json = JsonSerializer.Serialize(dto, _jsonOptions);
-		await File.WriteAllTextAsync(activeProfilePath, json);
+		string json = JsonSerializer.Serialize(dto, _jsonOptions);
+		await File.WriteAllTextAsync(activeProfilePath, json).ConfigureAwait(false);
 	}
 
 	/// <inheritdoc/>
 	public async Task<string?> LoadActiveProfileAsync()
 	{
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync().ConfigureAwait(false);
 
-		var activeProfilePath = Path.Combine(_dataDirectory, ActiveProfileFileName);
+		string activeProfilePath = Path.Combine(_dataDirectory, ActiveProfileFileName);
 		if (!File.Exists(activeProfilePath))
+		{
 			return null;
+		}
 
 		try
 		{
-			var json = await File.ReadAllTextAsync(activeProfilePath);
-			var dto = JsonSerializer.Deserialize<ActiveProfileDto>(json, _jsonOptions);
+			string json = await File.ReadAllTextAsync(activeProfilePath).ConfigureAwait(false);
+			ActiveProfileDto? dto = JsonSerializer.Deserialize<ActiveProfileDto>(json, _jsonOptions);
 			return dto?.ActiveProfileId;
 		}
 		catch (JsonException)
@@ -228,10 +238,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	}
 
 	/// <inheritdoc/>
-	public async Task<bool> IsInitializedAsync()
-	{
-		return await Task.FromResult(Directory.Exists(_dataDirectory));
-	}
+	public async Task<bool> IsInitializedAsync() => await Task.FromResult(Directory.Exists(_dataDirectory)).ConfigureAwait(false);
 
 	/// <inheritdoc/>
 	public async Task InitializeAsync()
@@ -242,14 +249,14 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			{
 				Directory.CreateDirectory(_dataDirectory);
 			}
-		});
+		}).ConfigureAwait(false);
 	}
 
 	private async Task EnsureInitializedAsync()
 	{
-		if (!await IsInitializedAsync())
+		if (!await IsInitializedAsync().ConfigureAwait(false))
 		{
-			await InitializeAsync();
+			await InitializeAsync().ConfigureAwait(false);
 		}
 	}
 
@@ -259,7 +266,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 		public string Id { get; set; } = string.Empty;
 		public string Name { get; set; } = string.Empty;
 		public string? Description { get; set; }
-		public Dictionary<string, KeyCombinationDto> Keybindings { get; set; } = new();
+		public Dictionary<string, KeyCombinationDto> Keybindings { get; set; } = [];
 	}
 
 	private sealed class KeyCombinationDto

@@ -2,11 +2,12 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.Core.Services;
 using System.Collections.Concurrent;
+using System.Globalization;
+using System.Threading;
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Models;
-
-namespace ktsu.Keybinding.Core.Services;
 
 /// <summary>
 /// Implementation of command registry for managing command registrations
@@ -14,7 +15,7 @@ namespace ktsu.Keybinding.Core.Services;
 public sealed class CommandRegistry : ICommandRegistry
 {
 	private readonly ConcurrentDictionary<string, Command> _commands = new();
-	private readonly object _lock = new();
+	private readonly Lock _lock = new();
 
 	/// <inheritdoc/>
 	public bool RegisterCommand(Command command)
@@ -27,19 +28,17 @@ public sealed class CommandRegistry : ICommandRegistry
 	/// <inheritdoc/>
 	public bool UnregisterCommand(string commandId)
 	{
-		if (string.IsNullOrWhiteSpace(commandId))
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
-
-		return _commands.TryRemove(commandId.Trim(), out _);
+		return string.IsNullOrWhiteSpace(commandId)
+			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
+			: _commands.TryRemove(commandId.Trim(), out _);
 	}
 
 	/// <inheritdoc/>
 	public Command? GetCommand(string commandId)
 	{
-		if (string.IsNullOrWhiteSpace(commandId))
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
-
-		return _commands.TryGetValue(commandId.Trim(), out var command) ? command : null;
+		return string.IsNullOrWhiteSpace(commandId)
+			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
+			: _commands.TryGetValue(commandId.Trim(), out Command? command) ? command : null;
 	}
 
 	/// <inheritdoc/>
@@ -56,7 +55,7 @@ public sealed class CommandRegistry : ICommandRegistry
 	{
 		lock (_lock)
 		{
-			var normalizedCategory = category?.Trim();
+			string? normalizedCategory = category?.Trim();
 			return _commands.Values
 				.Where(c => string.Equals(c.Category, normalizedCategory, StringComparison.OrdinalIgnoreCase))
 				.ToList()
@@ -68,10 +67,12 @@ public sealed class CommandRegistry : ICommandRegistry
 	public IReadOnlyCollection<Command> SearchCommands(string searchTerm, bool caseSensitive = false)
 	{
 		if (string.IsNullOrWhiteSpace(searchTerm))
+		{
 			throw new ArgumentException("Search term cannot be null or whitespace", nameof(searchTerm));
+		}
 
-		var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-		var normalizedSearchTerm = searchTerm.Trim();
+		StringComparison comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+		string normalizedSearchTerm = searchTerm.Trim();
 
 		lock (_lock)
 		{
@@ -90,15 +91,11 @@ public sealed class CommandRegistry : ICommandRegistry
 	/// <inheritdoc/>
 	public bool IsCommandRegistered(string commandId)
 	{
-		if (string.IsNullOrWhiteSpace(commandId))
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
-
-		return _commands.ContainsKey(commandId.Trim());
+		return string.IsNullOrWhiteSpace(commandId)
+			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
+			: _commands.ContainsKey(commandId.Trim());
 	}
 
 	/// <inheritdoc/>
-	public void ClearCommands()
-	{
-		_commands.Clear();
-	}
+	public void ClearCommands() => _commands.Clear();
 }
