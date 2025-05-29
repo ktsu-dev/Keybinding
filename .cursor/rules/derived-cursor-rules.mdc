@@ -1,0 +1,33 @@
+---
+description: AI rules derived by SpecStory from the project AI interaction history
+globs: *
+---
+
+## PROJECT GOALS
+
+*   Create a .NET library for managing keybindings.
+*   Support profiles where a command is the key.
+*   Allow each profile to have a keybinding associated with a command.
+*   Implement a contracts, models, services architecture.
+*   Adhere to SOLID and DRY principles.
+
+## TECH STACK
+
+*   .NET
+
+## PROJECT STRUCTURE
+
+*   Contracts: Defines interfaces for services and data models.
+*   Models: Defines the data structures used in the library.
+*   Services: Implements the business logic for managing keybindings.
+
+## CODING STANDARDS
+
+*   Adhere to SOLID principles (Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion).
+*   Follow DRY principle (Don't Repeat Yourself).
+
+## WORKFLOW & RELEASE RULES
+
+## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+
+## DEBUGGING
