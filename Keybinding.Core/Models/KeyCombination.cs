@@ -36,10 +36,104 @@ public enum ModifierKeys
 }
 
 /// <summary>
+/// Represents special keys that require specific formatting
+/// </summary>
+public enum SpecialKeys
+{
+	/// <summary>Escape key</summary>
+	Escape,
+	/// <summary>Enter key</summary>
+	Enter,
+	/// <summary>Space key</summary>
+	Space,
+	/// <summary>Tab key</summary>
+	Tab,
+	/// <summary>Backspace key</summary>
+	Backspace,
+	/// <summary>Delete key</summary>
+	Delete,
+	/// <summary>Insert key</summary>
+	Insert,
+	/// <summary>Home key</summary>
+	Home,
+	/// <summary>End key</summary>
+	End,
+	/// <summary>Page Up key</summary>
+	PageUp,
+	/// <summary>Page Down key</summary>
+	PageDown,
+	/// <summary>Arrow Up key</summary>
+	ArrowUp,
+	/// <summary>Arrow Down key</summary>
+	ArrowDown,
+	/// <summary>Arrow Left key</summary>
+	ArrowLeft,
+	/// <summary>Arrow Right key</summary>
+	ArrowRight,
+	/// <summary>F1 function key</summary>
+	F1,
+	/// <summary>F2 function key</summary>
+	F2,
+	/// <summary>F3 function key</summary>
+	F3,
+	/// <summary>F4 function key</summary>
+	F4,
+	/// <summary>F5 function key</summary>
+	F5,
+	/// <summary>F6 function key</summary>
+	F6,
+	/// <summary>F7 function key</summary>
+	F7,
+	/// <summary>F8 function key</summary>
+	F8,
+	/// <summary>F9 function key</summary>
+	F9,
+	/// <summary>F10 function key</summary>
+	F10,
+	/// <summary>F11 function key</summary>
+	F11,
+	/// <summary>F12 function key</summary>
+	F12,
+	/// <summary>Caps Lock key</summary>
+	CapsLock,
+	/// <summary>Num Lock key</summary>
+	NumLock,
+	/// <summary>Scroll Lock key</summary>
+	ScrollLock,
+	/// <summary>Print Screen key</summary>
+	PrintScreen,
+	/// <summary>Pause key</summary>
+	Pause
+}
+
+/// <summary>
 /// Represents a key combination consisting of modifiers and a primary key
 /// </summary>
 public sealed class KeyCombination : IEquatable<KeyCombination>
 {
+	// Constants for modifier names
+	private const string CtrlDisplayName = "Ctrl";
+	private const string AltDisplayName = "Alt";
+	private const string ShiftDisplayName = "Shift";
+	private const string MetaDisplayName = "Meta";
+
+	// Constants for modifier aliases in parsing
+	private const string CtrlAlias = "CTRL";
+	private const string ControlAlias = "CONTROL";
+	private const string AltAlias = "ALT";
+	private const string ShiftAlias = "SHIFT";
+	private const string MetaAlias = "META";
+	private const string WinAlias = "WIN";
+	private const string WindowsAlias = "WINDOWS";
+	private const string CmdAlias = "CMD";
+	private const string CommandAlias = "COMMAND";
+
+	// Constants for special key aliases
+	private const string UpAlias = "UP";
+	private const string DownAlias = "DOWN";
+	private const string LeftAlias = "LEFT";
+	private const string RightAlias = "RIGHT";
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="KeyCombination"/> class
 	/// </summary>
@@ -77,22 +171,22 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 
 		if (Modifiers.HasFlag(ModifierKeys.Ctrl))
 		{
-			parts.Add("Ctrl");
+			parts.Add(CtrlDisplayName);
 		}
 
 		if (Modifiers.HasFlag(ModifierKeys.Alt))
 		{
-			parts.Add("Alt");
+			parts.Add(AltDisplayName);
 		}
 
 		if (Modifiers.HasFlag(ModifierKeys.Shift))
 		{
-			parts.Add("Shift");
+			parts.Add(ShiftDisplayName);
 		}
 
 		if (Modifiers.HasFlag(ModifierKeys.Meta))
 		{
-			parts.Add("Meta");
+			parts.Add(MetaDisplayName);
 		}
 
 		parts.Add(FormatKeyForDisplay(Key));
@@ -107,43 +201,62 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 	/// <returns>Formatted key string</returns>
 	private static string FormatKeyForDisplay(string key)
 	{
-		// Handle special keys that should have proper casing
-		return key.ToUpperInvariant() switch
+		// Try to match the key to a special key enum
+		string upperKey = key.ToUpperInvariant();
+
+		// Handle special key aliases
+		string normalizedKey = upperKey switch
 		{
-			"ESCAPE" => "Escape",
-			"ENTER" => "Enter",
-			"SPACE" => "Space",
-			"TAB" => "Tab",
-			"BACKSPACE" => "Backspace",
-			"DELETE" => "Delete",
-			"INSERT" => "Insert",
-			"HOME" => "Home",
-			"END" => "End",
-			"PAGEUP" => "PageUp",
-			"PAGEDOWN" => "PageDown",
-			"ARROWUP" or "UP" => "ArrowUp",
-			"ARROWDOWN" or "DOWN" => "ArrowDown",
-			"ARROWLEFT" or "LEFT" => "ArrowLeft",
-			"ARROWRIGHT" or "RIGHT" => "ArrowRight",
-			"F1" => "F1",
-			"F2" => "F2",
-			"F3" => "F3",
-			"F4" => "F4",
-			"F5" => "F5",
-			"F6" => "F6",
-			"F7" => "F7",
-			"F8" => "F8",
-			"F9" => "F9",
-			"F10" => "F10",
-			"F11" => "F11",
-			"F12" => "F12",
-			"CAPSLOCK" => "CapsLock",
-			"NUMLOCK" => "NumLock",
-			"SCROLLLOCK" => "ScrollLock",
-			"PRINTSCREEN" => "PrintScreen",
-			"PAUSE" => "Pause",
-			_ => key // For single character keys and others, keep as-is
+			UpAlias => nameof(SpecialKeys.ArrowUp).ToUpperInvariant(),
+			DownAlias => nameof(SpecialKeys.ArrowDown).ToUpperInvariant(),
+			LeftAlias => nameof(SpecialKeys.ArrowLeft).ToUpperInvariant(),
+			RightAlias => nameof(SpecialKeys.ArrowRight).ToUpperInvariant(),
+			_ => upperKey
 		};
+
+		// Try to parse as a special key enum
+		if (Enum.TryParse(normalizedKey, true, out SpecialKeys specialKey))
+		{
+			return specialKey switch
+			{
+				SpecialKeys.Escape => nameof(SpecialKeys.Escape),
+				SpecialKeys.Enter => nameof(SpecialKeys.Enter),
+				SpecialKeys.Space => nameof(SpecialKeys.Space),
+				SpecialKeys.Tab => nameof(SpecialKeys.Tab),
+				SpecialKeys.Backspace => nameof(SpecialKeys.Backspace),
+				SpecialKeys.Delete => nameof(SpecialKeys.Delete),
+				SpecialKeys.Insert => nameof(SpecialKeys.Insert),
+				SpecialKeys.Home => nameof(SpecialKeys.Home),
+				SpecialKeys.End => nameof(SpecialKeys.End),
+				SpecialKeys.PageUp => "PageUp",
+				SpecialKeys.PageDown => "PageDown",
+				SpecialKeys.ArrowUp => "ArrowUp",
+				SpecialKeys.ArrowDown => "ArrowDown",
+				SpecialKeys.ArrowLeft => "ArrowLeft",
+				SpecialKeys.ArrowRight => "ArrowRight",
+				SpecialKeys.F1 => nameof(SpecialKeys.F1),
+				SpecialKeys.F2 => nameof(SpecialKeys.F2),
+				SpecialKeys.F3 => nameof(SpecialKeys.F3),
+				SpecialKeys.F4 => nameof(SpecialKeys.F4),
+				SpecialKeys.F5 => nameof(SpecialKeys.F5),
+				SpecialKeys.F6 => nameof(SpecialKeys.F6),
+				SpecialKeys.F7 => nameof(SpecialKeys.F7),
+				SpecialKeys.F8 => nameof(SpecialKeys.F8),
+				SpecialKeys.F9 => nameof(SpecialKeys.F9),
+				SpecialKeys.F10 => nameof(SpecialKeys.F10),
+				SpecialKeys.F11 => nameof(SpecialKeys.F11),
+				SpecialKeys.F12 => nameof(SpecialKeys.F12),
+				SpecialKeys.CapsLock => "CapsLock",
+				SpecialKeys.NumLock => "NumLock",
+				SpecialKeys.ScrollLock => "ScrollLock",
+				SpecialKeys.PrintScreen => "PrintScreen",
+				SpecialKeys.Pause => nameof(SpecialKeys.Pause),
+				_ => specialKey.ToString()
+			};
+		}
+
+		// For single character keys and unrecognized keys, keep as-is
+		return key;
 	}
 
 	/// <summary>
@@ -173,10 +286,10 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 		{
 			ModifierKeys modifier = parts[i].ToUpperInvariant() switch
 			{
-				"CTRL" or "CONTROL" => ModifierKeys.Ctrl,
-				"ALT" => ModifierKeys.Alt,
-				"SHIFT" => ModifierKeys.Shift,
-				"META" or "WIN" or "WINDOWS" or "CMD" or "COMMAND" => ModifierKeys.Meta,
+				CtrlAlias or ControlAlias => ModifierKeys.Ctrl,
+				AltAlias => ModifierKeys.Alt,
+				ShiftAlias => ModifierKeys.Shift,
+				MetaAlias or WinAlias or WindowsAlias or CmdAlias or CommandAlias => ModifierKeys.Meta,
 				_ => throw new ArgumentException($"Unknown modifier: {parts[i]}", nameof(value))
 			};
 

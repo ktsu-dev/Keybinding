@@ -175,3 +175,535 @@ _**Assistant**_
 
 ---
 
+I can see there's still one failing test. The issue is that the `KeyCombination` constructor stores keys in uppercase, but the `ToString()` method should format special keys with proper casing for display. Let me fix this by modifying the `ToString()` method to format keys properly.
+
+---
+
+
+
+---
+
+Now let's run the tests to see if this fixes the issue:
+
+---
+
+```bash
+dotnet test
+```
+
+```
+C:\dev\ktsu-dev\Keybinding>dotnet test
+Microsoft Windows [Version 10.0.26100.4061]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\dev\ktsu-dev\Keybinding>dotnet test
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Restore complete (0.8s)
+  Keybinding.Core succeeded (0.6s) → Keybinding.Core\bin\Debug\net9.0\ktsu.Keybinding.Core.dll
+  Keybinding.Test succeeded (0.6s) → Keybinding.Test\bin\Debug\net9.0\ktsu.Keybinding.Test.dll
+  Keybinding.Test test succeeded (1.0s)
+
+Test summary: total: 22, failed: 0, succeeded: 22, skipped: 0, duration: 0.6s
+Build succeeded in 3.3s
+
+C:\dev\ktsu-dev\Keybinding>
+```
+
+---
+
+Perfect! The test is now passing. Let me also run `dotnet format` to make sure the code formatting is consistent:
+
+---
+
+```bash
+dotnet format
+```
+
+```
+C:\dev\ktsu-dev\Keybinding>dotnet format
+
+C:\dev\ktsu-dev\Keybinding>
+```
+
+---
+
+Great! The fix is complete. Here's what I did to resolve the failing test:
+
+## Problem
+The test `ToString_NoModifiers_ReturnsKeyOnly` was failing because:
+- The `KeyCombination` constructor stores keys in uppercase internally (`Key = key.Trim().ToUpperInvariant()`)
+- When `ToString()` was called, it returned "ESCAPE" instead of the expected "Escape"
+
+## Solution
+I added a new private method `FormatKeyForDisplay()` that properly formats special keys for display purposes:
+
+```12:15:Keybinding.Core/Models/KeyCombination.cs
+parts.Add(FormatKeyForDisplay(Key));
+```
+
+The method handles common special keys like:
+- "ESCAPE" → "Escape"
+- "ENTER" → "Enter" 
+- "SPACE" → "Space"
+- Function keys (F1-F12)
+- Arrow keys
+- And many others
+
+This maintains the internal uppercase storage for consistency while providing proper formatting for user-facing display in the `ToString()` method.
+
+## Result
+✅ All 22 tests now pass
+✅ Code formatting is consistent 
+✅ The keybinding functionality works correctly with proper display formatting
+
+---
+
+_**User**_
+
+use enums, nameof, and consts where possible to reduce hard coded strings
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+I'll refactor the code to use enums, `nameof`, and constants to reduce hard-coded strings. Let me examine the current code and make improvements.
+
+---
+
+Model provided invalid arguments to read file tool.
+
+---
+
+Read file: Keybinding.Core/Models/KeyCombination.cs
+
+---
+
+Now let me see the rest of the file:
+
+---
+
+Read file: Keybinding.Core/Models/KeyCombination.cs
+
+---
+
+Now I'll refactor the code to use enums, constants, and `nameof` where possible. I'll create:
+
+1. An enum for special keys
+2. Constants for modifier names and aliases  
+3. Use `nameof` and constants throughout
+
+---
+
+```diff
+  	Meta = 8
+  }
++ 
++ /// <summary>
++ /// Represents special keys that require specific formatting
++ /// </summary>
++ public enum SpecialKeys
++ {
++ 	Escape,
++ 	Enter,
++ 	Space,
++ 	Tab,
++ 	Backspace,
++ 	Delete,
++ 	Insert,
++ 	Home,
++ 	End,
++ 	PageUp,
++ 	PageDown,
++ 	ArrowUp,
++ 	ArrowDown,
++ 	ArrowLeft,
++ 	ArrowRight,
++ 	F1,
++ 	F2,
++ 	F3,
++ 	F4,
++ 	F5,
++ 	F6,
++ 	F7,
++ 	F8,
++ 	F9,
++ 	F10,
++ 	F11,
++ 	F12,
++ 	CapsLock,
++ 	NumLock,
++ 	ScrollLock,
++ 	PrintScreen,
++ 	Pause
++ }
+  
+  /// <summary>
+```
+
+```diff
+  public sealed class KeyCombination : IEquatable<KeyCombination>
+  {
++ 	// Constants for modifier names
++ 	private const string CtrlDisplayName = "Ctrl";
++ 	private const string AltDisplayName = "Alt";
++ 	private const string ShiftDisplayName = "Shift";
++ 	private const string MetaDisplayName = "Meta";
++ 
++ 	// Constants for modifier aliases in parsing
++ 	private const string CtrlAlias = "CTRL";
++ 	private const string ControlAlias = "CONTROL";
++ 	private const string AltAlias = "ALT";
++ 	private const string ShiftAlias = "SHIFT";
++ 	private const string MetaAlias = "META";
++ 	private const string WinAlias = "WIN";
++ 	private const string WindowsAlias = "WINDOWS";
++ 	private const string CmdAlias = "CMD";
++ 	private const string CommandAlias = "COMMAND";
++ 
++ 	// Constants for special key aliases
++ 	private const string UpAlias = "UP";
++ 	private const string DownAlias = "DOWN";
++ 	private const string LeftAlias = "LEFT";
++ 	private const string RightAlias = "RIGHT";
++ 
+  	/// <summary>
+  	/// Initializes a new instance of the <see cref="KeyCombination"/> class
+```
+
+```diff
+  		if (Modifiers.HasFlag(ModifierKeys.Ctrl))
+  		{
+- 			parts.Add("Ctrl");
++ 			parts.Add(CtrlDisplayName);
+  		}
+  
+  		if (Modifiers.HasFlag(ModifierKeys.Alt))
+  		{
+- 			parts.Add("Alt");
++ 			parts.Add(AltDisplayName);
+  		}
+  
+  		if (Modifiers.HasFlag(ModifierKeys.Shift))
+  		{
+- 			parts.Add("Shift");
++ 			parts.Add(ShiftDisplayName);
+  		}
+  
+  		if (Modifiers.HasFlag(ModifierKeys.Meta))
+  		{
+- 			parts.Add("Meta");
++ 			parts.Add(MetaDisplayName);
+  		}
+  
+```
+
+```diff
+  	private static string FormatKeyForDisplay(string key)
+  	{
+- 		// Handle special keys that should have proper casing
+- 		return key.ToUpperInvariant() switch
++ 		// Try to match the key to a special key enum
++ 		string upperKey = key.ToUpperInvariant();
++ 		
++ 		// Handle special key aliases
++ 		string normalizedKey = upperKey switch
+  		{
+- 			"ESCAPE" => "Escape",
+- 			"ENTER" => "Enter",
+- 			"SPACE" => "Space",
+- 			"TAB" => "Tab",
+- 			"BACKSPACE" => "Backspace",
+- 			"DELETE" => "Delete",
+- 			"INSERT" => "Insert",
+- 			"HOME" => "Home",
+- 			"END" => "End",
+- 			"PAGEUP" => "PageUp",
+- 			"PAGEDOWN" => "PageDown",
+- 			"ARROWUP" or "UP" => "ArrowUp",
+- 			"ARROWDOWN" or "DOWN" => "ArrowDown",
+- 			"ARROWLEFT" or "LEFT" => "ArrowLeft",
+- 			"ARROWRIGHT" or "RIGHT" => "ArrowRight",
+- 			"F1" => "F1",
+- 			"F2" => "F2",
+- 			"F3" => "F3",
+- 			"F4" => "F4",
+- 			"F5" => "F5",
+- 			"F6" => "F6",
+- 			"F7" => "F7",
+- 			"F8" => "F8",
+- 			"F9" => "F9",
+- 			"F10" => "F10",
+- 			"F11" => "F11",
+- 			"F12" => "F12",
+- 			"CAPSLOCK" => "CapsLock",
+- 			"NUMLOCK" => "NumLock",
+- 			"SCROLLLOCK" => "ScrollLock",
+- 			"PRINTSCREEN" => "PrintScreen",
+- 			"PAUSE" => "Pause",
+- 			_ => key // For single character keys and others, keep as-is
+- 		};
++ 			UpAlias => nameof(SpecialKeys.ArrowUp).ToUpperInvariant(),
++ 			DownAlias => nameof(SpecialKeys.ArrowDown).ToUpperInvariant(),
++ 			LeftAlias => nameof(SpecialKeys.ArrowLeft).ToUpperInvariant(),
++ 			RightAlias => nameof(SpecialKeys.ArrowRight).ToUpperInvariant(),
++ 			_ => upperKey
++ 		};
++ 
++ 		// Try to parse as a special key enum
++ 		if (Enum.TryParse<SpecialKeys>(normalizedKey, true, out SpecialKeys specialKey))
++ 		{
++ 			return nameof(SpecialKeys) switch
++ 			{
++ 				_ when specialKey == SpecialKeys.PageUp => "PageUp",
++ 				_ when specialKey == SpecialKeys.PageDown => "PageDown",
++ 				_ when specialKey == SpecialKeys.ArrowUp => "ArrowUp",
++ 				_ when specialKey == SpecialKeys.ArrowDown => "ArrowDown",
++ 				_ when specialKey == SpecialKeys.ArrowLeft => "ArrowLeft",
++ 				_ when specialKey == SpecialKeys.ArrowRight => "ArrowRight",
++ 				_ when specialKey == SpecialKeys.CapsLock => "CapsLock",
++ 				_ when specialKey == SpecialKeys.NumLock => "NumLock",
++ 				_ when specialKey == SpecialKeys.ScrollLock => "ScrollLock",
++ 				_ when specialKey == SpecialKeys.PrintScreen => "PrintScreen",
++ 				_ => specialKey.ToString()
++ 			};
++ 		}
++ 
++ 		// For single character keys and unrecognized keys, keep as-is
++ 		return key;
+  	}
+  
+```
+
+```diff
+  			ModifierKeys modifier = parts[i].ToUpperInvariant() switch
+  			{
+- 				"CTRL" or "CONTROL" => ModifierKeys.Ctrl,
+- 				"ALT" => ModifierKeys.Alt,
+- 				"SHIFT" => ModifierKeys.Shift,
+- 				"META" or "WIN" or "WINDOWS" or "CMD" or "COMMAND" => ModifierKeys.Meta,
++ 				CtrlAlias or ControlAlias => ModifierKeys.Ctrl,
++ 				AltAlias => ModifierKeys.Alt,
++ 				ShiftAlias => ModifierKeys.Shift,
++ 				MetaAlias or WinAlias or WindowsAlias or CmdAlias or CommandAlias => ModifierKeys.Meta,
+  				_ => throw new ArgumentException($"Unknown modifier: {parts[i]}", nameof(value))
+  			};
+```
+
+---
+
+I have a linter error on line 186. Let me see what it is and fix it:
+
+---
+
+```bash
+dotnet build
+```
+
+```
+C:\dev\ktsu-dev\Keybinding>dotnet build
+
+  C:\dev\ktsu-dev\Keybinding\Keybinding.sln                                                              Restore (0.0s)
+                                                                                                                 (0.1s)       
+Restore complete (0.8s)
+  Keybinding.Core failed with 32 error(s) (0.5s)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(43,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Escape'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(44,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Enter'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(45,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Space'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(46,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Tab'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(47,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Backspace'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(48,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Delete'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(49,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Insert'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(50,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Home'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(51,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.End'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(52,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.PageUp'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(53,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.PageDown'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(54,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.ArrowUp'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(55,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.ArrowDown'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(56,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.ArrowLeft'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(57,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.ArrowRight'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(58,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F1'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(59,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F2'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(60,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F3'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(61,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F4'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(62,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F5'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(63,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F6'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(64,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F7'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(65,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F8'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(66,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F9'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(67,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F10'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(68,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F11'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(69,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.F12'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(70,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.CapsLock'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(71,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.NumLock'
+visible type or member 'SpecialKeys.PrintScreen'
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(74,2): error CS1591: Missing XML comment for publicly 
+visible type or member 'SpecialKeys.Pause'
+
+Build failed with 32 error(s) in 1.8s
+
+C:\dev\ktsu-dev\Keybinding>
+```
+
+---
+
+I see the issue - I need to add XML documentation comments for all the enum members. Let me also fix the issue with the problematic switch expression on line 186. Let me update the SpecialKeys enum with proper documentation:
+
+---
+
+
+
+---
+
+Now I need to fix the problematic switch expression. Let me look at the specific lines around 186 and 218 to fix the issue:
+
+---
+
+Read file: Keybinding.Core/Models/KeyCombination.cs
+
+---
+
+I can see the problematic switch expression. The issue is on line 186 where I'm using `nameof(SpecialKeys)` in a switch expression, but I should be switching on the `specialKey` value directly. Let me fix this:
+
+---
+
+
+
+---
+
+The linter is complaining about the switch expression not being complete (missing cases) and a name can be simplified. Let me run the build to see the exact errors and then fix them:
+
+---
+
+```bash
+dotnet build
+```
+
+```
+C:\dev\ktsu-dev\Keybinding>dotnet build
+
+  Keybinding.Core failed with 1 error(s) (0.5s)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Core\Models\KeyCombination.cs(220,22): error IDE0072: Populate switch (https://learn
+.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0072)
+
+Build failed with 1 error(s) in 1.7s
+
+C:\dev\ktsu-dev\Keybinding>
+```
+
+---
+
+The linter wants me to populate the switch with all enum cases. Let me add all the missing cases to make the switch complete:
+
+---
+
+
+
+---
+
+Let me run the build again to see what the "Name can be simplified" error refers to specifically:
+
+---
+
+```bash
+dotnet build --verbosity normal
+```
+
+```
+C:\dev\ktsu-dev\Keybinding>dotnet build --verbosity normal
+
+  C:\dev\ktsu-dev\Keybinding\Keybinding.sln                                                              Restore (0.0s)
+                                                                                                                 (0.1s)
+```
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+_**User**_
+
+use consts to replace hardcoded primitives where possible
+
+---
+
+_**Assistant**_
+
+
+
+---
+

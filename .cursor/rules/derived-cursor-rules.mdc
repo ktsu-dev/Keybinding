@@ -27,6 +27,9 @@ globs: *
 *   Adhere to SOLID principles (Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion).
 *   Follow DRY principle (Don't Repeat Yourself).
 *   When catching exceptions, catch specific exception types rather than generic exceptions to adhere to code analysis rule CA1031.
+*   The `Key` property of the `KeyCombination` class is stored in uppercase.
+*   The `ToString()` method should format special keys properly, preserving the correct casing for display.
+*   Use enums, `nameof`, and consts where possible to reduce hard-coded strings.
 
 ## WORKFLOW & RELEASE RULES
 
@@ -36,3 +39,5 @@ globs: *
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 
 ## DEBUGGING
+
+*   When debugging `ToString` related issues, note that the `KeyCombination` constructor stores keys in uppercase internally. The `ToString()` method formats special keys with proper casing for display.
