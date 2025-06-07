@@ -30,7 +30,7 @@ public static class Program
 
 		ParserResult<DemoOptions> result = await Parser.Default.ParseArguments<DemoOptions>(args)
 			.MapResult(
-				async (DemoOptions opts) => await RunDemo(opts).ConfigureAwait(false),
+				async opts => await RunDemo(opts).ConfigureAwait(false),
 				errs => Task.FromResult(1)).ConfigureAwait(false);
 
 		return result;
@@ -536,6 +536,7 @@ public static class Program
 [Verb("demo", isDefault: true, HelpText = "Run the keybinding library demo")]
 public class DemoOptions
 {
+	/// <inheritdoc/>
 	[Option('d', "data-dir", Required = false,
 		HelpText = "Directory to store keybinding data",
 		Default = null)]
@@ -543,10 +544,12 @@ public class DemoOptions
 		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
 		"Keybinding", "Demo");
 
+	/// <inheritdoc/>
 	[Option('i', "interactive", Required = false,
 		HelpText = "Run in interactive mode")]
 	public bool Interactive { get; set; }
 
+	/// <inheritdoc/>
 	[Option('r', "reset", Required = false,
 		HelpText = "Reset demo data before running")]
 	public bool Reset { get; set; }
