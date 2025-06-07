@@ -31,6 +31,7 @@ globs: *
 ## WORKFLOW & RELEASE RULES
 
 *   The Keybinding.ConsoleApp should serve as a demo of the library's functionality and utilize the CommandLineParser library.
+*   Always run `dotnet format && dotnet test` before committing changes.
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 

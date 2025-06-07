@@ -95,9 +95,55 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 			parts.Add("Meta");
 		}
 
-		parts.Add(Key);
+		parts.Add(FormatKeyForDisplay(Key));
 
 		return string.Join("+", parts);
+	}
+
+	/// <summary>
+	/// Formats a key for display purposes, converting special keys to proper case
+	/// </summary>
+	/// <param name="key">The key to format</param>
+	/// <returns>Formatted key string</returns>
+	private static string FormatKeyForDisplay(string key)
+	{
+		// Handle special keys that should have proper casing
+		return key.ToUpperInvariant() switch
+		{
+			"ESCAPE" => "Escape",
+			"ENTER" => "Enter",
+			"SPACE" => "Space",
+			"TAB" => "Tab",
+			"BACKSPACE" => "Backspace",
+			"DELETE" => "Delete",
+			"INSERT" => "Insert",
+			"HOME" => "Home",
+			"END" => "End",
+			"PAGEUP" => "PageUp",
+			"PAGEDOWN" => "PageDown",
+			"ARROWUP" or "UP" => "ArrowUp",
+			"ARROWDOWN" or "DOWN" => "ArrowDown",
+			"ARROWLEFT" or "LEFT" => "ArrowLeft",
+			"ARROWRIGHT" or "RIGHT" => "ArrowRight",
+			"F1" => "F1",
+			"F2" => "F2",
+			"F3" => "F3",
+			"F4" => "F4",
+			"F5" => "F5",
+			"F6" => "F6",
+			"F7" => "F7",
+			"F8" => "F8",
+			"F9" => "F9",
+			"F10" => "F10",
+			"F11" => "F11",
+			"F12" => "F12",
+			"CAPSLOCK" => "CapsLock",
+			"NUMLOCK" => "NumLock",
+			"SCROLLLOCK" => "ScrollLock",
+			"PRINTSCREEN" => "PrintScreen",
+			"PAUSE" => "Pause",
+			_ => key // For single character keys and others, keep as-is
+		};
 	}
 
 	/// <summary>
