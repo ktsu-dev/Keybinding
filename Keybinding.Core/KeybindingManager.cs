@@ -186,9 +186,13 @@ public sealed class KeybindingManager : IDisposable
 					successCount++;
 				}
 			}
-			catch
+			catch (ArgumentException)
 			{
 				// Skip invalid keybindings
+			}
+			catch (InvalidOperationException)
+			{
+				// Skip keybindings that can't be set due to state issues
 			}
 		}
 

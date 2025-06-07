@@ -3,516 +3,551 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.CLI;
-using System.CommandLine;
+using CommandLine;
 using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Models;
 
 /// <summary>
-/// Command-line interface for the Keybinding library
+/// Demo application showcasing the Keybinding library functionality
 /// </summary>
 public static class Program
 {
 	private static KeybindingManager? _manager;
 
 	/// <summary>
-	/// Main entry point for the CLI application
+	/// Main entry point for the demo application
 	/// </summary>
 	/// <param name="args">Command line arguments</param>
 	/// <returns>Exit code</returns>
 	public static async Task<int> Main(string[] args)
 	{
-		var dataDirectoryOption = new Option<string>(
-			"--data-dir",
-			description: "Directory to store keybinding data",
-			getDefaultValue: () => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Keybinding"));
+		Console.WriteLine("🔧 Keybinding Library Demo");
+		Console.WriteLine("========================");
+		Console.WriteLine();
 
-		var rootCommand = new RootCommand("Keybinding Management CLI")
-		{
-			dataDirectoryOption
-		};
+		Parser.Default.Settings.CaseSensitive = false;
+		Parser.Default.Settings.IgnoreUnknownArguments = false;
 
-		// Profile commands
-		Command profileCommand = new("profile", "Manage keybinding profiles");
-		Command profileListCommand = new("list", "List all profiles");
-		Command profileCreateCommand = new("create", "Create a new profile");
-		Command profileDeleteCommand = new("delete", "Delete a profile");
-		Command profileActivateCommand = new("activate", "Activate a profile");
-		Command profileRenameCommand = new("rename", "Rename a profile");
-		Command profileDuplicateCommand = new("duplicate", "Duplicate a profile");
+		ParserResult<DemoOptions> result = await Parser.Default.ParseArguments<DemoOptions>(args)
+			.MapResult(
+				async (DemoOptions opts) => await RunDemo(opts).ConfigureAwait(false),
+				errs => Task.FromResult(1)).ConfigureAwait(false);
 
-		// Command management commands
-		Command commandCommand = new("command", "Manage commands");
-		Command commandListCommand = new("list", "List all commands");
-		Command commandRegisterCommand = new("register", "Register a new command");
-		Command commandUnregisterCommand = new("unregister", "Unregister a command");
-
-		// Keybinding commands
-		Command keybindingCommand = new("keybinding", "Manage keybindings");
-		Command keybindingListCommand = new("list", "List all keybindings");
-		Command keybindingSetCommand = new("set", "Set a keybinding");
-		Command keybindingRemoveCommand = new("remove", "Remove a keybinding");
-		Command keybindingFindCommand = new("find", "Find command by key combination");
-
-		// Status command
-		Command statusCommand = new("status", "Show current status");
-
-		// Add options to commands
-		AddProfileOptions(profileCreateCommand, profileDeleteCommand, profileActivateCommand, profileRenameCommand, profileDuplicateCommand);
-		AddCommandOptions(commandRegisterCommand, commandUnregisterCommand);
-		AddKeybindingOptions(keybindingSetCommand, keybindingRemoveCommand, keybindingFindCommand);
-
-		// Build command hierarchy
-		profileCommand.AddCommand(profileListCommand);
-		profileCommand.AddCommand(profileCreateCommand);
-		profileCommand.AddCommand(profileDeleteCommand);
-		profileCommand.AddCommand(profileActivateCommand);
-		profileCommand.AddCommand(profileRenameCommand);
-		profileCommand.AddCommand(profileDuplicateCommand);
-
-		commandCommand.AddCommand(commandListCommand);
-		commandCommand.AddCommand(commandRegisterCommand);
-		commandCommand.AddCommand(commandUnregisterCommand);
-
-		keybindingCommand.AddCommand(keybindingListCommand);
-		keybindingCommand.AddCommand(keybindingSetCommand);
-		keybindingCommand.AddCommand(keybindingRemoveCommand);
-		keybindingCommand.AddCommand(keybindingFindCommand);
-
-		rootCommand.AddCommand(profileCommand);
-		rootCommand.AddCommand(commandCommand);
-		rootCommand.AddCommand(keybindingCommand);
-		rootCommand.AddCommand(statusCommand);
-
-		// Set up handlers
-		SetupHandlers(dataDirectoryOption, profileListCommand, profileCreateCommand, profileDeleteCommand,
-			profileActivateCommand, profileRenameCommand, profileDuplicateCommand,
-			commandListCommand, commandRegisterCommand, commandUnregisterCommand,
-			keybindingListCommand, keybindingSetCommand, keybindingRemoveCommand, keybindingFindCommand,
-			statusCommand);
-
-		return await rootCommand.InvokeAsync(args);
+		return result;
 	}
 
-	private static void AddProfileOptions(params Command[] commands)
+	/// <summary>
+	/// Runs the keybinding demo
+	/// </summary>
+	/// <param name="options">Demo options</param>
+	/// <returns>Exit code</returns>
+	private static async Task<int> RunDemo(DemoOptions options)
 	{
-		var profileIdOption = new Option<string>("--id", "Profile ID") { IsRequired = true };
-		var profileNameOption = new Option<string>("--name", "Profile name");
-		var profileDescriptionOption = new Option<string>("--description", "Profile description");
-		var newProfileIdOption = new Option<string>("--new-id", "New profile ID");
-		var newProfileNameOption = new Option<string>("--new-name", "New profile name");
-
-		foreach (Command command in commands)
+		try
 		{
-			switch (command.Name)
+			await InitializeManager(options.DataDirectory).ConfigureAwait(false);
+
+			Console.WriteLine($"📁 Data directory: {options.DataDirectory}");
+			Console.WriteLine();
+
+			if (options.Reset)
 			{
-				case "create":
-					command.AddOption(profileIdOption);
-					command.AddOption(profileNameOption);
-					command.AddOption(profileDescriptionOption);
-					break;
-				case "delete":
-				case "activate":
-					command.AddOption(profileIdOption);
-					break;
-				case "rename":
-					command.AddOption(profileIdOption);
-					command.AddOption(newProfileNameOption);
-					break;
-				case "duplicate":
-					command.AddOption(profileIdOption);
-					command.AddOption(newProfileIdOption);
-					command.AddOption(newProfileNameOption);
-					break;
+				await ResetDemo().ConfigureAwait(false);
+			}
+
+			await SetupDemoData().ConfigureAwait(false);
+			DisplayCurrentStatus();
+
+			if (options.Interactive)
+			{
+				await RunInteractiveDemo().ConfigureAwait(false);
+			}
+			else
+			{
+				RunBasicDemo();
+			}
+
+			return 0;
+		}
+		catch (ArgumentException ex)
+		{
+			Console.WriteLine($"❌ Invalid argument: {ex.Message}");
+			return 1;
+		}
+		catch (InvalidOperationException ex)
+		{
+			Console.WriteLine($"❌ Operation error: {ex.Message}");
+			return 1;
+		}
+		catch (UnauthorizedAccessException ex)
+		{
+			Console.WriteLine($"❌ Access denied: {ex.Message}");
+			return 1;
+		}
+		finally
+		{
+			if (_manager != null)
+			{
+				await _manager.SaveAsync().ConfigureAwait(false);
+				_manager.Dispose();
 			}
 		}
 	}
 
-	private static void AddCommandOptions(params Command[] commands)
-	{
-		var commandIdOption = new Option<string>("--id", "Command ID") { IsRequired = true };
-		var commandNameOption = new Option<string>("--name", "Command name") { IsRequired = true };
-		var commandDescriptionOption = new Option<string>("--description", "Command description");
-		var commandCategoryOption = new Option<string>("--category", "Command category");
-
-		foreach (Command command in commands)
-		{
-			switch (command.Name)
-			{
-				case "register":
-					command.AddOption(commandIdOption);
-					command.AddOption(commandNameOption);
-					command.AddOption(commandDescriptionOption);
-					command.AddOption(commandCategoryOption);
-					break;
-				case "unregister":
-					command.AddOption(commandIdOption);
-					break;
-			}
-		}
-	}
-
-	private static void AddKeybindingOptions(params Command[] commands)
-	{
-		var commandIdOption = new Option<string>("--command", "Command ID") { IsRequired = true };
-		var keyOption = new Option<string>("--key", "Key combination (e.g., 'Ctrl+S', 'Alt+F4')") { IsRequired = true };
-
-		foreach (Command command in commands)
-		{
-			switch (command.Name)
-			{
-				case "set":
-					command.AddOption(commandIdOption);
-					command.AddOption(keyOption);
-					break;
-				case "remove":
-					command.AddOption(commandIdOption);
-					break;
-				case "find":
-					command.AddOption(keyOption);
-					break;
-			}
-		}
-	}
-
-	private static void SetupHandlers(Option<string> dataDirectoryOption, params Command[] commands)
-	{
-		foreach (Command command in commands)
-		{
-			command.SetHandler(async (context) =>
-			{
-				var dataDirectory = context.ParseResult.GetValueForOption(dataDirectoryOption)!;
-				await InitializeManager(dataDirectory).ConfigureAwait(false);
-
-				try
-				{
-					await HandleCommand(command, context).ConfigureAwait(false);
-				}
-				finally
-				{
-					if (_manager != null)
-					{
-						await _manager.SaveAsync().ConfigureAwait(false);
-						_manager.Dispose();
-						_manager = null;
-					}
-				}
-			});
-		}
-	}
-
+	/// <summary>
+	/// Initializes the keybinding manager
+	/// </summary>
+	/// <param name="dataDirectory">Data directory path</param>
 	private static async Task InitializeManager(string dataDirectory)
 	{
 		_manager = new KeybindingManager(dataDirectory);
 		await _manager.InitializeAsync().ConfigureAwait(false);
-
-		// Create default profile if none exist
-		if (!_manager.Profiles.GetAllProfiles().Any())
-		{
-			_manager.CreateDefaultProfile();
-			Console.WriteLine("Created default profile.");
-		}
 	}
 
-	private static async Task HandleCommand(Command command, InvocationContext context)
+	/// <summary>
+	/// Resets the demo by clearing all data
+	/// </summary>
+	private static async Task ResetDemo()
 	{
-		if (_manager == null)
+		Console.WriteLine("🔄 Resetting demo data...");
+
+		// Clear all profiles except default
+		IReadOnlyCollection<Profile> profiles = _manager!.Profiles.GetAllProfiles();
+		foreach (Profile profile in profiles.Where(p => p.Id != "default"))
 		{
-			throw new InvalidOperationException("Manager not initialized");
+			_manager.Profiles.DeleteProfile(profile.Id);
 		}
 
-		string commandPath = GetCommandPath(command);
-
-		switch (commandPath)
+		// Clear all commands
+		IReadOnlyCollection<Command> commands = _manager.Commands.GetAllCommands();
+		foreach (Command command in commands)
 		{
-			case "profile list":
-				await HandleProfileList().ConfigureAwait(false);
-				break;
-			case "profile create":
-				await HandleProfileCreate(context).ConfigureAwait(false);
-				break;
-			case "profile delete":
-				await HandleProfileDelete(context).ConfigureAwait(false);
-				break;
-			case "profile activate":
-				await HandleProfileActivate(context).ConfigureAwait(false);
-				break;
-			case "profile rename":
-				await HandleProfileRename(context).ConfigureAwait(false);
-				break;
-			case "profile duplicate":
-				await HandleProfileDuplicate(context).ConfigureAwait(false);
-				break;
-			case "command list":
-				await HandleCommandList().ConfigureAwait(false);
-				break;
-			case "command register":
-				await HandleCommandRegister(context).ConfigureAwait(false);
-				break;
-			case "command unregister":
-				await HandleCommandUnregister(context).ConfigureAwait(false);
-				break;
-			case "keybinding list":
-				await HandleKeybindingList().ConfigureAwait(false);
-				break;
-			case "keybinding set":
-				await HandleKeybindingSet(context).ConfigureAwait(false);
-				break;
-			case "keybinding remove":
-				await HandleKeybindingRemove(context).ConfigureAwait(false);
-				break;
-			case "keybinding find":
-				await HandleKeybindingFind(context).ConfigureAwait(false);
-				break;
-			case "status":
-				await HandleStatus().ConfigureAwait(false);
-				break;
+			_manager.Commands.UnregisterCommand(command.Id);
 		}
+
+		await _manager.SaveAsync().ConfigureAwait(false);
+		Console.WriteLine("✅ Demo data reset complete");
+		Console.WriteLine();
 	}
 
-	private static string GetCommandPath(Command command)
+	/// <summary>
+	/// Sets up demo data including commands and profiles
+	/// </summary>
+	private static async Task SetupDemoData()
 	{
-		List<string> parts = [];
-		Command current = command;
-		while (current != null && current.Name != "keybinding-cli")
-		{
-			parts.Insert(0, current.Name);
-			current = current.Parents.OfType<Command>().FirstOrDefault();
-		}
+		Console.WriteLine("🚀 Setting up demo data...");
 
-		return string.Join(" ", parts);
+		// Create default profile if it doesn't exist
+		_manager!.CreateDefaultProfile();
+
+		// Register demo commands
+		Command[] demoCommands = [
+			new Command("file.new", "New File", "Create a new file", "File"),
+			new Command("file.open", "Open File", "Open an existing file", "File"),
+			new Command("file.save", "Save File", "Save the current file", "File"),
+			new Command("file.save_as", "Save As", "Save the current file with a new name", "File"),
+			new Command("edit.copy", "Copy", "Copy selected text to clipboard", "Edit"),
+			new Command("edit.cut", "Cut", "Cut selected text to clipboard", "Edit"),
+			new Command("edit.paste", "Paste", "Paste text from clipboard", "Edit"),
+			new Command("edit.undo", "Undo", "Undo the last action", "Edit"),
+			new Command("edit.redo", "Redo", "Redo the last undone action", "Edit"),
+			new Command("view.zoom_in", "Zoom In", "Increase the zoom level", "View"),
+			new Command("view.zoom_out", "Zoom Out", "Decrease the zoom level", "View"),
+			new Command("navigate.go_to_line", "Go to Line", "Navigate to a specific line", "Navigate"),
+		];
+
+		int registeredCount = _manager.RegisterCommands(demoCommands);
+		Console.WriteLine($"✅ Registered {registeredCount} demo commands");
+
+		// Set up default keybindings
+		Dictionary<string, KeyCombination> defaultKeybindings = new()
+		{
+			["file.new"] = KeyCombination.Parse("Ctrl+N"),
+			["file.open"] = KeyCombination.Parse("Ctrl+O"),
+			["file.save"] = KeyCombination.Parse("Ctrl+S"),
+			["file.save_as"] = KeyCombination.Parse("Ctrl+Shift+S"),
+			["edit.copy"] = KeyCombination.Parse("Ctrl+C"),
+			["edit.cut"] = KeyCombination.Parse("Ctrl+X"),
+			["edit.paste"] = KeyCombination.Parse("Ctrl+V"),
+			["edit.undo"] = KeyCombination.Parse("Ctrl+Z"),
+			["edit.redo"] = KeyCombination.Parse("Ctrl+Y"),
+			["view.zoom_in"] = KeyCombination.Parse("Ctrl+Plus"),
+			["view.zoom_out"] = KeyCombination.Parse("Ctrl+Minus"),
+			["navigate.go_to_line"] = KeyCombination.Parse("Ctrl+G"),
+		};
+
+		int keybindingCount = _manager.SetKeybindings(defaultKeybindings);
+		Console.WriteLine($"✅ Set {keybindingCount} default keybindings");
+
+		// Create additional demo profiles
+		await CreateDemoProfiles().ConfigureAwait(false);
+
+		Console.WriteLine("✅ Demo data setup complete");
+		Console.WriteLine();
 	}
 
-	private static async Task HandleProfileList()
+	/// <summary>
+	/// Creates additional demo profiles
+	/// </summary>
+	private static async Task CreateDemoProfiles()
 	{
+		// Create Vim-style profile
+		Profile vimProfile = new("vim", "Vim Style", "Vim-inspired keybindings");
+		if (_manager!.Profiles.CreateProfile(vimProfile))
+		{
+			_manager.Profiles.SetActiveProfile("vim");
+
+			Dictionary<string, KeyCombination> vimKeybindings = new()
+			{
+				["file.save"] = KeyCombination.Parse("Escape"),
+				["edit.copy"] = KeyCombination.Parse("y"),
+				["edit.paste"] = KeyCombination.Parse("p"),
+				["edit.undo"] = KeyCombination.Parse("u"),
+				["navigate.go_to_line"] = KeyCombination.Parse("G"),
+			};
+
+			_manager.SetKeybindings(vimKeybindings);
+			Console.WriteLine("✅ Created Vim-style profile");
+		}
+
+		// Create Mac-style profile
+		Profile macProfile = new("mac", "Mac Style", "Mac-inspired keybindings");
+		if (_manager.Profiles.CreateProfile(macProfile))
+		{
+			_manager.Profiles.SetActiveProfile("mac");
+
+			Dictionary<string, KeyCombination> macKeybindings = new()
+			{
+				["file.new"] = KeyCombination.Parse("Cmd+N"),
+				["file.open"] = KeyCombination.Parse("Cmd+O"),
+				["file.save"] = KeyCombination.Parse("Cmd+S"),
+				["edit.copy"] = KeyCombination.Parse("Cmd+C"),
+				["edit.cut"] = KeyCombination.Parse("Cmd+X"),
+				["edit.paste"] = KeyCombination.Parse("Cmd+V"),
+				["edit.undo"] = KeyCombination.Parse("Cmd+Z"),
+				["edit.redo"] = KeyCombination.Parse("Cmd+Shift+Z"),
+			};
+
+			_manager.SetKeybindings(macKeybindings);
+			Console.WriteLine("✅ Created Mac-style profile");
+		}
+
+		// Switch back to default profile
+		_manager.Profiles.SetActiveProfile("default");
+		await Task.CompletedTask.ConfigureAwait(false);
+	}
+
+	/// <summary>
+	/// Displays the current status
+	/// </summary>
+	private static void DisplayCurrentStatus()
+	{
+		KeybindingSummary summary = _manager!.GetSummary();
+
+		Console.WriteLine("📊 Current Status:");
+		Console.WriteLine($"   Total Commands: {summary.TotalCommands}");
+		Console.WriteLine($"   Total Profiles: {summary.TotalProfiles}");
+		Console.WriteLine($"   Active Profile: {summary.ActiveProfileName} ({summary.ActiveProfileId})");
+		Console.WriteLine($"   Active Keybindings: {summary.ActiveKeybindings}");
+		Console.WriteLine();
+	}
+
+	/// <summary>
+	/// Runs a basic demo showing the functionality
+	/// </summary>
+	private static void RunBasicDemo()
+	{
+		Console.WriteLine("🎯 Basic Demo - Command and Keybinding Operations");
+		Console.WriteLine("================================================");
+		Console.WriteLine();
+
+		// List all commands
+		Console.WriteLine("📋 Available Commands:");
+		IReadOnlyCollection<Command> commands = _manager!.Commands.GetAllCommands();
+		foreach (Command command in commands.OrderBy(c => c.Category).ThenBy(c => c.Name))
+		{
+			Console.WriteLine($"   {command.Category}/{command.Id}: {command.Name}");
+		}
+
+		Console.WriteLine();
+
+		// Show keybindings for current profile
+		ShowProfileKeybindings("default");
+
+		// Demonstrate profile switching
+		Console.WriteLine("🔄 Switching between profiles...");
+		Console.WriteLine();
+
+		foreach (string profileId in new[] { "vim", "mac", "default" })
+		{
+			if (_manager.Profiles.ProfileExists(profileId))
+			{
+				_manager.Profiles.SetActiveProfile(profileId);
+				ShowProfileKeybindings(profileId);
+			}
+		}
+
+		// Demonstrate finding commands by key
+		Console.WriteLine("🔍 Finding commands by key combination:");
+		string[] testKeys = ["Ctrl+S", "Ctrl+C", "Cmd+N"];
+
+		foreach (string keyStr in testKeys)
+		{
+			try
+			{
+				KeyCombination key = KeyCombination.Parse(keyStr);
+				string? commandId = _manager.Keybindings.FindCommandByKeybinding(key);
+				if (!string.IsNullOrEmpty(commandId))
+				{
+					Command? command = _manager.Commands.GetCommand(commandId);
+					Console.WriteLine($"   {keyStr} → {command?.Name ?? "Unknown"}");
+				}
+				else
+				{
+					Console.WriteLine($"   {keyStr} → (no command assigned)");
+				}
+			}
+			catch (ArgumentException)
+			{
+				Console.WriteLine($"   {keyStr} → (invalid key combination)");
+			}
+		}
+
+		Console.WriteLine();
+
+		Console.WriteLine("✅ Basic demo complete!");
+	}
+
+	/// <summary>
+	/// Shows keybindings for a specific profile
+	/// </summary>
+	/// <param name="profileId">Profile ID</param>
+	private static void ShowProfileKeybindings(string profileId)
+	{
+		Profile? profile = _manager!.Profiles.GetProfile(profileId);
+		if (profile == null)
+		{
+			return;
+		}
+
+		Console.WriteLine($"⌨️  Keybindings for '{profile.Name}' profile:");
+
+		if (profile.Keybindings.Count != 0)
+		{
+			foreach (KeyValuePair<string, KeyCombination> kvp in profile.Keybindings.OrderBy(k => k.Key))
+			{
+				Command? command = _manager.Commands.GetCommand(kvp.Key);
+				Console.WriteLine($"   {kvp.Value} → {command?.Name ?? kvp.Key}");
+			}
+		}
+		else
+		{
+			Console.WriteLine("   (no keybindings configured)");
+		}
+
+		Console.WriteLine();
+	}
+
+	/// <summary>
+	/// Runs an interactive demo allowing user input
+	/// </summary>
+	private static async Task RunInteractiveDemo()
+	{
+		Console.WriteLine("🎮 Interactive Demo");
+		Console.WriteLine("==================");
+		Console.WriteLine("Enter commands to try the keybinding system:");
+		Console.WriteLine("  'list profiles' - Show all profiles");
+		Console.WriteLine("  'switch <profile>' - Switch to a profile");
+		Console.WriteLine("  'find <key>' - Find command by key (e.g., 'find Ctrl+S')");
+		Console.WriteLine("  'status' - Show current status");
+		Console.WriteLine("  'help' - Show this help");
+		Console.WriteLine("  'quit' - Exit interactive mode");
+		Console.WriteLine();
+
+		while (true)
+		{
+			Console.Write("🔧 > ");
+			string? input = Console.ReadLine()?.Trim();
+
+			if (string.IsNullOrEmpty(input))
+			{
+				continue;
+			}
+
+			if (input.Equals("quit", StringComparison.OrdinalIgnoreCase))
+			{
+				break;
+			}
+
+			ProcessInteractiveCommand(input);
+		}
+
+		Console.WriteLine("👋 Goodbye!");
+		await Task.CompletedTask.ConfigureAwait(false);
+	}
+
+	/// <summary>
+	/// Processes an interactive command
+	/// </summary>
+	/// <param name="input">User input</param>
+	private static void ProcessInteractiveCommand(string input)
+	{
+		try
+		{
+			string[] parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			if (parts.Length == 0)
+			{
+				return;
+			}
+
+			string command = parts[0].ToLowerInvariant();
+
+			switch (command)
+			{
+				case "list":
+					if (parts.Length > 1 && parts[1].Equals("profiles", StringComparison.OrdinalIgnoreCase))
+					{
+						ListProfiles();
+					}
+
+					break;
+
+				case "switch":
+					if (parts.Length > 1)
+					{
+						SwitchProfile(parts[1]);
+					}
+					else
+					{
+						Console.WriteLine("❌ Please specify a profile name");
+					}
+
+					break;
+
+				case "find":
+					if (parts.Length > 1)
+					{
+						FindCommandByKey(string.Join(" ", parts.Skip(1)));
+					}
+					else
+					{
+						Console.WriteLine("❌ Please specify a key combination");
+					}
+
+					break;
+
+				case "status":
+					DisplayCurrentStatus();
+					break;
+
+				case "help":
+					Console.WriteLine("Available commands:");
+					Console.WriteLine("  'list profiles' - Show all profiles");
+					Console.WriteLine("  'switch <profile>' - Switch to a profile");
+					Console.WriteLine("  'find <key>' - Find command by key");
+					Console.WriteLine("  'status' - Show current status");
+					Console.WriteLine("  'quit' - Exit interactive mode");
+					break;
+
+				default:
+					Console.WriteLine($"❌ Unknown command: {command}");
+					break;
+			}
+		}
+		catch (ArgumentException ex)
+		{
+			Console.WriteLine($"❌ Invalid argument: {ex.Message}");
+		}
+		catch (InvalidOperationException ex)
+		{
+			Console.WriteLine($"❌ Operation error: {ex.Message}");
+		}
+
+		Console.WriteLine();
+	}
+
+	/// <summary>
+	/// Lists all available profiles
+	/// </summary>
+	private static void ListProfiles()
+	{
+		Console.WriteLine("📋 Available Profiles:");
 		IReadOnlyCollection<Profile> profiles = _manager!.Profiles.GetAllProfiles();
 		Profile? activeProfile = _manager.Profiles.GetActiveProfile();
 
-		Console.WriteLine("Profiles:");
-		foreach (Profile? profile in profiles.OrderBy(p => p.Name))
+		foreach (Profile profile in profiles.OrderBy(p => p.Id))
 		{
 			string isActive = profile.Id == activeProfile?.Id ? " (active)" : "";
-			Console.WriteLine($"  {profile.Id}: {profile.Name}{isActive}");
-			if (!string.IsNullOrEmpty(profile.Description))
+			Console.WriteLine($"   {profile.Id}: {profile.Name}{isActive}");
+			Console.WriteLine($"      {profile.Description}");
+			Console.WriteLine($"      Keybindings: {profile.Keybindings.Count}");
+		}
+	}
+
+	/// <summary>
+	/// Switches to a different profile
+	/// </summary>
+	/// <param name="profileId">Profile ID</param>
+	private static void SwitchProfile(string profileId)
+	{
+		if (_manager!.Profiles.ProfileExists(profileId))
+		{
+			_manager.Profiles.SetActiveProfile(profileId);
+			Profile? profile = _manager.Profiles.GetProfile(profileId);
+			Console.WriteLine($"✅ Switched to profile: {profile?.Name} ({profileId})");
+		}
+		else
+		{
+			Console.WriteLine($"❌ Profile not found: {profileId}");
+		}
+	}
+
+	/// <summary>
+	/// Finds a command by key combination
+	/// </summary>
+	/// <param name="keyStr">Key combination string</param>
+	private static void FindCommandByKey(string keyStr)
+	{
+		try
+		{
+			KeyCombination key = KeyCombination.Parse(keyStr);
+			string? commandId = _manager!.Keybindings.FindCommandByKeybinding(key);
+
+			if (!string.IsNullOrEmpty(commandId))
 			{
-				Console.WriteLine($"    Description: {profile.Description}");
+				Command? command = _manager.Commands.GetCommand(commandId);
+				Console.WriteLine($"✅ {keyStr} → {command?.Name ?? "Unknown"} ({commandId})");
 			}
-
-			Console.WriteLine($"    Keybindings: {profile.GetAllKeybindings().Count()}");
-		}
-	}
-
-	private static async Task HandleProfileCreate(InvocationContext context)
-	{
-		var id = context.ParseResult.GetValueForOption<string>("--id")!;
-		var name = context.ParseResult.GetValueForOption<string>("--name") ?? id;
-		var description = context.ParseResult.GetValueForOption<string>("--description") ?? "";
-
-		Profile profile = new(id, name, description);
-		if (_manager!.Profiles.CreateProfile(profile))
-		{
-			Console.WriteLine($"Created profile '{name}' with ID '{id}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to create profile. Profile with ID '{id}' may already exist.");
-		}
-	}
-
-	private static async Task HandleProfileDelete(InvocationContext context)
-	{
-		var id = context.ParseResult.GetValueForOption<string>("--id")!;
-
-		if (_manager!.Profiles.DeleteProfile(id))
-		{
-			Console.WriteLine($"Deleted profile '{id}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to delete profile '{id}'. Profile may not exist or may be the active profile.");
-		}
-	}
-
-	private static async Task HandleProfileActivate(InvocationContext context)
-	{
-		var id = context.ParseResult.GetValueForOption<string>("--id")!;
-
-		if (_manager!.Profiles.SetActiveProfile(id))
-		{
-			Console.WriteLine($"Activated profile '{id}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to activate profile '{id}'. Profile may not exist.");
-		}
-	}
-
-	private static async Task HandleProfileRename(InvocationContext context)
-	{
-		var id = context.ParseResult.GetValueForOption<string>("--id")!;
-		var newName = context.ParseResult.GetValueForOption<string>("--new-name")!;
-
-		if (_manager!.Profiles.RenameProfile(id, newName))
-		{
-			Console.WriteLine($"Renamed profile '{id}' to '{newName}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to rename profile '{id}'. Profile may not exist.");
-		}
-	}
-
-	private static async Task HandleProfileDuplicate(InvocationContext context)
-	{
-		var sourceId = context.ParseResult.GetValueForOption<string>("--id")!;
-		var newId = context.ParseResult.GetValueForOption<string>("--new-id")!;
-		var newName = context.ParseResult.GetValueForOption<string>("--new-name") ?? newId;
-
-		Profile newProfile = _manager!.Profiles.DuplicateProfile(sourceId, newId, newName);
-		if (newProfile != null)
-		{
-			Console.WriteLine($"Duplicated profile '{sourceId}' to '{newId}' ('{newName}')");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to duplicate profile. Source profile '{sourceId}' may not exist or target ID '{newId}' may already exist.");
-		}
-	}
-
-	private static async Task HandleCommandList()
-	{
-		IReadOnlyCollection<Command> commands = _manager!.Commands.GetAllCommands();
-
-		Console.WriteLine("Commands:");
-		foreach (Command? cmd in commands.OrderBy(c => c.Category).ThenBy(c => c.Name))
-		{
-			string category = string.IsNullOrEmpty(cmd.Category) ? "General" : cmd.Category;
-			Console.WriteLine($"  [{category}] {cmd.Id}: {cmd.Name}");
-			if (!string.IsNullOrEmpty(cmd.Description))
+			else
 			{
-				Console.WriteLine($"    Description: {cmd.Description}");
+				Console.WriteLine($"❌ No command assigned to: {keyStr}");
 			}
 		}
-	}
-
-	private static async Task HandleCommandRegister(InvocationContext context)
-	{
-		var id = context.ParseResult.GetValueForOption<string>("--id")!;
-		var name = context.ParseResult.GetValueForOption<string>("--name")!;
-		var description = context.ParseResult.GetValueForOption<string>("--description") ?? "";
-		var category = context.ParseResult.GetValueForOption<string>("--category") ?? "";
-
-		Command command = new(id, name, description, category);
-		if (_manager!.Commands.RegisterCommand(command))
+		catch (ArgumentException ex)
 		{
-			Console.WriteLine($"Registered command '{name}' with ID '{id}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to register command. Command with ID '{id}' may already exist.");
+			Console.WriteLine($"❌ Invalid key combination '{keyStr}': {ex.Message}");
 		}
 	}
+}
 
-	private static async Task HandleCommandUnregister(InvocationContext context)
-	{
-		var id = context.ParseResult.GetValueForOption<string>("--id")!;
+/// <summary>
+/// Command line options for the demo application
+/// </summary>
+[Verb("demo", isDefault: true, HelpText = "Run the keybinding library demo")]
+public class DemoOptions
+{
+	[Option('d', "data-dir", Required = false,
+		HelpText = "Directory to store keybinding data",
+		Default = null)]
+	public string DataDirectory { get; set; } = Path.Combine(
+		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+		"Keybinding", "Demo");
 
-		if (_manager!.Commands.UnregisterCommand(id))
-		{
-			Console.WriteLine($"Unregistered command '{id}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to unregister command '{id}'. Command may not exist.");
-		}
-	}
+	[Option('i', "interactive", Required = false,
+		HelpText = "Run in interactive mode")]
+	public bool Interactive { get; set; }
 
-	private static async Task HandleKeybindingList()
-	{
-		Profile? activeProfile = _manager!.Profiles.GetActiveProfile();
-		if (activeProfile == null)
-		{
-			Console.WriteLine("No active profile set.");
-			return;
-		}
-
-		Console.WriteLine($"Keybindings for profile '{activeProfile.Name}':");
-		var keybindings = activeProfile.GetAllKeybindings();
-
-		foreach (var kvp in keybindings.OrderBy(k => k.Value.ToString()))
-		{
-			Command command = _manager.Commands.GetCommand(kvp.Key);
-			var commandName = command?.Name ?? kvp.Key;
-			Console.WriteLine($"  {kvp.Value}: {commandName}");
-		}
-	}
-
-	private static async Task HandleKeybindingSet(InvocationContext context)
-	{
-		var commandId = context.ParseResult.GetValueForOption<string>("--command")!;
-		var keyString = context.ParseResult.GetValueForOption<string>("--key")!;
-
-		if (!KeyCombination.TryParse(keyString, out KeyCombination keyCombination))
-		{
-			Console.WriteLine($"Invalid key combination: {keyString}");
-			return;
-		}
-
-		if (_manager!.Keybindings.SetKeybinding(commandId, keyCombination))
-		{
-			Console.WriteLine($"Set keybinding {keyCombination} for command '{commandId}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to set keybinding. Command '{commandId}' may not exist or key combination may be invalid.");
-		}
-	}
-
-	private static async Task HandleKeybindingRemove(InvocationContext context)
-	{
-		var commandId = context.ParseResult.GetValueForOption<string>("--command")!;
-
-		if (_manager!.Keybindings.RemoveKeybinding(commandId))
-		{
-			Console.WriteLine($"Removed keybinding for command '{commandId}'");
-		}
-		else
-		{
-			Console.WriteLine($"Failed to remove keybinding. Command '{commandId}' may not exist or may not have a keybinding.");
-		}
-	}
-
-	private static async Task HandleKeybindingFind(InvocationContext context)
-	{
-		var keyString = context.ParseResult.GetValueForOption<string>("--key")!;
-
-		if (!KeyCombination.TryParse(keyString, out KeyCombination keyCombination))
-		{
-			Console.WriteLine($"Invalid key combination: {keyString}");
-			return;
-		}
-
-		var commands = _manager!.Keybindings.FindCommandsByKeyCombination(keyCombination);
-		if (commands.Any())
-		{
-			Console.WriteLine($"Commands bound to {keyCombination}:");
-			foreach (var command in commands)
-			{
-				Console.WriteLine($"  {command.Id}: {command.Name}");
-			}
-		}
-		else
-		{
-			Console.WriteLine($"No commands found for key combination {keyCombination}");
-		}
-	}
-
-	private static async Task HandleStatus()
-	{
-		KeybindingSummary summary = _manager!.GetSummary();
-		Console.WriteLine("Keybinding Manager Status:");
-		Console.WriteLine($"  Total Commands: {summary.TotalCommands}");
-		Console.WriteLine($"  Total Profiles: {summary.TotalProfiles}");
-		Console.WriteLine($"  Active Profile: {summary.ActiveProfileName ?? "None"} ({summary.ActiveProfileId ?? "None"})");
-		Console.WriteLine($"  Active Keybindings: {summary.ActiveKeybindings}");
-	}
+	[Option('r', "reset", Required = false,
+		HelpText = "Reset demo data before running")]
+	public bool Reset { get; set; }
 }

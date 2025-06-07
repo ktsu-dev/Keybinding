@@ -67,11 +67,11 @@ public class KeybindingManagerTests
 		using KeybindingManager manager = new(_testDataDirectory);
 		await manager.InitializeAsync().ConfigureAwait(false);
 
-		Command[] commands = new[]
-		{
+		Command[] commands =
+		[
 			new Command("copy", "Copy", "Copy content", "Edit"),
 			new Command("paste", "Paste", "Paste content", "Edit")
-		};
+		];
 
 		// Act
 		int registeredCount = manager.RegisterCommands(commands);
@@ -90,11 +90,11 @@ public class KeybindingManagerTests
 		await manager.InitializeAsync().ConfigureAwait(false);
 		manager.CreateDefaultProfile();
 
-		Command[] commands = new[]
-		{
+		Command[] commands =
+		[
 			new Command("copy", "Copy", "Copy content", "Edit"),
 			new Command("paste", "Paste", "Paste content", "Edit")
-		};
+		];
 		manager.RegisterCommands(commands);
 
 		Dictionary<string, KeyCombination> keybindings = new()
@@ -190,12 +190,12 @@ public class KeybindingManagerTests
 		await manager.InitializeAsync().ConfigureAwait(false);
 		manager.CreateDefaultProfile();
 
-		Command[] commands = new[]
-		{
+		Command[] commands =
+		[
 			new Command("cmd1", "Command 1"),
 			new Command("cmd2", "Command 2"),
 			new Command("cmd3", "Command 3")
-		};
+		];
 		manager.RegisterCommands(commands);
 
 		manager.Keybindings.SetKeybinding("cmd1", new KeyCombination("A", ModifierKeys.Ctrl));

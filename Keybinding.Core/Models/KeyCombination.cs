@@ -153,7 +153,7 @@ public sealed class KeyCombination : IEquatable<KeyCombination>
 			result = Parse(value);
 			return true;
 		}
-		catch
+		catch (ArgumentException)
 		{
 			result = null;
 			return false;

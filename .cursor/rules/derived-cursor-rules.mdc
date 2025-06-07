@@ -26,10 +26,11 @@ globs: *
 
 *   Adhere to SOLID principles (Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion).
 *   Follow DRY principle (Don't Repeat Yourself).
+*   When catching exceptions, catch specific exception types rather than generic exceptions to adhere to code analysis rule CA1031.
 
 ## WORKFLOW & RELEASE RULES
 
-*   The Keybinding.ConsoleApp should serve as a demo of the library's functionality.
+*   The Keybinding.ConsoleApp should serve as a demo of the library's functionality and utilize the CommandLineParser library.
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 
