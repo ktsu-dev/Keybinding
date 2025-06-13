@@ -25,6 +25,7 @@ globs: *
 *   ktsu.SemanticString
 *   Spectre.Console (to be used in the console app demo)
 *   Microsoft.Extensions.DependencyInjection
+*   coverlet.msbuild (for code coverage analysis)
 
 ## PROJECT STRUCTURE
 
@@ -73,3 +74,22 @@ globs: *
 ## DEBUGGING
 
 *   When debugging `ToString` related issues, note that the `KeyCombination` constructor stores keys in uppercase internally. The `ToString()` method formats special keys with proper casing for display.
+
+## TESTING
+
+*   Run code coverage analysis to verify high coverage on critical paths, identifying any remaining untested edge cases.
+*   Create example applications:
+    *   Console App: To demonstrate standalone usage.
+    *   Web API: To demonstrate dependency injection usage.
+        *   These examples serve as integration tests and user documentation.
+
+## NUGET PACKAGE PREPARATION
+
+*   Update project metadata (description, tags, etc.).
+*   Verify `README.md` completeness.
+
+## CODE COVERAGE
+
+*   Use Coverlet for code coverage analysis.
+*   Run tests with the following command from the root directory: `dotnet test /p:CollectCoverage=true /p:CoverletOutput=./TestResults/ /p:CoverletOutputFormat=cobertura /p:Exclude="[*Test*]*"`
+*   To run code coverage from the `Keybinding.Test` directory, use: `dotnet test /p:CollectCoverage=true /p:CoverletOutput=../TestResults/ /p:CoverletOutputFormat=cobertura /p:Exclude="[*Test*]*"`
