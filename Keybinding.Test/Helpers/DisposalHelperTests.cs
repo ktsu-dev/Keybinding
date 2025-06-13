@@ -3,6 +3,8 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Test.Helpers;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ktsu.Keybinding.Core.Helpers;
 
 [TestClass]

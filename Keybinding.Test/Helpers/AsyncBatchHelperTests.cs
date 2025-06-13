@@ -2,10 +2,10 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.Test.Helpers;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ktsu.Keybinding.Core.Helpers;
-
-namespace ktsu.Keybinding.Test.Helpers;
 
 [TestClass]
 public class AsyncBatchHelperTests
@@ -56,9 +56,8 @@ public class AsyncBatchHelperTests
 		// Act & Assert
 		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
 			() => AsyncBatchHelper.ForEachAsync(nullItems!, async item =>
-			{
-				await Task.Delay(1).ConfigureAwait(false);
-			})).ConfigureAwait(false);
+				await Task.Delay(1).ConfigureAwait(false)
+			)).ConfigureAwait(false);
 	}
 
 	[TestMethod]
@@ -162,9 +161,8 @@ public class AsyncBatchHelperTests
 		// Act & Assert
 		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
 			() => AsyncBatchHelper.BatchSaveAsync(nullItems!, async item =>
-			{
-				await Task.Delay(1).ConfigureAwait(false);
-			})).ConfigureAwait(false);
+				await Task.Delay(1).ConfigureAwait(false)
+			)).ConfigureAwait(false);
 	}
 
 	[TestMethod]

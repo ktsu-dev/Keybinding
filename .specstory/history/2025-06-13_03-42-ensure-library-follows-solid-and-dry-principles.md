@@ -3190,3 +3190,739 @@ _**Assistant**_
 
 ---
 
+I can see the test files were created but there are compilation errors. Let me fix these issues systematically. First, I need to add the Microsoft.Extensions.DependencyInjection package to the test project, then fix the code analysis issues.
+
+---
+
+Read file: Keybinding.Test/Keybinding.Test.csproj
+
+---
+
+
+
+---
+
+Now let me fix the AsyncBatchHelper tests by addressing the ConfigureAwait and other issues:
+
+---
+
+
+
+---
+
+Let me delete the problematic test files and recreate them properly with all the necessary using statements and fixes:
+
+---
+
+Deleting the file to recreate it properly with all necessary using statements and fixes
+
+---
+
+Deleting the file to recreate it properly with all necessary using statements and fixes
+
+---
+
+Deleting the file to recreate it properly with all necessary using statements and fixes
+
+---
+
+
+
+---
+
+Now let me recreate the test files with proper using statements and fixes. Let me start with the simplest ones:
+
+---
+
+```diff
+- 
++ // Copyright (c) ktsu.dev
++ // All rights reserved.
++ // Licensed under the MIT license.
++ 
++ using Microsoft.VisualStudio.TestTools.UnitTesting;
++ using ktsu.Keybinding.Core.Helpers;
++ 
++ namespace ktsu.Keybinding.Test.Helpers;
++ 
++ [TestClass]
++ public class AsyncBatchHelperTests
++ {
++ 	[TestMethod]
++ 	public async Task ForEachAsync_WithValidItems_ExecutesOperationForEach()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3, 4, 5];
++ 		List<int> processedItems = [];
++ 
++ 		// Act
++ 		await AsyncBatchHelper.ForEachAsync(items, async item =>
++ 		{
++ 			await Task.Delay(1).ConfigureAwait(false);
++ 			processedItems.Add(item * 2);
++ 		}).ConfigureAwait(false);
++ 
++ 		// Assert
++ 		Assert.AreEqual(5, processedItems.Count);
++ 		CollectionAssert.AreEqual(new List<int> { 2, 4, 6, 8, 10 }, processedItems);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task ForEachAsync_WithEmptyCollection_DoesNothing()
++ 	{
++ 		// Arrange
++ 		List<int> items = [];
++ 		bool operationCalled = false;
++ 
++ 		// Act
++ 		await AsyncBatchHelper.ForEachAsync(items, async item =>
++ 		{
++ 			await Task.Delay(1).ConfigureAwait(false);
++ 			operationCalled = true;
++ 		}).ConfigureAwait(false);
++ 
++ 		// Assert
++ 		Assert.IsFalse(operationCalled);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task ForEachAsync_WithNullItems_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		IEnumerable<int>? nullItems = null;
++ 
++ 		// Act & Assert
++ 		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
++ 			() => AsyncBatchHelper.ForEachAsync(nullItems!, async item =>
++ 			{
++ 				await Task.Delay(1).ConfigureAwait(false);
++ 			})).ConfigureAwait(false);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task ForEachAsync_WithNullOperation_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3];
++ 		Func<int, Task>? nullOperation = null;
++ 
++ 		// Act & Assert
++ 		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
++ 			() => AsyncBatchHelper.ForEachAsync(items, nullOperation!)).ConfigureAwait(false);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task SelectAsync_WithValidItems_ReturnsTransformedResults()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3, 4];
++ 
++ 		// Act
++ 		IReadOnlyCollection<string> results = await AsyncBatchHelper.SelectAsync(items, async item =>
++ 		{
++ 			await Task.Delay(1).ConfigureAwait(false);
++ 			return $"Item_{item}";
++ 		}).ConfigureAwait(false);
++ 
++ 		// Assert
++ 		Assert.AreEqual(4, results.Count);
++ 		string[] expectedResults = ["Item_1", "Item_2", "Item_3", "Item_4"];
++ 		CollectionAssert.AreEqual(expectedResults, results.ToArray());
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task SelectAsync_WithEmptyCollection_ReturnsEmptyCollection()
++ 	{
++ 		// Arrange
++ 		List<int> items = [];
++ 
++ 		// Act
++ 		IReadOnlyCollection<string> results = await AsyncBatchHelper.SelectAsync(items, async item =>
++ 		{
++ 			await Task.Delay(1).ConfigureAwait(false);
++ 			return item.ToString();
++ 		}).ConfigureAwait(false);
++ 
++ 		// Assert
++ 		Assert.AreEqual(0, results.Count);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task BatchSaveAsync_WithValidItems_ReturnsSuccessCount()
++ 	{
++ 		// Arrange
++ 		List<string> items = ["item1", "item2", "item3"];
++ 		List<string> savedItems = [];
++ 
++ 		// Act
++ 		int successCount = await AsyncBatchHelper.BatchSaveAsync(items, async item =>
++ 		{
++ 			await Task.Delay(1).ConfigureAwait(false);
++ 			savedItems.Add(item);
++ 		}).ConfigureAwait(false);
++ 
++ 		// Assert
++ 		Assert.AreEqual(3, successCount);
++ 		Assert.AreEqual(3, savedItems.Count);
++ 		CollectionAssert.AreEqual(items, savedItems);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task BatchSaveAsync_WithFailingItems_ContinuesAndReturnsPartialSuccess()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3, 4, 5];
++ 		List<int> savedItems = [];
++ 
++ 		// Act
++ 		int successCount = await AsyncBatchHelper.BatchSaveAsync(items, async item =>
++ 		{
++ 			await Task.Delay(1).ConfigureAwait(false);
++ 			if (item == 3) // Simulate failure for item 3
++ 			{
++ 				throw new InvalidOperationException("Save failed");
++ 			}
++ 			savedItems.Add(item);
++ 		}).ConfigureAwait(false);
++ 
++ 		// Assert
++ 		Assert.AreEqual(4, successCount); // 4 out of 5 succeeded
++ 		Assert.AreEqual(4, savedItems.Count);
++ 		CollectionAssert.AreEqual(new List<int> { 1, 2, 4, 5 }, savedItems);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task BatchSaveAsync_WithNullItems_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		IEnumerable<int>? nullItems = null;
++ 
++ 		// Act & Assert
++ 		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
++ 			() => AsyncBatchHelper.BatchSaveAsync(nullItems!, async item =>
++ 			{
++ 				await Task.Delay(1).ConfigureAwait(false);
++ 			})).ConfigureAwait(false);
++ 	}
++ 
++ 	[TestMethod]
++ 	public async Task BatchSaveAsync_WithNullOperation_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3];
++ 		Func<int, Task>? nullOperation = null;
++ 
++ 		// Act & Assert
++ 		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
++ 			() => AsyncBatchHelper.BatchSaveAsync(items, nullOperation!)).ConfigureAwait(false);
++ 	}
++ } 
+```
+
+---
+
+```diff
+- 
++ // Copyright (c) ktsu.dev
++ // All rights reserved.
++ // Licensed under the MIT license.
++ 
++ using Microsoft.VisualStudio.TestTools.UnitTesting;
++ using ktsu.Keybinding.Core.Helpers;
++ 
++ namespace ktsu.Keybinding.Test.Helpers;
++ 
++ [TestClass]
++ public class OperationHelperTests
++ {
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithAllSuccessfulOperations_ReturnsCorrectCount()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3, 4, 5];
++ 		static bool IsEven(int item) => item % 2 == 0;
++ 
++ 		// Act
++ 		int successCount = OperationHelper.ExecuteWithCount(items, IsEven);
++ 
++ 		// Assert
++ 		Assert.AreEqual(2, successCount); // 2 and 4 are even
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithAllFailingOperations_ReturnsZero()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 3, 5, 7, 9];
++ 		static bool IsEven(int item) => item % 2 == 0;
++ 
++ 		// Act
++ 		int successCount = OperationHelper.ExecuteWithCount(items, IsEven);
++ 
++ 		// Assert
++ 		Assert.AreEqual(0, successCount); // No even numbers
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithOperationThrowingArgumentException_SkipsAndContinues()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3, 4, 5];
++ 		static bool ThrowingOperation(int item) => item == 3 
++ 			? throw new ArgumentException("Invalid item") 
++ 			: item % 2 == 0;
++ 
++ 		// Act
++ 		int successCount = OperationHelper.ExecuteWithCount(items, ThrowingOperation);
++ 
++ 		// Assert
++ 		Assert.AreEqual(2, successCount); // 2 and 4 are even, 3 throws but is skipped
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithOperationThrowingInvalidOperationException_SkipsAndContinues()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3, 4, 5];
++ 		static bool ThrowingOperation(int item) => item == 4 
++ 			? throw new InvalidOperationException("Invalid state") 
++ 			: item % 2 == 0;
++ 
++ 		// Act
++ 		int successCount = OperationHelper.ExecuteWithCount(items, ThrowingOperation);
++ 
++ 		// Assert
++ 		Assert.AreEqual(1, successCount); // Only 2 is even, 4 throws but is skipped
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithShouldContinueOnErrorFalse_StopsOnFirstException()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3, 4, 5];
++ 		static bool ThrowingOperation(int item) => item == 3 
++ 			? throw new ArgumentException("Invalid item") 
++ 			: item % 2 == 0;
++ 
++ 		// Act & Assert
++ 		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
++ 			() => OperationHelper.ExecuteWithCount(items, ThrowingOperation, shouldContinueOnError: false));
++ 
++ 		Assert.AreEqual("Invalid item", exception.Message);
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithEmptyCollection_ReturnsZero()
++ 	{
++ 		// Arrange
++ 		List<int> items = [];
++ 		static bool AlwaysTrue(int item) => true;
++ 
++ 		// Act
++ 		int successCount = OperationHelper.ExecuteWithCount(items, AlwaysTrue);
++ 
++ 		// Assert
++ 		Assert.AreEqual(0, successCount);
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithNullItems_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		IEnumerable<int>? nullItems = null;
++ 		static bool AlwaysTrue(int item) => true;
++ 
++ 		// Act & Assert
++ 		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
++ 			() => OperationHelper.ExecuteWithCount(nullItems!, AlwaysTrue));
++ 
++ 		Assert.AreEqual("items", exception.ParamName);
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_WithNullOperation_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		List<int> items = [1, 2, 3];
++ 		Func<int, bool>? nullOperation = null;
++ 
++ 		// Act & Assert
++ 		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
++ 			() => OperationHelper.ExecuteWithCount(items, nullOperation!));
++ 
++ 		Assert.AreEqual("operation", exception.ParamName);
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_KeyValuePair_WithAllSuccessfulOperations_ReturnsCorrectCount()
++ 	{
++ 		// Arrange
++ 		Dictionary<string, int> items = new()
++ 		{
++ 			["key1"] = 2,
++ 			["key2"] = 4,
++ 			["key3"] = 1,
++ 			["key4"] = 6
++ 		};
++ 		static bool IsValueEven(string key, int value) => value % 2 == 0;
++ 
++ 		// Act
++ 		int successCount = OperationHelper.ExecuteWithCount(items, IsValueEven);
++ 
++ 		// Assert
++ 		Assert.AreEqual(3, successCount); // 2, 4, and 6 are even
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_KeyValuePair_WithOperationThrowingException_SkipsAndContinues()
++ 	{
++ 		// Arrange
++ 		Dictionary<string, int> items = new()
++ 		{
++ 			["key1"] = 2,
++ 			["key2"] = 4,
++ 			["key3"] = 1,
++ 			["key4"] = 6
++ 		};
++ 		static bool ThrowingOperation(string key, int value) => key == "key2" 
++ 			? throw new ArgumentException("Invalid key") 
++ 			: value % 2 == 0;
++ 
++ 		// Act
++ 		int successCount = OperationHelper.ExecuteWithCount(items, ThrowingOperation);
++ 
++ 		// Assert
++ 		Assert.AreEqual(2, successCount); // 2 and 6 are even, key2 throws but is skipped
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_KeyValuePair_WithShouldContinueOnErrorFalse_StopsOnFirstException()
++ 	{
++ 		// Arrange
++ 		Dictionary<string, int> items = new()
++ 		{
++ 			["key1"] = 2,
++ 			["key2"] = 4,
++ 		};
++ 		static bool ThrowingOperation(string key, int value) => key == "key1" 
++ 			? throw new ArgumentException("Invalid key") 
++ 			: value % 2 == 0;
++ 
++ 		// Act & Assert
++ 		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
++ 			() => OperationHelper.ExecuteWithCount(items, ThrowingOperation, shouldContinueOnError: false));
++ 
++ 		Assert.AreEqual("Invalid key", exception.Message);
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_KeyValuePair_WithNullItems_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		IEnumerable<KeyValuePair<string, int>>? nullItems = null;
++ 		static bool AlwaysTrue(string key, int value) => true;
++ 
++ 		// Act & Assert
++ 		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
++ 			() => OperationHelper.ExecuteWithCount(nullItems!, AlwaysTrue));
++ 
++ 		Assert.AreEqual("items", exception.ParamName);
++ 	}
++ 
++ 	[TestMethod]
++ 	public void ExecuteWithCount_KeyValuePair_WithNullOperation_ThrowsArgumentNullException()
++ 	{
++ 		// Arrange
++ 		Dictionary<string, int> items = new() { ["key"] = 1 };
++ 		Func<string, int, bool>? nullOperation = null;
++ 
++ 		// Act & Assert
++ 		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
++ 			() => OperationHelper.ExecuteWithCount(items, nullOperation!));
++ 
++ 		Assert.AreEqual("operation", exception.ParamName);
++ 	}
++ } 
+```
+
+---
+
+
+
+---
+
+Now let me create the ServiceCollectionExtensions tests with proper fixes:
+
+---
+
+
+
+---
+
+
+
+---
+
+Let me try a different approach to create the ServiceCollectionExtensionsTests file:
+
+---
+
+<details>
+            <summary>Listed directory Keybinding.Test/Extensions • **1** results</summary>
+        
+| Name |
+|-------|
+| 📄 `ServiceCollectionExtensionsTests.cs` |
+
+</details>
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+Let me fix the ValidationHelper and DisposalHelper tests to make sure they have the correct using statements:
+
+---
+
+
+
+---
+
+
+
+---
+
+Let me check if there are any missing package references by running the tests:
+
+---
+
+```bash
+dotnet test Keybinding.Test --verbosity minimal
+```
+
+```
+C:\dev\ktsu-dev\Keybinding>dotnet test Keybinding.Test --verbosity minimal
+
+                                                                                                                 (0.2s)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Keybinding.Test.csproj : error NU1008: Projects that use central package version management should not define the version on the Packag
+eReference items but on the PackageVersion items: Microsoft.Extensions.DependencyInjection.
+
+Restore failed with 1 error(s) in 4.7s
+
+C:\dev\ktsu-dev\Keybinding>
+```
+
+---
+
+
+
+---
+
+Let me check the Directory.Packages.props file to understand the central package management:
+
+---
+
+Read file: Directory.Packages.props
+
+---
+
+
+
+---
+
+I need to add the Microsoft.Extensions.DependencyInjection package version to the central package management and remove the version from the test project:
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+Now let me run the tests to see if they build and work properly:
+
+---
+
+```bash
+dotnet test Keybinding.Test --verbosity minimal
+```
+
+```
+Restore failed with 1 error(s) in 4.7s
+
+C:\dev\ktsu-dev\Keybinding>q^D^C
+'q' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\dev\ktsu-dev\Keybinding>
+
+
+
+
+                           dotnet test Keybinding.Test --verbosity minimal
+```
+
+---
+
+
+
+---
+
+```bash
+dotnet build Keybinding.Test
+```
+
+```
+  C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Keybinding.Test.csproj                                      Restore (6.3s)
+  Keybinding.Test                                                                     ProcessFrameworkReferences (0.0s)
+  Keybinding.Test                                                                                PrepareForBuild (0.1s)
+  Keybinding.Test                                                                 IgnoreJavaScriptOutputAssembly (0.1s)
+  Keybinding.Test                                                                           ResolvePackageAssets (0.2s)
+                                                                                                                 (0.3s)
+                                                                                                                 (0.3s)
+
+
+  Keybinding.Test                                                                           ResolvePackageAssets (0.4s)
+
+                                                                                                                 (0.4s)
+
+
+
+
+
+  Keybinding.Core succeeded (2.5s) → Keybinding.Core\bin\Debug\net9.0\ktsu.Keybinding.Core.dll
+  Keybinding.Test failed with 19 error(s) (5.3s)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(7,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(8,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(9,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(10,1): error IDE0065: Using directives must be placed inside of a namespace declaration 
+(https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\OperationHelperTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.m
+icrosoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\OperationHelperTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.m
+icrosoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\ValidationHelperTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\ValidationHelperTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(58,52): error IDE0053: Use expression body for lambda expression (https://learn.microsoft.com/dotnet/f
+undamentals/code-analysis/style-rules/ide0053)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(164,54): error IDE0053: Use expression body for lambda expression (https://learn.microsoft.com/dotnet/
+fundamentals/code-analysis/style-rules/ide0053)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(5,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet/fundamentals/
+code-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(6,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet
+/fundamentals/code-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\OperationHelperTests.cs(5,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet/fundamentals/c
+ode-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\ValidationHelperTests.cs(5,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet/fundamentals/
+code-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(97,23): error CA1812: 'ServiceCollectionExtensionsTests.TestKeybindingRepository' is an 
+internal class that is apparently never instantiated. If so, remove the code from the assembly. If this class is intended to contain only static members, make it 'static' (Module in 
+Visual Basic). (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1812)
+
+Build failed with 19 error(s) in 18.1s
+
+C:\dev\ktsu-dev\Keybinding>q^D^C
+'q' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\dev\ktsu-dev\Keybinding>dotnet build Keybinding.Test
+Restore complete (4.4s)
+  Keybinding.Core succeeded (0.7s) → Keybinding.Core\bin\Debug\net9.0\ktsu.Keybinding.Core.dll
+  Keybinding.Test failed with 19 error(s) (1.7s)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(7,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(8,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(9,1): error IDE0065: Using directives must be placed inside of a namespace declaration (
+https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(10,1): error IDE0065: Using directives must be placed inside of a namespace declaration 
+(https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\OperationHelperTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.m
+icrosoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\OperationHelperTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.m
+icrosoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\ValidationHelperTests.cs(5,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\ValidationHelperTests.cs(6,1): error IDE0065: Using directives must be placed inside of a namespace declaration (https://learn.
+microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide0065)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(58,52): error IDE0053: Use expression body for lambda expression (https://learn.microsoft.com/dotnet/f
+undamentals/code-analysis/style-rules/ide0053)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(5,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet/fundamentals/
+code-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(6,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet
+/fundamentals/code-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\OperationHelperTests.cs(5,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet/fundamentals/c
+ode-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\ValidationHelperTests.cs(5,1): error IDE0005: Using directive is unnecessary. (https://learn.microsoft.com/dotnet/fundamentals/
+code-analysis/style-rules/ide0005)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Helpers\AsyncBatchHelperTests.cs(164,54): error IDE0053: Use expression body for lambda expression (https://learn.microsoft.com/dotnet/
+fundamentals/code-analysis/style-rules/ide0053)
+    C:\dev\ktsu-dev\Keybinding\Keybinding.Test\Extensions\ServiceCollectionExtensionsTests.cs(97,23): error CA1812: 'ServiceCollectionExtensionsTests.TestKeybindingRepository' is an 
+internal class that is apparently never instantiated. If so, remove the code from the assembly. If this class is intended to contain only static members, make it 'static' (Module in 
+Visual Basic). (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1812)
+
+Build failed with 19 error(s) in 9.6s
+
+C:\dev\ktsu-dev\Keybinding>
+```
+
+---
+
+
+
+---
+
+_**User**_
+
+continue
+
+---
+
+_**Assistant**_
+
+
+
+---
+

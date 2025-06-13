@@ -2,10 +2,10 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.Test.Helpers;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ktsu.Keybinding.Core.Helpers;
-
-namespace ktsu.Keybinding.Test.Helpers;
 
 [TestClass]
 public class OperationHelperTests

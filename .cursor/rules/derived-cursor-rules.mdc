@@ -52,6 +52,7 @@ globs: *
 *   Complete the migration by refactoring the entire codebase to use only the musical paradigm and remove the obsoleted code
     *   Update all of the semantic type validation to use attributes and remove the old validation code
 *   Use the `ValidationHelper` class for common validation operations to eliminate repeated code.
+*   Use `DisposalHelper.ThrowIfDisposed()` for consistent disposal checking across the `KeybindingManager`.
 
 ## WORKFLOW & RELEASE RULES
 

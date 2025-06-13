@@ -2,14 +2,14 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
+namespace ktsu.Keybinding.Test.Extensions;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Extensions;
 using ktsu.Keybinding.Core.Models;
-
-namespace ktsu.Keybinding.Test.Extensions;
 
 [TestClass]
 public class ServiceCollectionExtensionsTests
@@ -94,7 +94,7 @@ public class ServiceCollectionExtensionsTests
 	/// <summary>
 	/// Test implementation of IKeybindingRepository for testing purposes
 	/// </summary>
-	private sealed class TestKeybindingRepository : IKeybindingRepository
+	public sealed class TestKeybindingRepository : IKeybindingRepository
 	{
 		public Task SaveProfileAsync(Profile profile) => Task.CompletedTask;
 		public Task<Profile?> LoadProfileAsync(string profileId) => Task.FromResult<Profile?>(null);
