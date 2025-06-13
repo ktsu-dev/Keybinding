@@ -1,3 +1,9 @@
+## v1.0.2 (patch)
+
+Changes since v1.0.1:
+
+- Refactor KeybindingManager to enhance DRY compliance and improve validation ([@matt-edmondson](https://github.com/matt-edmondson))
+- Add architecture analysis and usage examples for Keybinding library ([@matt-edmondson](https://github.com/matt-edmondson))
 ## v1.0.1 (patch)
 
 Changes since v1.0.0:
