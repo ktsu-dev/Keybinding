@@ -1,2 +1,5 @@
 <Project Sdk="ktsu.Sdk.Test">
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+	</ItemGroup>
 </Project>
