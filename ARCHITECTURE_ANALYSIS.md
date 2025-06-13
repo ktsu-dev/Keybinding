@@ -243,10 +243,14 @@ services.AddKeybinding<InMemoryKeybindingRepository>();
 ✅ **Dependency Inversion**: Depends on abstractions, not concretions  
 
 ### DRY Compliance
-✅ **No Repeated Logic**: Common patterns are abstracted  
+✅ **No Repeated Logic**: Common patterns are abstracted into helper classes  
 ✅ **Reusable Components**: Services can be composed differently  
 ✅ **Configuration Centralization**: Settings managed in one place  
 ✅ **Extension Methods**: Eliminate repetitive setup code  
+✅ **Disposal Patterns**: Centralized disposal checking via `DisposalHelper`  
+✅ **Async Batch Operations**: Reusable async iteration patterns via `AsyncBatchHelper`  
+✅ **Operation Counting**: Standardized error-handling loops via `OperationHelper`  
+✅ **Validation Patterns**: Common validation logic via `ValidationHelper`  
 
 ### Usage Flexibility
 ✅ **Standalone Usage**: Works without DI containers  

@@ -33,6 +33,7 @@ globs: *
 *   Services: Implements the business logic for managing keybindings.
 *   Constants: Defines shared constants like error messages and file names.
 *   Extensions: Contains extension methods, such as those for dependency injection.
+*   Helpers: Contains helper classes for validation and other common operations.
 
 ## CODING STANDARDS
 
@@ -50,6 +51,7 @@ globs: *
 *   Use the `.As<SemanticString>()` extensions for converting system strings rather than the casts.
 *   Complete the migration by refactoring the entire codebase to use only the musical paradigm and remove the obsoleted code
     *   Update all of the semantic type validation to use attributes and remove the old validation code
+*   Use the `ValidationHelper` class for common validation operations to eliminate repeated code.
 
 ## WORKFLOW & RELEASE RULES
 

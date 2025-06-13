@@ -15,9 +15,12 @@ internal static class ValidationHelper
 	/// <param name="value">The string value to validate</param>
 	/// <param name="parameterName">The parameter name for the exception</param>
 	/// <param name="customMessage">Optional custom message</param>
-	/// <exception cref="ArgumentException">Thrown when the string is null or whitespace</exception>
+	/// <exception cref="ArgumentNullException">Thrown when the string is null</exception>
+	/// <exception cref="ArgumentException">Thrown when the string is whitespace</exception>
 	public static void ThrowIfNullOrWhiteSpace(string? value, string parameterName, string? customMessage = null)
 	{
+		ArgumentNullException.ThrowIfNull(value, parameterName);
+
 		if (string.IsNullOrWhiteSpace(value))
 		{
 			string message = customMessage ?? $"{parameterName} cannot be null or whitespace";

@@ -4,6 +4,7 @@
 
 namespace ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Contracts;
+using ktsu.Keybinding.Core.Helpers;
 using ktsu.Keybinding.Core.Models;
 using ktsu.Keybinding.Core.Services;
 
@@ -69,7 +70,7 @@ public sealed class KeybindingManager : IDisposable
 	/// <returns>Task representing the async operation</returns>
 	public async Task InitializeAsync()
 	{
-		ObjectDisposedException.ThrowIf(_disposed, this);
+		DisposalHelper.ThrowIfDisposed(_disposed, this);
 
 		await Repository.InitializeAsync().ConfigureAwait(false);
 
@@ -101,18 +102,15 @@ public sealed class KeybindingManager : IDisposable
 	/// <returns>Task representing the async operation</returns>
 	public async Task SaveAsync()
 	{
-		ObjectDisposedException.ThrowIf(_disposed, this);
+		DisposalHelper.ThrowIfDisposed(_disposed, this);
 
 		// Save commands
 		IReadOnlyCollection<Command> commands = Commands.GetAllCommands();
 		await Repository.SaveCommandsAsync(commands).ConfigureAwait(false);
 
-		// Save profiles
+		// Save profiles using batch helper
 		IReadOnlyCollection<Profile> profiles = Profiles.GetAllProfiles();
-		foreach (Profile profile in profiles)
-		{
-			await Repository.SaveProfileAsync(profile).ConfigureAwait(false);
-		}
+		await AsyncBatchHelper.ForEachAsync(profiles, Repository.SaveProfileAsync).ConfigureAwait(false);
 
 		// Save active profile
 		Profile? activeProfile = Profiles.GetActiveProfile();
@@ -128,7 +126,7 @@ public sealed class KeybindingManager : IDisposable
 	/// <returns>The created profile, or null if a profile already exists with the given ID</returns>
 	public Profile? CreateDefaultProfile(string profileId = "default", string profileName = "Default", ProfileActivation activation = ProfileActivation.Activate)
 	{
-		ObjectDisposedException.ThrowIf(_disposed, this);
+		DisposalHelper.ThrowIfDisposed(_disposed, this);
 
 		if (Profiles.ProfileExists(profileId))
 		{
@@ -157,10 +155,10 @@ public sealed class KeybindingManager : IDisposable
 	/// <returns>Number of commands successfully registered</returns>
 	public int RegisterCommands(IEnumerable<Command> commands)
 	{
-		ObjectDisposedException.ThrowIf(_disposed, this);
+		DisposalHelper.ThrowIfDisposed(_disposed, this);
 		ArgumentNullException.ThrowIfNull(commands);
 
-		return commands.Count(Commands.RegisterCommand);
+		return OperationHelper.ExecuteWithCount(commands, Commands.RegisterCommand, shouldContinueOnError: false);
 	}
 
 	/// <summary>
@@ -170,32 +168,12 @@ public sealed class KeybindingManager : IDisposable
 	/// <returns>Number of chord bindings successfully set</returns>
 	public int SetChords(IReadOnlyDictionary<string, Chord> chords)
 	{
-		ObjectDisposedException.ThrowIf(_disposed, this);
+		DisposalHelper.ThrowIfDisposed(_disposed, this);
 		ArgumentNullException.ThrowIfNull(chords);
 
 		Profile activeProfile = Profiles.GetActiveProfile() ?? throw new InvalidOperationException("No active profile is set");
 
-		int successCount = 0;
-		foreach (KeyValuePair<string, Chord> kvp in chords)
-		{
-			try
-			{
-				if (Keybindings.BindChord(kvp.Key, kvp.Value))
-				{
-					successCount++;
-				}
-			}
-			catch (ArgumentException)
-			{
-				// Skip invalid chord bindings
-			}
-			catch (InvalidOperationException)
-			{
-				// Skip chord bindings that can't be set due to state issues
-			}
-		}
-
-		return successCount;
+		return OperationHelper.ExecuteWithCount(chords, Keybindings.BindChord);
 	}
 
 	/// <summary>
@@ -204,7 +182,7 @@ public sealed class KeybindingManager : IDisposable
 	/// <returns>Summary information</returns>
 	public KeybindingSummary GetSummary()
 	{
-		ObjectDisposedException.ThrowIf(_disposed, this);
+		DisposalHelper.ThrowIfDisposed(_disposed, this);
 
 		Profile? activeProfile = Profiles.GetActiveProfile();
 		int totalCommands = Commands.GetAllCommands().Count;
