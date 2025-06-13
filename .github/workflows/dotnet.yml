@@ -152,7 +152,7 @@ jobs:
       - name: Detect Dependencies
         uses: advanced-security/component-detection-dependency-submission-action@v0.0.2
 
-    SonarQube:
+  SonarQube:
     name: SonarQube
     needs: build
     runs-on: windows-latest
@@ -171,7 +171,7 @@ jobs:
           submodules: recursive
           persist-credentials: true
           token: ${{ github.token }}
-            - name: Determine Target Commit for Analysis
+      - name: Determine Target Commit for Analysis
         shell: pwsh
         run: |
           # Check the context to determine the appropriate commit to analyze

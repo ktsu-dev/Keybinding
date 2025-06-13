@@ -97,22 +97,21 @@ public class KeybindingManagerTests
 		];
 		manager.RegisterCommands(commands);
 
-		Dictionary<string, KeyCombination> keybindings = new()
+		Dictionary<string, Chord> chords = new()
 		{
-			["copy"] = new KeyCombination("C", ModifierKeys.Ctrl),
-			["paste"] = new KeyCombination("V", ModifierKeys.Ctrl)
+			["copy"] = manager.Keybindings.ParseChord("Ctrl+C"),
+			["paste"] = manager.Keybindings.ParseChord("Ctrl+V")
 		};
 
 		// Act
-		int setCount = manager.SetKeybindings(keybindings);
+		int setCount = manager.SetChords(chords);
 
 		// Assert
 		Assert.AreEqual(2, setCount);
 
-		KeyCombination? copyKeybinding = manager.Keybindings.GetKeybinding("copy");
-		Assert.IsNotNull(copyKeybinding);
-		Assert.AreEqual("C", copyKeybinding.Key);
-		Assert.AreEqual(ModifierKeys.Ctrl, copyKeybinding.Modifiers);
+		Chord? copyChord = manager.Keybindings.GetChord("copy");
+		Assert.IsNotNull(copyChord);
+		Assert.AreEqual("Ctrl+C", copyChord.ToString());
 	}
 
 	[TestMethod]
@@ -126,11 +125,11 @@ public class KeybindingManagerTests
 		Command command = new("save", "Save", "Save document", "File");
 		manager.Commands.RegisterCommand(command);
 
-		KeyCombination keyCombination = new("S", ModifierKeys.Ctrl);
-		manager.Keybindings.SetKeybinding("save", keyCombination);
+		Chord chord = manager.Keybindings.ParseChord("Ctrl+S");
+		manager.Keybindings.BindChord("save", chord);
 
 		// Act
-		string? commandId = manager.Keybindings.FindCommandByKeybinding(keyCombination);
+		string? commandId = manager.Keybindings.FindCommandByChord(chord);
 
 		// Assert
 		Assert.AreEqual("save", commandId);
@@ -154,8 +153,8 @@ public class KeybindingManagerTests
 			Command command = new(commandId, "Test Command", "Test description", "Test");
 			manager.Commands.RegisterCommand(command);
 
-			KeyCombination keyCombination = new("T", ModifierKeys.Ctrl);
-			manager.Keybindings.SetKeybinding(commandId, keyCombination);
+			Chord chord = manager.Keybindings.ParseChord("Ctrl+T");
+			manager.Keybindings.BindChord(commandId, chord);
 
 			await manager.SaveAsync().ConfigureAwait(false);
 		}
@@ -175,10 +174,9 @@ public class KeybindingManagerTests
 			Assert.IsNotNull(command);
 			Assert.AreEqual("Test Command", command.Name);
 
-			KeyCombination? keybinding = manager.Keybindings.GetKeybinding(commandId);
-			Assert.IsNotNull(keybinding);
-			Assert.AreEqual("T", keybinding.Key);
-			Assert.AreEqual(ModifierKeys.Ctrl, keybinding.Modifiers);
+			Chord? chord = manager.Keybindings.GetChord(commandId);
+			Assert.IsNotNull(chord);
+			Assert.AreEqual("Ctrl+T", chord.ToString());
 		}
 	}
 
@@ -198,8 +196,8 @@ public class KeybindingManagerTests
 		];
 		manager.RegisterCommands(commands);
 
-		manager.Keybindings.SetKeybinding("cmd1", new KeyCombination("A", ModifierKeys.Ctrl));
-		manager.Keybindings.SetKeybinding("cmd2", new KeyCombination("B", ModifierKeys.Ctrl));
+		manager.Keybindings.BindChord("cmd1", manager.Keybindings.ParseChord("Ctrl+A"));
+		manager.Keybindings.BindChord("cmd2", manager.Keybindings.ParseChord("Ctrl+B"));
 
 		// Act
 		KeybindingSummary summary = manager.GetSummary();
@@ -228,21 +226,21 @@ public class KeybindingManagerTests
 		manager.Profiles.CreateProfile(profile1);
 		manager.Profiles.CreateProfile(profile2);
 
-		// Set different keybindings for each profile
-		KeyCombination key1 = new("A", ModifierKeys.Ctrl);
-		KeyCombination key2 = new("B", ModifierKeys.Ctrl);
+		// Set different chord bindings for each profile
+		Chord chord1 = manager.Keybindings.ParseChord("Ctrl+A");
+		Chord chord2 = manager.Keybindings.ParseChord("Ctrl+B");
 
-		manager.Keybindings.SetKeybinding("profile1", "test", key1);
-		manager.Keybindings.SetKeybinding("profile2", "test", key2);
+		manager.Keybindings.BindChord("profile1", "test", chord1);
+		manager.Keybindings.BindChord("profile2", "test", chord2);
 
 		// Act & Assert
-		KeyCombination? keybinding1 = manager.Keybindings.GetKeybinding("profile1", "test");
-		KeyCombination? keybinding2 = manager.Keybindings.GetKeybinding("profile2", "test");
+		Chord? binding1 = manager.Keybindings.GetChord("profile1", "test");
+		Chord? binding2 = manager.Keybindings.GetChord("profile2", "test");
 
-		Assert.IsNotNull(keybinding1);
-		Assert.IsNotNull(keybinding2);
-		Assert.AreEqual("A", keybinding1.Key);
-		Assert.AreEqual("B", keybinding2.Key);
-		Assert.AreNotEqual(keybinding1, keybinding2);
+		Assert.IsNotNull(binding1);
+		Assert.IsNotNull(binding2);
+		Assert.AreEqual("Ctrl+A", binding1.ToString());
+		Assert.AreEqual("Ctrl+B", binding2.ToString());
+		Assert.AreNotEqual(binding1, binding2);
 	}
 }

@@ -26,6 +26,33 @@ public sealed class ProfileManager : IProfileManager
 	}
 
 	/// <inheritdoc/>
+	public Profile CreateProfile(string id, string name, string? description = null)
+	{
+		if (string.IsNullOrWhiteSpace(id))
+		{
+			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(id));
+		}
+
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			throw new ArgumentException("Profile name cannot be null or whitespace", nameof(name));
+		}
+
+		string normalizedId = id.Trim();
+
+		// Return existing profile if it already exists
+		if (_profiles.TryGetValue(normalizedId, out Profile? existingProfile))
+		{
+			return existingProfile;
+		}
+
+		// Create new profile
+		Profile newProfile = new(normalizedId, name.Trim(), description);
+		_profiles.TryAdd(normalizedId, newProfile);
+		return newProfile;
+	}
+
+	/// <inheritdoc/>
 	public bool DeleteProfile(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
@@ -131,10 +158,10 @@ public sealed class ProfileManager : IProfileManager
 
 		Profile newProfile = new(normalizedNewId, newProfileName.Trim(), newDescription);
 
-		// Copy all keybindings from source profile
-		foreach (KeyValuePair<string, KeyCombination> kvp in sourceProfile.Keybindings)
+		// Copy all chords from source profile
+		foreach (KeyValuePair<string, Chord> kvp in sourceProfile.Chords)
 		{
-			newProfile.SetKeybinding(kvp.Key, kvp.Value);
+			newProfile.SetChord(kvp.Key, kvp.Value);
 		}
 
 		return CreateProfile(newProfile) ? newProfile : null;
@@ -162,10 +189,10 @@ public sealed class ProfileManager : IProfileManager
 		// Create a new profile with the same ID but new name/description
 		Profile updatedProfile = new(profile.Id, newName.Trim(), newDescription);
 
-		// Copy all keybindings
-		foreach (KeyValuePair<string, KeyCombination> kvp in profile.Keybindings)
+		// Copy all chords
+		foreach (KeyValuePair<string, Chord> kvp in profile.Chords)
 		{
-			updatedProfile.SetKeybinding(kvp.Key, kvp.Value);
+			updatedProfile.SetChord(kvp.Key, kvp.Value);
 		}
 
 		// Replace the profile (this will preserve the same ID)

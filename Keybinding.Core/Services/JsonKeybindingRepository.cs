@@ -16,9 +16,9 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	private readonly string _dataDirectory;
 	private readonly JsonSerializerOptions _jsonOptions;
 
-	private const string ProfilesFileName = "profiles.json";
-	private const string CommandsFileName = "commands.json";
-	private const string ActiveProfileFileName = "active-profile.json";
+	private const string ProfilesFileName = Constants.Files.ProfilesFileName;
+	private const string CommandsFileName = Constants.Files.CommandsFileName;
+	private const string ActiveProfileFileName = Constants.Files.ActiveProfileFileName;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="JsonKeybindingRepository"/> class
@@ -28,7 +28,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	{
 		if (string.IsNullOrWhiteSpace(dataDirectory))
 		{
-			throw new ArgumentException("Data directory cannot be null or whitespace", nameof(dataDirectory));
+			throw new ArgumentException(Constants.ErrorMessages.DataDirectoryNullOrWhitespace, nameof(dataDirectory));
 		}
 
 		_dataDirectory = dataDirectory.Trim();
@@ -60,12 +60,11 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			Id = p.Id,
 			Name = p.Name,
 			Description = p.Description,
-			Keybindings = p.Keybindings.ToDictionary(
+			Chords = p.Chords.ToDictionary(
 				kvp => kvp.Key,
-				kvp => new KeyCombinationDto
+				kvp => new ChordDto
 				{
-					Key = kvp.Value.Key,
-					Modifiers = kvp.Value.Modifiers
+					Notes = [.. kvp.Value.Notes]
 				})
 		});
 
@@ -106,10 +105,10 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			return [.. profileDtos.Select(dto =>
 			{
 				Profile profile = new(dto.Id, dto.Name, dto.Description);
-				foreach (KeyValuePair<string, KeyCombinationDto> kvp in dto.Keybindings ?? [])
+				foreach (KeyValuePair<string, ChordDto> kvp in dto.Chords ?? [])
 				{
-					KeyCombination keyCombination = new(kvp.Value.Key, kvp.Value.Modifiers);
-					profile.SetKeybinding(kvp.Key, keyCombination);
+					Chord chord = new(kvp.Value.Notes);
+					profile.SetChord(kvp.Key, chord);
 				}
 
 				return profile;
@@ -139,12 +138,11 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			Id = p.Id,
 			Name = p.Name,
 			Description = p.Description,
-			Keybindings = p.Keybindings.ToDictionary(
+			Chords = p.Chords.ToDictionary(
 				kvp => kvp.Key,
-				kvp => new KeyCombinationDto
+				kvp => new ChordDto
 				{
-					Key = kvp.Value.Key,
-					Modifiers = kvp.Value.Modifiers
+					Notes = [.. kvp.Value.Notes]
 				})
 		});
 
@@ -206,10 +204,9 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 		await EnsureInitializedAsync().ConfigureAwait(false);
 
 		string activeProfilePath = Path.Combine(_dataDirectory, ActiveProfileFileName);
-		ActiveProfileDto dto = new()
-		{ ActiveProfileId = profileId };
+		ActiveProfileDto activeProfileDto = new() { ActiveProfileId = profileId };
 
-		string json = JsonSerializer.Serialize(dto, _jsonOptions);
+		string json = JsonSerializer.Serialize(activeProfileDto, _jsonOptions);
 		await File.WriteAllTextAsync(activeProfilePath, json).ConfigureAwait(false);
 	}
 
@@ -227,8 +224,9 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 		try
 		{
 			string json = await File.ReadAllTextAsync(activeProfilePath).ConfigureAwait(false);
-			ActiveProfileDto? dto = JsonSerializer.Deserialize<ActiveProfileDto>(json, _jsonOptions);
-			return dto?.ActiveProfileId;
+			ActiveProfileDto? activeProfileDto = JsonSerializer.Deserialize<ActiveProfileDto>(json, _jsonOptions);
+
+			return activeProfileDto?.ActiveProfileId;
 		}
 		catch (JsonException)
 		{
@@ -243,13 +241,12 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	/// <inheritdoc/>
 	public async Task InitializeAsync()
 	{
-		await Task.Run(() =>
+		if (!Directory.Exists(_dataDirectory))
 		{
-			if (!Directory.Exists(_dataDirectory))
-			{
-				Directory.CreateDirectory(_dataDirectory);
-			}
-		}).ConfigureAwait(false);
+			Directory.CreateDirectory(_dataDirectory);
+		}
+
+		await Task.CompletedTask.ConfigureAwait(false);
 	}
 
 	private async Task EnsureInitializedAsync()
@@ -260,19 +257,17 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 		}
 	}
 
-	// DTOs for serialization
 	private sealed class ProfileDto
 	{
 		public string Id { get; set; } = string.Empty;
 		public string Name { get; set; } = string.Empty;
 		public string? Description { get; set; }
-		public Dictionary<string, KeyCombinationDto> Keybindings { get; set; } = [];
+		public Dictionary<string, ChordDto> Chords { get; set; } = [];
 	}
 
-	private sealed class KeyCombinationDto
+	private sealed class ChordDto
 	{
-		public string Key { get; set; } = string.Empty;
-		public ModifierKeys Modifiers { get; set; }
+		public List<Note> Notes { get; set; } = [];
 	}
 
 	private sealed class CommandDto

@@ -125,9 +125,9 @@ public sealed class KeybindingManager : IDisposable
 	/// </summary>
 	/// <param name="profileId">The ID for the default profile</param>
 	/// <param name="profileName">The name for the default profile</param>
-	/// <param name="setAsActive">Whether to set as the active profile</param>
+	/// <param name="activation">Whether to set as the active profile</param>
 	/// <returns>The created profile, or null if a profile already exists with the given ID</returns>
-	public Profile? CreateDefaultProfile(string profileId = "default", string profileName = "Default", bool setAsActive = true)
+	public Profile? CreateDefaultProfile(string profileId = "default", string profileName = "Default", ProfileActivation activation = ProfileActivation.Activate)
 	{
 		ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -140,7 +140,7 @@ public sealed class KeybindingManager : IDisposable
 
 		if (Profiles.CreateProfile(profile))
 		{
-			if (setAsActive)
+			if (activation == ProfileActivation.Activate)
 			{
 				Profiles.SetActiveProfile(profileId);
 			}
@@ -165,34 +165,34 @@ public sealed class KeybindingManager : IDisposable
 	}
 
 	/// <summary>
-	/// Sets multiple keybindings for the active profile
+	/// Sets multiple chord bindings for the active profile
 	/// </summary>
-	/// <param name="keybindings">Dictionary of command ID to key combination mappings</param>
-	/// <returns>Number of keybindings successfully set</returns>
-	public int SetKeybindings(IReadOnlyDictionary<string, KeyCombination> keybindings)
+	/// <param name="chords">Dictionary of command ID to chord mappings</param>
+	/// <returns>Number of chord bindings successfully set</returns>
+	public int SetChords(IReadOnlyDictionary<string, Chord> chords)
 	{
 		ObjectDisposedException.ThrowIf(_disposed, this);
-		ArgumentNullException.ThrowIfNull(keybindings);
+		ArgumentNullException.ThrowIfNull(chords);
 
 		Profile activeProfile = Profiles.GetActiveProfile() ?? throw new InvalidOperationException("No active profile is set");
 
 		int successCount = 0;
-		foreach (KeyValuePair<string, KeyCombination> kvp in keybindings)
+		foreach (KeyValuePair<string, Chord> kvp in chords)
 		{
 			try
 			{
-				if (Keybindings.SetKeybinding(kvp.Key, kvp.Value))
+				if (Keybindings.BindChord(kvp.Key, kvp.Value))
 				{
 					successCount++;
 				}
 			}
 			catch (ArgumentException)
 			{
-				// Skip invalid keybindings
+				// Skip invalid chord bindings
 			}
 			catch (InvalidOperationException)
 			{
-				// Skip keybindings that can't be set due to state issues
+				// Skip chord bindings that can't be set due to state issues
 			}
 		}
 
@@ -210,7 +210,7 @@ public sealed class KeybindingManager : IDisposable
 		Profile? activeProfile = Profiles.GetActiveProfile();
 		int totalCommands = Commands.GetAllCommands().Count;
 		int totalProfiles = Profiles.GetAllProfiles().Count;
-		int activeKeybindings = activeProfile?.Keybindings.Count ?? 0;
+		int activeKeybindings = activeProfile?.Chords.Count ?? 0;
 
 		return new KeybindingSummary
 		{
@@ -232,35 +232,4 @@ public sealed class KeybindingManager : IDisposable
 			_disposed = true;
 		}
 	}
-}
-
-/// <summary>
-/// Summary information about the current keybinding state
-/// </summary>
-public sealed class KeybindingSummary
-{
-	/// <summary>
-	/// Gets or sets the total number of registered commands
-	/// </summary>
-	public int TotalCommands { get; set; }
-
-	/// <summary>
-	/// Gets or sets the total number of profiles
-	/// </summary>
-	public int TotalProfiles { get; set; }
-
-	/// <summary>
-	/// Gets or sets the active profile ID
-	/// </summary>
-	public string? ActiveProfileId { get; set; }
-
-	/// <summary>
-	/// Gets or sets the active profile name
-	/// </summary>
-	public string? ActiveProfileName { get; set; }
-
-	/// <summary>
-	/// Gets or sets the number of keybindings in the active profile
-	/// </summary>
-	public int ActiveKeybindings { get; set; }
 }

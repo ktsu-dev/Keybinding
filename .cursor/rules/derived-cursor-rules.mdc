@@ -10,17 +10,26 @@ globs: *
 *   Allow each profile to have a keybinding associated with a command.
 *   Implement a contracts, models, services architecture.
 *   Adhere to SOLID and DRY principles.
+*   The library should expose a "musical" paradigm, where we have notes, chords, phrases, using profiles.
+    *   **Notes** 🎵 → Individual keys (A, B, C, Escape, Enter, etc.)
+    *   **Chords** 🎶 → Key combinations (Ctrl+C, Alt+Tab, Ctrl+Shift+N)
+    *   **Phrases** 🎼 → Commands or actions that can be triggered by chords, for example like ctrl + (r, r) in visual studio for tool assisted rename. A phrase could be a single chord, a sequence of chords, a sequence mixing notes and chords.
+    *   **Profiles** 📝 → Collections of phrases (familiar terminology)
+    *   A chord should be able to support any number of simultaneous notes, and modifiers should be treated the same as notes
 
 ## TECH STACK
 
 *   .NET
 *   CommandLineParser (to be used in the console app demo)
+*   ktsu.SemanticString
+*   Spectre.Console (to be used in the console app demo)
 
 ## PROJECT STRUCTURE
 
 *   Contracts: Defines interfaces for services and data models.
 *   Models: Defines the data structures used in the library.
 *   Services: Implements the business logic for managing keybindings.
+*   Constants: Defines shared constants like error messages and file names.
 
 ## CODING STANDARDS
 
@@ -30,11 +39,24 @@ globs: *
 *   The `Key` property of the `KeyCombination` class is stored in uppercase.
 *   The `ToString()` method should format special keys properly, preserving the correct casing for display.
 *   Use enums, `nameof`, and consts where possible to reduce hard-coded strings.
+*   Use enums where possible to replace boolean parameters to ensure semantic safety.
+*   Cache `CompositeFormat` instances for string formatting where appropriate.
+*   Use consts to replace hardcoded primitives where possible.
+*   One type per file, prefer not using nested types.
+    *   Validation attributes should be added to semantic strings where appropriate, following the examples in `https://github.com/ktsu-dev/SemanticString/blob/main/SemanticString/SemanticStringValidationAttributes.cs` as a guide.
+*   Use the `.As<SemanticString>()` extensions for converting system strings rather than the casts.
+*   Complete the migration by refactoring the entire codebase to use only the musical paradigm and remove the obsoleted code
+    *   Update all of the semantic type validation to use attributes and remove the old validation code
 
 ## WORKFLOW & RELEASE RULES
 
 *   The Keybinding.ConsoleApp should serve as a demo of the library's functionality and utilize the CommandLineParser library.
 *   Always run `dotnet format && dotnet test` before committing changes.
+*   The demo should go in the console app and use Spectre.Console so that it looks nice.
+*   Look for other instances of the core library outputting to console and consider if that functionality should be split to the console app.
+*   Set the console to use UTF-8 output encoding at the start of the application.
+*   Use the Spectre.Console AnsiConsole for any console writing.
+*   Remove obsoleted code.
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 

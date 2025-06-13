@@ -41,13 +41,14 @@ var commands = new[]
 
 manager.RegisterCommands(commands);
 
-// Set keybindings
-manager.Keybindings.SetKeybinding("file.new", KeyCombination.Parse("Ctrl+N"));
-manager.Keybindings.SetKeybinding("file.save", KeyCombination.Parse("Ctrl+S"));
-manager.Keybindings.SetKeybinding("edit.copy", KeyCombination.Parse("Ctrl+C"));
+// Set chord bindings
+manager.Keybindings.BindChord("file.new", manager.Keybindings.ParseChord("Ctrl+N"));
+manager.Keybindings.BindChord("file.save", manager.Keybindings.ParseChord("Ctrl+S"));
+manager.Keybindings.BindChord("edit.copy", manager.Keybindings.ParseChord("Ctrl+C"));
 
-// Find commands by key combination
-var commands = manager.Keybindings.FindCommandsByKeyCombination(KeyCombination.Parse("Ctrl+S"));
+// Find commands by chord
+var chord = manager.Keybindings.ParseChord("Ctrl+S");
+var commandId = manager.Keybindings.FindCommandByChord(chord);
 
 // Save changes
 await manager.SaveAsync();
@@ -68,19 +69,20 @@ var command = new Command(
 );
 ```
 
-### Key Combinations
+### Chords (Key Combinations)
 
-Key combinations support multiple modifier keys and a primary key:
+Chords represent musical-style key combinations using the Note and Chord classes:
 
 ```csharp
 // Parse from string
-var keyCombination = KeyCombination.Parse("Ctrl+Alt+S");
+var chord = manager.Keybindings.ParseChord("Ctrl+Alt+S");
 
 // Create programmatically
-var keyCombination = new KeyCombination(
-    modifiers: ModifierKeys.Ctrl | ModifierKeys.Alt,
-    key: "S"
-);
+var chord = new Chord([
+    new Note("CTRL"),
+    new Note("ALT"), 
+    new Note("S")
+]);
 
 // Supported modifiers: Ctrl, Alt, Shift, Meta (Windows/Cmd key)
 ```
@@ -108,8 +110,10 @@ The library follows a clean architecture with clear separation of concerns:
 ### Models
 
 -   **`Command`**: Represents a named action that can be bound to keys
--   **`KeyCombination`**: Represents a keyboard shortcut with modifiers and primary key
--   **`Profile`**: Contains a set of keybindings for commands
+-   **`Chord`**: Represents a keyboard shortcut with modifiers and primary key using musical paradigm
+-   **`Note`**: Represents individual keys in a chord
+-   **`Phrase`**: Represents sequences of chords for complex key combinations
+-   **`Profile`**: Contains a set of chord bindings for commands
 
 ### Contracts (Interfaces)
 
@@ -164,14 +168,14 @@ var commands = new[]
 };
 int registered = manager.RegisterCommands(commands);
 
-// Set multiple keybindings
-var keybindings = new Dictionary<string, KeyCombination>
+// Set multiple chord bindings
+var chords = new Dictionary<string, Chord>
 {
-    { "edit.cut", KeyCombination.Parse("Ctrl+X") },
-    { "edit.copy", KeyCombination.Parse("Ctrl+C") },
-    { "edit.paste", KeyCombination.Parse("Ctrl+V") }
+    { "edit.cut", manager.Keybindings.ParseChord("Ctrl+X") },
+    { "edit.copy", manager.Keybindings.ParseChord("Ctrl+C") },
+    { "edit.paste", manager.Keybindings.ParseChord("Ctrl+V") }
 };
-int set = manager.SetKeybindings(keybindings);
+int set = manager.SetChords(chords);
 ```
 
 ### Profile Management

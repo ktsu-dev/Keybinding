@@ -7,7 +7,7 @@ using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Models;
 
 /// <summary>
-/// Implementation of the main keybinding service that coordinates commands, profiles, and keybindings
+/// Implementation of the keybinding service using the musical paradigm
 /// </summary>
 /// <remarks>
 /// Initializes a new instance of the <see cref="KeybindingService"/> class
@@ -20,220 +20,265 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	private readonly IProfileManager _profileManager = profileManager ?? throw new ArgumentNullException(nameof(profileManager));
 
 	/// <inheritdoc/>
-	public bool SetKeybinding(string profileId, string commandId, KeyCombination keyCombination)
+	public Profile? ActiveProfile => _profileManager.GetActiveProfile();
+
+	/// <inheritdoc/>
+	public IReadOnlyCollection<Profile> GetAllProfiles() => _profileManager.GetAllProfiles();
+
+	/// <inheritdoc/>
+	public Profile? GetProfile(string profileId) =>
+		!string.IsNullOrWhiteSpace(profileId) ? _profileManager.GetProfile(profileId) : null;
+
+	/// <inheritdoc/>
+	public Profile CreateProfile(string id, string name, string? description = null)
+	{
+		if (string.IsNullOrWhiteSpace(id))
+		{
+			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(id));
+		}
+
+		ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+		return _profileManager.CreateProfile(id, name, description);
+	}
+
+	/// <inheritdoc/>
+	public bool DeleteProfile(string profileId) =>
+		!string.IsNullOrWhiteSpace(profileId) && _profileManager.DeleteProfile(profileId);
+
+	/// <inheritdoc/>
+	public bool SetActiveProfile(string profileId) =>
+		!string.IsNullOrWhiteSpace(profileId) && _profileManager.SetActiveProfile(profileId);
+
+	/// <inheritdoc/>
+	public bool BindChord(string commandId, Chord chord)
+	{
+		Profile? activeProfile = _profileManager.GetActiveProfile();
+		return activeProfile is not null && BindChord(activeProfile.Id, commandId, chord);
+	}
+
+	/// <inheritdoc/>
+	public bool BindChord(string profileId, string commandId, Chord chord)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
 		{
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
+			return false;
 		}
 
 		if (string.IsNullOrWhiteSpace(commandId))
 		{
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+			return false;
 		}
 
-		ArgumentNullException.ThrowIfNull(keyCombination);
+		ArgumentNullException.ThrowIfNull(chord);
 
-		Profile profile = _profileManager.GetProfile(profileId) ?? throw new InvalidOperationException($"Profile '{profileId}' does not exist");
+		Profile? profile = _profileManager.GetProfile(profileId);
+		if (profile is null)
+		{
+			return false;
+		}
 
 		if (!_commandRegistry.IsCommandRegistered(commandId))
 		{
-			throw new InvalidOperationException($"Command '{commandId}' is not registered");
+			return false;
 		}
 
-		profile.SetKeybinding(commandId, keyCombination);
+		profile.SetChord(commandId, chord);
 		return true;
 	}
 
 	/// <inheritdoc/>
-	public bool SetKeybinding(string commandId, KeyCombination keyCombination)
+	public Chord? GetChord(string commandId)
 	{
 		Profile? activeProfile = _profileManager.GetActiveProfile();
-		return activeProfile is null
-			? throw new InvalidOperationException("No active profile is set")
-			: SetKeybinding(activeProfile.Id, commandId, keyCombination);
+		return activeProfile?.GetChord(commandId);
 	}
 
 	/// <inheritdoc/>
-	public bool RemoveKeybinding(string profileId, string commandId)
+	public Chord? GetChord(string profileId, string commandId)
 	{
-		if (string.IsNullOrWhiteSpace(profileId))
+		if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(commandId))
 		{
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
-		}
-
-		if (string.IsNullOrWhiteSpace(commandId))
-		{
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+			return null;
 		}
 
 		Profile? profile = _profileManager.GetProfile(profileId);
-		return profile?.RemoveKeybinding(commandId) ?? false;
+		return profile?.GetChord(commandId);
 	}
 
 	/// <inheritdoc/>
-	public bool RemoveKeybinding(string commandId)
+	public IReadOnlyDictionary<string, Chord> GetAllChords()
 	{
 		Profile? activeProfile = _profileManager.GetActiveProfile();
-		return activeProfile?.RemoveKeybinding(commandId) ?? false;
+		return activeProfile?.GetAllChords() ?? new Dictionary<string, Chord>().AsReadOnly();
 	}
 
 	/// <inheritdoc/>
-	public KeyCombination? GetKeybinding(string profileId, string commandId)
+	public IReadOnlyDictionary<string, Chord> GetAllChords(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
 		{
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
-		}
-
-		if (string.IsNullOrWhiteSpace(commandId))
-		{
-			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+			return new Dictionary<string, Chord>().AsReadOnly();
 		}
 
 		Profile? profile = _profileManager.GetProfile(profileId);
-		return profile?.GetKeybinding(commandId);
+		return profile?.GetAllChords() ?? new Dictionary<string, Chord>().AsReadOnly();
 	}
 
 	/// <inheritdoc/>
-	public KeyCombination? GetKeybinding(string commandId)
+	public bool UnbindChord(string commandId)
 	{
 		Profile? activeProfile = _profileManager.GetActiveProfile();
-		return activeProfile?.GetKeybinding(commandId);
+		return activeProfile?.RemoveChord(commandId) ?? false;
 	}
 
 	/// <inheritdoc/>
-	public string? FindCommandByKeybinding(string profileId, KeyCombination keyCombination)
+	public bool UnbindChord(string profileId, string commandId)
+	{
+		if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(commandId))
+		{
+			return false;
+		}
+
+		Profile? profile = _profileManager.GetProfile(profileId);
+		return profile?.RemoveChord(commandId) ?? false;
+	}
+
+	/// <inheritdoc/>
+	public bool ClearAllChords()
+	{
+		Profile? activeProfile = _profileManager.GetActiveProfile();
+		if (activeProfile is null)
+		{
+			return false;
+		}
+
+		activeProfile.ClearChords();
+		return true;
+	}
+
+	/// <inheritdoc/>
+	public bool ClearAllChords(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
 		{
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
+			return false;
 		}
 
-		ArgumentNullException.ThrowIfNull(keyCombination);
+		Profile? profile = _profileManager.GetProfile(profileId);
+		if (profile is null)
+		{
+			return false;
+		}
+
+		profile.ClearChords();
+		return true;
+	}
+
+	/// <inheritdoc/>
+	public Phrase ParsePhrase(string phraseString)
+	{
+		if (string.IsNullOrWhiteSpace(phraseString))
+		{
+			return new Phrase([]);
+		}
+
+		// Split by comma to get individual chord strings
+		string[] chordStrings = phraseString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+		List<Chord> chords = [];
+
+		foreach (string chordString in chordStrings)
+		{
+			Chord chord = ParseChord(chordString);
+			chords.Add(chord);
+		}
+
+		return new Phrase(chords);
+	}
+
+	/// <inheritdoc/>
+	public Chord ParseChord(string chordString)
+	{
+		if (string.IsNullOrWhiteSpace(chordString))
+		{
+			throw new ArgumentException("Chord string cannot be null or whitespace", nameof(chordString));
+		}
+
+		// Split by + to get individual note strings
+		string[] noteStrings = chordString.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+		List<Note> notes = [];
+
+		foreach (string noteString in noteStrings)
+		{
+			Note note = new(noteString.Trim());
+			notes.Add(note);
+		}
+
+		return notes.Count == 0 ? throw new ArgumentException("Chord must contain at least one note", nameof(chordString)) : new Chord(notes);
+	}
+
+	/// <inheritdoc/>
+	public string? ExecuteChord(Chord chord)
+	{
+		Profile? activeProfile = _profileManager.GetActiveProfile();
+		return activeProfile is not null ? ExecuteChord(activeProfile.Id, chord) : null;
+	}
+
+	/// <inheritdoc/>
+	public string? ExecuteChord(string profileId, Chord chord)
+	{
+		ArgumentNullException.ThrowIfNull(chord);
+
+		string? commandId = FindCommandByChord(profileId, chord);
+		if (commandId is not null && _commandRegistry.IsCommandRegistered(commandId))
+		{
+			// In a real implementation, this would trigger command execution
+			// For now, we just return the command ID that would be executed
+			return commandId;
+		}
+
+		return null;
+	}
+
+	/// <inheritdoc/>
+	public bool HasChordBinding(string commandId)
+	{
+		Profile? activeProfile = _profileManager.GetActiveProfile();
+		return activeProfile?.HasChord(commandId) ?? false;
+	}
+
+	/// <inheritdoc/>
+	public bool HasChordBinding(string profileId, string commandId)
+	{
+		if (string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(commandId))
+		{
+			return false;
+		}
 
 		Profile? profile = _profileManager.GetProfile(profileId);
-		return profile?.Keybindings
-			.FirstOrDefault(kvp => kvp.Value.Equals(keyCombination))
+		return profile?.HasChord(commandId) ?? false;
+	}
+
+	/// <inheritdoc/>
+	public string? FindCommandByChord(Chord chord)
+	{
+		Profile? activeProfile = _profileManager.GetActiveProfile();
+		return activeProfile is not null ? FindCommandByChord(activeProfile.Id, chord) : null;
+	}
+
+	/// <inheritdoc/>
+	public string? FindCommandByChord(string profileId, Chord chord)
+	{
+		ArgumentNullException.ThrowIfNull(chord);
+
+		if (string.IsNullOrWhiteSpace(profileId))
+		{
+			return null;
+		}
+
+		Profile? profile = _profileManager.GetProfile(profileId);
+		return profile?.Chords
+			.FirstOrDefault(kvp => kvp.Value.Equals(chord))
 			.Key;
-	}
-
-	/// <inheritdoc/>
-	public string? FindCommandByKeybinding(KeyCombination keyCombination)
-	{
-		Profile? activeProfile = _profileManager.GetActiveProfile();
-		return activeProfile is not null ? FindCommandByKeybinding(activeProfile.Id, keyCombination) : null;
-	}
-
-	/// <inheritdoc/>
-	public IReadOnlyDictionary<string, KeyCombination> GetAllKeybindings(string profileId)
-	{
-		if (string.IsNullOrWhiteSpace(profileId))
-		{
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
-		}
-
-		Profile? profile = _profileManager.GetProfile(profileId);
-		return profile?.Keybindings.AsReadOnly() ?? new Dictionary<string, KeyCombination>().AsReadOnly();
-	}
-
-	/// <inheritdoc/>
-	public IReadOnlyDictionary<string, KeyCombination> GetAllKeybindings()
-	{
-		Profile? activeProfile = _profileManager.GetActiveProfile();
-		return activeProfile?.Keybindings.AsReadOnly() ?? new Dictionary<string, KeyCombination>().AsReadOnly();
-	}
-
-	/// <inheritdoc/>
-	public bool IsKeyCombinationBound(string profileId, KeyCombination keyCombination)
-	{
-		if (string.IsNullOrWhiteSpace(profileId))
-		{
-			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
-		}
-
-		ArgumentNullException.ThrowIfNull(keyCombination);
-
-		Profile? profile = _profileManager.GetProfile(profileId);
-		return profile?.Keybindings.Values.Any(kc => kc.Equals(keyCombination)) ?? false;
-	}
-
-	/// <inheritdoc/>
-	public bool IsKeyCombinationBound(KeyCombination keyCombination)
-	{
-		Profile? activeProfile = _profileManager.GetActiveProfile();
-		return activeProfile is not null && IsKeyCombinationBound(activeProfile.Id, keyCombination);
-	}
-
-	/// <inheritdoc/>
-	public bool ValidateKeybinding(string profileId, string commandId, KeyCombination keyCombination)
-	{
-		if (string.IsNullOrWhiteSpace(profileId))
-		{
-			return false;
-		}
-
-		if (string.IsNullOrWhiteSpace(commandId))
-		{
-			return false;
-		}
-
-		if (keyCombination is null)
-		{
-			return false;
-		}
-
-		// Check if profile exists
-		if (!_profileManager.ProfileExists(profileId))
-		{
-			return false;
-		}
-
-		// Check if command is registered
-		if (!_commandRegistry.IsCommandRegistered(commandId))
-		{
-			return false;
-		}
-
-		// Additional validation can be added here (e.g., checking for forbidden key combinations)
-
-		return true;
-	}
-
-	/// <inheritdoc/>
-	public bool CopyKeybindings(string sourceProfileId, string targetProfileId, bool overwriteExisting = false)
-	{
-		if (string.IsNullOrWhiteSpace(sourceProfileId))
-		{
-			throw new ArgumentException("Source profile ID cannot be null or whitespace", nameof(sourceProfileId));
-		}
-
-		if (string.IsNullOrWhiteSpace(targetProfileId))
-		{
-			throw new ArgumentException("Target profile ID cannot be null or whitespace", nameof(targetProfileId));
-		}
-
-		Profile? sourceProfile = _profileManager.GetProfile(sourceProfileId);
-		Profile? targetProfile = _profileManager.GetProfile(targetProfileId);
-
-		if (sourceProfile is null || targetProfile is null)
-		{
-			return false;
-		}
-
-		foreach (KeyValuePair<string, KeyCombination> kvp in sourceProfile.Keybindings)
-		{
-			string commandId = kvp.Key;
-			KeyCombination keyCombination = kvp.Value;
-
-			// Only copy if command exists and either we're overwriting or the target doesn't have this command bound
-			if (_commandRegistry.IsCommandRegistered(commandId) &&
-				(overwriteExisting || !targetProfile.HasKeybinding(commandId)))
-			{
-				targetProfile.SetKeybinding(commandId, keyCombination);
-			}
-		}
-
-		return true;
 	}
 }

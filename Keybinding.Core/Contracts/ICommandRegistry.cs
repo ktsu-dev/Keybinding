@@ -48,9 +48,9 @@ public interface ICommandRegistry
 	/// Searches for commands by name or description
 	/// </summary>
 	/// <param name="searchTerm">The term to search for</param>
-	/// <param name="caseSensitive">Whether the search should be case sensitive</param>
+	/// <param name="caseSensitivity">Whether the search should be case sensitive</param>
 	/// <returns>Collection of matching commands</returns>
-	public IReadOnlyCollection<Command> SearchCommands(string searchTerm, bool caseSensitive = false);
+	public IReadOnlyCollection<Command> SearchCommands(string searchTerm, CaseSensitivity caseSensitivity = CaseSensitivity.CaseInsensitive);
 
 	/// <summary>
 	/// Checks if a command is registered

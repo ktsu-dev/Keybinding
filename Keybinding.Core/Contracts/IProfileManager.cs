@@ -18,6 +18,15 @@ public interface IProfileManager
 	public bool CreateProfile(Profile profile);
 
 	/// <summary>
+	/// Creates a new profile with the specified parameters
+	/// </summary>
+	/// <param name="id">The profile ID</param>
+	/// <param name="name">The profile name</param>
+	/// <param name="description">Optional profile description</param>
+	/// <returns>The created profile, or existing profile if it already exists</returns>
+	public Profile CreateProfile(string id, string name, string? description = null);
+
+	/// <summary>
 	/// Deletes a profile
 	/// </summary>
 	/// <param name="profileId">The ID of the profile to delete</param>

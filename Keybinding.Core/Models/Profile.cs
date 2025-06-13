@@ -4,17 +4,19 @@
 
 namespace ktsu.Keybinding.Core.Models;
 
+using System.Collections.Generic;
+
 /// <summary>
-/// Represents a keybinding profile containing command-to-keybinding mappings
+/// Represents a keybinding profile with command to chord mappings
 /// </summary>
 public sealed class Profile : IEquatable<Profile>
 {
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Profile"/> class
 	/// </summary>
-	/// <param name="id">The unique identifier for the profile</param>
-	/// <param name="name">The display name of the profile</param>
-	/// <param name="description">Optional description of the profile</param>
+	/// <param name="id">The unique profile identifier</param>
+	/// <param name="name">The profile name</param>
+	/// <param name="description">Optional profile description</param>
 	/// <exception cref="ArgumentException">Thrown when id or name is null or whitespace</exception>
 	public Profile(string id, string name, string? description = null)
 	{
@@ -31,99 +33,105 @@ public sealed class Profile : IEquatable<Profile>
 		Id = id.Trim();
 		Name = name.Trim();
 		Description = description?.Trim();
-		Keybindings = [];
+		Chords = [];
 	}
 
 	/// <summary>
-	/// Gets the unique identifier for the profile
+	/// Gets the unique profile identifier
 	/// </summary>
 	public string Id { get; }
 
 	/// <summary>
-	/// Gets the display name of the profile
+	/// Gets the profile name
 	/// </summary>
 	public string Name { get; }
 
 	/// <summary>
-	/// Gets the description of the profile
+	/// Gets the profile description
 	/// </summary>
 	public string? Description { get; }
 
 	/// <summary>
-	/// Gets the command-to-keybinding mappings for this profile
+	/// Gets the chord bindings for this profile (command ID to chord mapping)
 	/// </summary>
-	public Dictionary<string, KeyCombination> Keybindings { get; }
+	public Dictionary<string, Chord> Chords { get; }
 
 	/// <summary>
-	/// Sets a keybinding for a command in this profile
+	/// Sets a chord binding for a command in this profile
 	/// </summary>
 	/// <param name="commandId">The command ID</param>
-	/// <param name="keyCombination">The key combination to bind</param>
+	/// <param name="chord">The chord to bind</param>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
-	/// <exception cref="ArgumentNullException">Thrown when keyCombination is null</exception>
-	public void SetKeybinding(string commandId, KeyCombination keyCombination)
+	/// <exception cref="ArgumentNullException">Thrown when chord is null</exception>
+	public void SetChord(string commandId, Chord chord)
 	{
 		if (string.IsNullOrWhiteSpace(commandId))
 		{
 			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
 		}
 
-		ArgumentNullException.ThrowIfNull(keyCombination);
+		ArgumentNullException.ThrowIfNull(chord);
 
-		Keybindings[commandId.Trim()] = keyCombination;
+		Chords[commandId.Trim()] = chord;
 	}
 
 	/// <summary>
-	/// Removes a keybinding for a command from this profile
+	/// Gets the chord binding for a command in this profile
 	/// </summary>
 	/// <param name="commandId">The command ID</param>
-	/// <returns>True if the keybinding was removed, false if it didn't exist</returns>
+	/// <returns>The chord if found, null otherwise</returns>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
-	public bool RemoveKeybinding(string commandId)
+	public Chord? GetChord(string commandId)
 	{
 		return string.IsNullOrWhiteSpace(commandId)
 			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
-			: Keybindings.Remove(commandId.Trim());
-	}
-
-	/// <summary>
-	/// Gets the keybinding for a command in this profile
-	/// </summary>
-	/// <param name="commandId">The command ID</param>
-	/// <returns>The key combination if found, null otherwise</returns>
-	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
-	public KeyCombination? GetKeybinding(string commandId)
-	{
-		return string.IsNullOrWhiteSpace(commandId)
-			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
-			: Keybindings.TryGetValue(commandId.Trim(), out KeyCombination? keyCombination)
-			? keyCombination
+			: Chords.TryGetValue(commandId.Trim(), out Chord? chord)
+			? chord
 			: null;
 	}
 
 	/// <summary>
-	/// Checks if a command has a keybinding in this profile
+	/// Gets all chord bindings for this profile
+	/// </summary>
+	/// <returns>Dictionary of command ID to chord mappings</returns>
+	public IReadOnlyDictionary<string, Chord> GetAllChords() => Chords.AsReadOnly();
+
+	/// <summary>
+	/// Checks if a command has a chord binding in this profile
 	/// </summary>
 	/// <param name="commandId">The command ID</param>
-	/// <returns>True if the command has a keybinding, false otherwise</returns>
+	/// <returns>True if the command has a chord binding, false otherwise</returns>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
-	public bool HasKeybinding(string commandId)
+	public bool HasChord(string commandId)
 	{
 		return string.IsNullOrWhiteSpace(commandId)
 			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
-			: Keybindings.ContainsKey(commandId.Trim());
+			: Chords.ContainsKey(commandId.Trim());
 	}
 
 	/// <summary>
-	/// Gets all command IDs that have keybindings in this profile
+	/// Removes a chord binding for a command from this profile
 	/// </summary>
-	/// <returns>Collection of command IDs</returns>
-	public IReadOnlyCollection<string> BoundCommands => Keybindings.Keys;
+	/// <param name="commandId">The command ID</param>
+	/// <returns>True if the chord binding was removed, false if it didn't exist</returns>
+	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
+	public bool RemoveChord(string commandId)
+	{
+		return string.IsNullOrWhiteSpace(commandId)
+			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
+			: Chords.Remove(commandId.Trim());
+	}
 
 	/// <summary>
-	/// Clears all keybindings from this profile
+	/// Gets all command IDs that have chord bindings in this profile
 	/// </summary>
-	public void ClearKeybindings() => Keybindings.Clear();
+	/// <returns>Collection of command IDs</returns>
+	public IReadOnlyCollection<string> BoundCommands => Chords.Keys;
+
+	/// <summary>
+	/// Clears all chord bindings from this profile
+	/// </summary>
+	public void ClearChords() => Chords.Clear();
 
 	/// <summary>
 	/// Returns a string representation of the profile

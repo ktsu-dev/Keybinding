@@ -1,2 +1,5 @@
 <Project Sdk="ktsu.Sdk.Lib">
+  <ItemGroup>
+    <PackageReference Include="ktsu.SemanticString" />
+  </ItemGroup>
 </Project>

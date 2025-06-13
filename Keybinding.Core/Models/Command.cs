@@ -3,7 +3,6 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core.Models;
-
 /// <summary>
 /// Represents a command that can be executed via keybindings
 /// </summary>
@@ -11,6 +10,25 @@ public sealed class Command : IEquatable<Command>
 {
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Command"/> class
+	/// </summary>
+	/// <param name="id">The unique identifier for the command</param>
+	/// <param name="name">The display name of the command</param>
+	/// <param name="description">Optional description of what the command does</param>
+	/// <param name="category">Optional category for grouping commands</param>
+	/// <exception cref="ArgumentException">Thrown when id or name is null or whitespace</exception>
+	public Command(CommandId id, CommandName name, CommandDescription? description = null, CommandCategory? category = null)
+	{
+		ArgumentNullException.ThrowIfNull(id);
+		ArgumentNullException.ThrowIfNull(name);
+
+		Id = id;
+		Name = name;
+		Description = description;
+		Category = category;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="Command"/> class from strings
 	/// </summary>
 	/// <param name="id">The unique identifier for the command</param>
 	/// <param name="name">The display name of the command</param>
@@ -29,31 +47,31 @@ public sealed class Command : IEquatable<Command>
 			throw new ArgumentException("Command name cannot be null or whitespace", nameof(name));
 		}
 
-		Id = id.Trim();
-		Name = name.Trim();
-		Description = description?.Trim();
-		Category = category?.Trim();
+		Id = (CommandId)id.Trim();
+		Name = (CommandName)name.Trim();
+		Description = !string.IsNullOrWhiteSpace(description) ? (CommandDescription)description.Trim() : null;
+		Category = !string.IsNullOrWhiteSpace(category) ? (CommandCategory)category.Trim() : null;
 	}
 
 	/// <summary>
 	/// Gets the unique identifier for the command
 	/// </summary>
-	public string Id { get; }
+	public CommandId Id { get; }
 
 	/// <summary>
 	/// Gets the display name of the command
 	/// </summary>
-	public string Name { get; }
+	public CommandName Name { get; }
 
 	/// <summary>
 	/// Gets the description of what the command does
 	/// </summary>
-	public string? Description { get; }
+	public CommandDescription? Description { get; }
 
 	/// <summary>
 	/// Gets the category for grouping commands
 	/// </summary>
-	public string? Category { get; }
+	public CommandCategory? Category { get; }
 
 	/// <summary>
 	/// Returns a string representation of the command

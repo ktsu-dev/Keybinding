@@ -64,14 +64,15 @@ public sealed class CommandRegistry : ICommandRegistry
 	}
 
 	/// <inheritdoc/>
-	public IReadOnlyCollection<Command> SearchCommands(string searchTerm, bool caseSensitive = false)
+	public IReadOnlyCollection<Command> SearchCommands(string searchTerm, CaseSensitivity caseSensitivity = CaseSensitivity.CaseInsensitive)
 	{
 		if (string.IsNullOrWhiteSpace(searchTerm))
 		{
 			throw new ArgumentException("Search term cannot be null or whitespace", nameof(searchTerm));
 		}
 
-		StringComparison comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+		bool isCaseSensitive = caseSensitivity == CaseSensitivity.CaseSensitive;
+		StringComparison comparison = isCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 		string normalizedSearchTerm = searchTerm.Trim();
 
 		lock (_lock)
@@ -82,7 +83,7 @@ public sealed class CommandRegistry : ICommandRegistry
 					c.Id.Contains(normalizedSearchTerm, comparison) ||
 					(!string.IsNullOrEmpty(c.Description) && c.Description.Contains(normalizedSearchTerm, comparison)) ||
 					(!string.IsNullOrEmpty(c.Category) && c.Category.Contains(normalizedSearchTerm, comparison)))
-				.OrderBy(c => c.Name, StringComparer.Create(CultureInfo.CurrentCulture, !caseSensitive))
+				.OrderBy(c => c.Name, StringComparer.Create(CultureInfo.CurrentCulture, !isCaseSensitive))
 				.ToList()
 				.AsReadOnly();
 		}

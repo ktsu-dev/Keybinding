@@ -3,9 +3,13 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.CLI;
+
+using System.Text;
 using CommandLine;
-using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Models;
+using ktsu.Keybinding.Core.Services;
+using Spectre.Console;
+using Profile = ktsu.Keybinding.Core.Models.Profile;
 
 /// <summary>
 /// Demo application showcasing the Keybinding library functionality
@@ -21,14 +25,17 @@ public static class Program
 	/// <returns>Exit code</returns>
 	public static async Task<int> Main(string[] args)
 	{
-		Console.WriteLine("🔧 Keybinding Library Demo");
-		Console.WriteLine("========================");
-		Console.WriteLine();
+		// Set console to use UTF-8 encoding
+		Console.OutputEncoding = Encoding.UTF8;
+
+		AnsiConsole.WriteLine("🔧 Keybinding Library Demo");
+		AnsiConsole.WriteLine("========================");
+		AnsiConsole.WriteLine();
 
 		Parser.Default.Settings.CaseSensitive = false;
 		Parser.Default.Settings.IgnoreUnknownArguments = false;
 
-		ParserResult<DemoOptions> result = await Parser.Default.ParseArguments<DemoOptions>(args)
+		int result = await Parser.Default.ParseArguments<DemoOptions>(args)
 			.MapResult(
 				async opts => await RunDemo(opts).ConfigureAwait(false),
 				errs => Task.FromResult(1)).ConfigureAwait(false);
@@ -47,8 +54,8 @@ public static class Program
 		{
 			await InitializeManager(options.DataDirectory).ConfigureAwait(false);
 
-			Console.WriteLine($"📁 Data directory: {options.DataDirectory}");
-			Console.WriteLine();
+			AnsiConsole.WriteLine($"📁 Data directory: {options.DataDirectory}");
+			AnsiConsole.WriteLine();
 
 			if (options.Reset)
 			{
@@ -56,6 +63,10 @@ public static class Program
 			}
 
 			await SetupDemoData().ConfigureAwait(false);
+
+			// Show the musical paradigm demo
+			MusicalDemo.ShowMusicalParadigm();
+
 			DisplayCurrentStatus();
 
 			if (options.Interactive)
@@ -71,17 +82,17 @@ public static class Program
 		}
 		catch (ArgumentException ex)
 		{
-			Console.WriteLine($"❌ Invalid argument: {ex.Message}");
+			AnsiConsole.WriteLine($"❌ Invalid argument: {ex.Message}");
 			return 1;
 		}
 		catch (InvalidOperationException ex)
 		{
-			Console.WriteLine($"❌ Operation error: {ex.Message}");
+			AnsiConsole.WriteLine($"❌ Operation error: {ex.Message}");
 			return 1;
 		}
 		catch (UnauthorizedAccessException ex)
 		{
-			Console.WriteLine($"❌ Access denied: {ex.Message}");
+			AnsiConsole.WriteLine($"❌ Access denied: {ex.Message}");
 			return 1;
 		}
 		finally
@@ -109,7 +120,7 @@ public static class Program
 	/// </summary>
 	private static async Task ResetDemo()
 	{
-		Console.WriteLine("🔄 Resetting demo data...");
+		AnsiConsole.WriteLine("🔄 Resetting demo data...");
 
 		// Clear all profiles except default
 		IReadOnlyCollection<Profile> profiles = _manager!.Profiles.GetAllProfiles();
@@ -126,8 +137,8 @@ public static class Program
 		}
 
 		await _manager.SaveAsync().ConfigureAwait(false);
-		Console.WriteLine("✅ Demo data reset complete");
-		Console.WriteLine();
+		AnsiConsole.WriteLine("✅ Demo data reset complete");
+		AnsiConsole.WriteLine();
 	}
 
 	/// <summary>
@@ -135,7 +146,7 @@ public static class Program
 	/// </summary>
 	private static async Task SetupDemoData()
 	{
-		Console.WriteLine("🚀 Setting up demo data...");
+		AnsiConsole.WriteLine("🚀 Setting up demo data...");
 
 		// Create default profile if it doesn't exist
 		_manager!.CreateDefaultProfile();
@@ -157,33 +168,33 @@ public static class Program
 		];
 
 		int registeredCount = _manager.RegisterCommands(demoCommands);
-		Console.WriteLine($"✅ Registered {registeredCount} demo commands");
+		AnsiConsole.WriteLine($"✅ Registered {registeredCount} demo commands");
 
-		// Set up default keybindings
-		Dictionary<string, KeyCombination> defaultKeybindings = new()
+		// Set up default chord bindings
+		Dictionary<string, Chord> defaultChords = new()
 		{
-			["file.new"] = KeyCombination.Parse("Ctrl+N"),
-			["file.open"] = KeyCombination.Parse("Ctrl+O"),
-			["file.save"] = KeyCombination.Parse("Ctrl+S"),
-			["file.save_as"] = KeyCombination.Parse("Ctrl+Shift+S"),
-			["edit.copy"] = KeyCombination.Parse("Ctrl+C"),
-			["edit.cut"] = KeyCombination.Parse("Ctrl+X"),
-			["edit.paste"] = KeyCombination.Parse("Ctrl+V"),
-			["edit.undo"] = KeyCombination.Parse("Ctrl+Z"),
-			["edit.redo"] = KeyCombination.Parse("Ctrl+Y"),
-			["view.zoom_in"] = KeyCombination.Parse("Ctrl+Plus"),
-			["view.zoom_out"] = KeyCombination.Parse("Ctrl+Minus"),
-			["navigate.go_to_line"] = KeyCombination.Parse("Ctrl+G"),
+			["file.new"] = _manager.Keybindings.ParseChord("Ctrl+N"),
+			["file.open"] = _manager.Keybindings.ParseChord("Ctrl+O"),
+			["file.save"] = _manager.Keybindings.ParseChord("Ctrl+S"),
+			["file.save_as"] = _manager.Keybindings.ParseChord("Ctrl+Shift+S"),
+			["edit.copy"] = _manager.Keybindings.ParseChord("Ctrl+C"),
+			["edit.cut"] = _manager.Keybindings.ParseChord("Ctrl+X"),
+			["edit.paste"] = _manager.Keybindings.ParseChord("Ctrl+V"),
+			["edit.undo"] = _manager.Keybindings.ParseChord("Ctrl+Z"),
+			["edit.redo"] = _manager.Keybindings.ParseChord("Ctrl+Y"),
+			["view.zoom_in"] = _manager.Keybindings.ParseChord("Ctrl+Plus"),
+			["view.zoom_out"] = _manager.Keybindings.ParseChord("Ctrl+Minus"),
+			["navigate.go_to_line"] = _manager.Keybindings.ParseChord("Ctrl+G"),
 		};
 
-		int keybindingCount = _manager.SetKeybindings(defaultKeybindings);
-		Console.WriteLine($"✅ Set {keybindingCount} default keybindings");
+		int chordCount = _manager.SetChords(defaultChords);
+		AnsiConsole.WriteLine($"✅ Set {chordCount} default chord bindings");
 
 		// Create additional demo profiles
 		await CreateDemoProfiles().ConfigureAwait(false);
 
-		Console.WriteLine("✅ Demo data setup complete");
-		Console.WriteLine();
+		AnsiConsole.WriteLine("✅ Demo data setup complete");
+		AnsiConsole.WriteLine();
 	}
 
 	/// <summary>
@@ -197,17 +208,17 @@ public static class Program
 		{
 			_manager.Profiles.SetActiveProfile("vim");
 
-			Dictionary<string, KeyCombination> vimKeybindings = new()
+			Dictionary<string, Chord> vimChords = new()
 			{
-				["file.save"] = KeyCombination.Parse("Escape"),
-				["edit.copy"] = KeyCombination.Parse("y"),
-				["edit.paste"] = KeyCombination.Parse("p"),
-				["edit.undo"] = KeyCombination.Parse("u"),
-				["navigate.go_to_line"] = KeyCombination.Parse("G"),
+				["file.save"] = _manager.Keybindings.ParseChord("Escape"),
+				["edit.copy"] = _manager.Keybindings.ParseChord("y"),
+				["edit.paste"] = _manager.Keybindings.ParseChord("p"),
+				["edit.undo"] = _manager.Keybindings.ParseChord("u"),
+				["navigate.go_to_line"] = _manager.Keybindings.ParseChord("G"),
 			};
 
-			_manager.SetKeybindings(vimKeybindings);
-			Console.WriteLine("✅ Created Vim-style profile");
+			_manager.SetChords(vimChords);
+			AnsiConsole.WriteLine("✅ Created Vim-style profile");
 		}
 
 		// Create Mac-style profile
@@ -216,20 +227,20 @@ public static class Program
 		{
 			_manager.Profiles.SetActiveProfile("mac");
 
-			Dictionary<string, KeyCombination> macKeybindings = new()
+			Dictionary<string, Chord> macChords = new()
 			{
-				["file.new"] = KeyCombination.Parse("Cmd+N"),
-				["file.open"] = KeyCombination.Parse("Cmd+O"),
-				["file.save"] = KeyCombination.Parse("Cmd+S"),
-				["edit.copy"] = KeyCombination.Parse("Cmd+C"),
-				["edit.cut"] = KeyCombination.Parse("Cmd+X"),
-				["edit.paste"] = KeyCombination.Parse("Cmd+V"),
-				["edit.undo"] = KeyCombination.Parse("Cmd+Z"),
-				["edit.redo"] = KeyCombination.Parse("Cmd+Shift+Z"),
+				["file.new"] = _manager.Keybindings.ParseChord("Cmd+N"),
+				["file.open"] = _manager.Keybindings.ParseChord("Cmd+O"),
+				["file.save"] = _manager.Keybindings.ParseChord("Cmd+S"),
+				["edit.copy"] = _manager.Keybindings.ParseChord("Cmd+C"),
+				["edit.cut"] = _manager.Keybindings.ParseChord("Cmd+X"),
+				["edit.paste"] = _manager.Keybindings.ParseChord("Cmd+V"),
+				["edit.undo"] = _manager.Keybindings.ParseChord("Cmd+Z"),
+				["edit.redo"] = _manager.Keybindings.ParseChord("Cmd+Shift+Z"),
 			};
 
-			_manager.SetKeybindings(macKeybindings);
-			Console.WriteLine("✅ Created Mac-style profile");
+			_manager.SetChords(macChords);
+			AnsiConsole.WriteLine("✅ Created Mac-style profile");
 		}
 
 		// Switch back to default profile
@@ -244,12 +255,12 @@ public static class Program
 	{
 		KeybindingSummary summary = _manager!.GetSummary();
 
-		Console.WriteLine("📊 Current Status:");
-		Console.WriteLine($"   Total Commands: {summary.TotalCommands}");
-		Console.WriteLine($"   Total Profiles: {summary.TotalProfiles}");
-		Console.WriteLine($"   Active Profile: {summary.ActiveProfileName} ({summary.ActiveProfileId})");
-		Console.WriteLine($"   Active Keybindings: {summary.ActiveKeybindings}");
-		Console.WriteLine();
+		AnsiConsole.WriteLine("📊 Current Status:");
+		AnsiConsole.WriteLine($"   Total Commands: {summary.TotalCommands}");
+		AnsiConsole.WriteLine($"   Total Profiles: {summary.TotalProfiles}");
+		AnsiConsole.WriteLine($"   Active Profile: {summary.ActiveProfileName} ({summary.ActiveProfileId})");
+		AnsiConsole.WriteLine($"   Active Keybindings: {summary.ActiveKeybindings}");
+		AnsiConsole.WriteLine();
 	}
 
 	/// <summary>
@@ -257,26 +268,26 @@ public static class Program
 	/// </summary>
 	private static void RunBasicDemo()
 	{
-		Console.WriteLine("🎯 Basic Demo - Command and Keybinding Operations");
-		Console.WriteLine("================================================");
-		Console.WriteLine();
+		AnsiConsole.WriteLine("🎯 Basic Demo - Command and Keybinding Operations");
+		AnsiConsole.WriteLine("================================================");
+		AnsiConsole.WriteLine();
 
 		// List all commands
-		Console.WriteLine("📋 Available Commands:");
+		AnsiConsole.WriteLine("📋 Available Commands:");
 		IReadOnlyCollection<Command> commands = _manager!.Commands.GetAllCommands();
 		foreach (Command command in commands.OrderBy(c => c.Category).ThenBy(c => c.Name))
 		{
-			Console.WriteLine($"   {command.Category}/{command.Id}: {command.Name}");
+			AnsiConsole.WriteLine($"   {command.Category}/{command.Id}: {command.Name}");
 		}
 
-		Console.WriteLine();
+		AnsiConsole.WriteLine();
 
 		// Show keybindings for current profile
 		ShowProfileKeybindings("default");
 
 		// Demonstrate profile switching
-		Console.WriteLine("🔄 Switching between profiles...");
-		Console.WriteLine();
+		AnsiConsole.WriteLine("🔄 Switching between profiles...");
+		AnsiConsole.WriteLine();
 
 		foreach (string profileId in new[] { "vim", "mac", "default" })
 		{
@@ -288,34 +299,34 @@ public static class Program
 		}
 
 		// Demonstrate finding commands by key
-		Console.WriteLine("🔍 Finding commands by key combination:");
+		AnsiConsole.WriteLine("🔍 Finding commands by key combination:");
 		string[] testKeys = ["Ctrl+S", "Ctrl+C", "Cmd+N"];
 
 		foreach (string keyStr in testKeys)
 		{
 			try
 			{
-				KeyCombination key = KeyCombination.Parse(keyStr);
-				string? commandId = _manager.Keybindings.FindCommandByKeybinding(key);
+				Chord key = _manager.Keybindings.ParseChord(keyStr);
+				string? commandId = _manager.Keybindings.FindCommandByChord(key);
 				if (!string.IsNullOrEmpty(commandId))
 				{
 					Command? command = _manager.Commands.GetCommand(commandId);
-					Console.WriteLine($"   {keyStr} → {command?.Name ?? "Unknown"}");
+					AnsiConsole.WriteLine($"   {keyStr} → {command?.Name ?? "Unknown"}");
 				}
 				else
 				{
-					Console.WriteLine($"   {keyStr} → (no command assigned)");
+					AnsiConsole.WriteLine($"   {keyStr} → (no command assigned)");
 				}
 			}
 			catch (ArgumentException)
 			{
-				Console.WriteLine($"   {keyStr} → (invalid key combination)");
+				AnsiConsole.WriteLine($"   {keyStr} → (invalid key combination)");
 			}
 		}
 
-		Console.WriteLine();
+		AnsiConsole.WriteLine();
 
-		Console.WriteLine("✅ Basic demo complete!");
+		AnsiConsole.WriteLine("✅ Basic demo complete!");
 	}
 
 	/// <summary>
@@ -330,22 +341,22 @@ public static class Program
 			return;
 		}
 
-		Console.WriteLine($"⌨️  Keybindings for '{profile.Name}' profile:");
+		AnsiConsole.WriteLine($"⌨️  Keybindings for '{profile.Name}' profile:");
 
-		if (profile.Keybindings.Count != 0)
+		if (profile.Chords.Count != 0)
 		{
-			foreach (KeyValuePair<string, KeyCombination> kvp in profile.Keybindings.OrderBy(k => k.Key))
+			foreach (KeyValuePair<string, Chord> kvp in profile.Chords.OrderBy(k => k.Key))
 			{
 				Command? command = _manager.Commands.GetCommand(kvp.Key);
-				Console.WriteLine($"   {kvp.Value} → {command?.Name ?? kvp.Key}");
+				AnsiConsole.WriteLine($"   {kvp.Value} → {command?.Name ?? kvp.Key}");
 			}
 		}
 		else
 		{
-			Console.WriteLine("   (no keybindings configured)");
+			AnsiConsole.WriteLine("   (no keybindings configured)");
 		}
 
-		Console.WriteLine();
+		AnsiConsole.WriteLine();
 	}
 
 	/// <summary>
@@ -353,20 +364,21 @@ public static class Program
 	/// </summary>
 	private static async Task RunInteractiveDemo()
 	{
-		Console.WriteLine("🎮 Interactive Demo");
-		Console.WriteLine("==================");
-		Console.WriteLine("Enter commands to try the keybinding system:");
-		Console.WriteLine("  'list profiles' - Show all profiles");
-		Console.WriteLine("  'switch <profile>' - Switch to a profile");
-		Console.WriteLine("  'find <key>' - Find command by key (e.g., 'find Ctrl+S')");
-		Console.WriteLine("  'status' - Show current status");
-		Console.WriteLine("  'help' - Show this help");
-		Console.WriteLine("  'quit' - Exit interactive mode");
-		Console.WriteLine();
+		AnsiConsole.WriteLine("🎮 Interactive Demo");
+		AnsiConsole.WriteLine("==================");
+		AnsiConsole.WriteLine("Enter commands to try the keybinding system:");
+		AnsiConsole.WriteLine("  'list profiles' - Show all profiles");
+		AnsiConsole.WriteLine("  'switch <profile>' - Switch to a profile");
+		AnsiConsole.WriteLine("  'find <key>' - Find command by key (e.g., 'find Ctrl+S')");
+		AnsiConsole.WriteLine("  'patterns' - Show common phrase patterns");
+		AnsiConsole.WriteLine("  'status' - Show current status");
+		AnsiConsole.WriteLine("  'help' - Show this help");
+		AnsiConsole.WriteLine("  'quit' - Exit interactive mode");
+		AnsiConsole.WriteLine();
 
 		while (true)
 		{
-			Console.Write("🔧 > ");
+			AnsiConsole.Write("🔧 > ");
 			string? input = Console.ReadLine()?.Trim();
 
 			if (string.IsNullOrEmpty(input))
@@ -382,7 +394,7 @@ public static class Program
 			ProcessInteractiveCommand(input);
 		}
 
-		Console.WriteLine("👋 Goodbye!");
+		AnsiConsole.WriteLine("👋 Goodbye!");
 		await Task.CompletedTask.ConfigureAwait(false);
 	}
 
@@ -419,7 +431,7 @@ public static class Program
 					}
 					else
 					{
-						Console.WriteLine("❌ Please specify a profile name");
+						AnsiConsole.WriteLine("❌ Please specify a profile name");
 					}
 
 					break;
@@ -431,7 +443,7 @@ public static class Program
 					}
 					else
 					{
-						Console.WriteLine("❌ Please specify a key combination");
+						AnsiConsole.WriteLine("❌ Please specify a key combination");
 					}
 
 					break;
@@ -440,30 +452,35 @@ public static class Program
 					DisplayCurrentStatus();
 					break;
 
+				case "patterns":
+					MusicalDemo.ShowPhrasePatterns();
+					break;
+
 				case "help":
-					Console.WriteLine("Available commands:");
-					Console.WriteLine("  'list profiles' - Show all profiles");
-					Console.WriteLine("  'switch <profile>' - Switch to a profile");
-					Console.WriteLine("  'find <key>' - Find command by key");
-					Console.WriteLine("  'status' - Show current status");
-					Console.WriteLine("  'quit' - Exit interactive mode");
+					AnsiConsole.WriteLine("Available commands:");
+					AnsiConsole.WriteLine("  'list profiles' - Show all profiles");
+					AnsiConsole.WriteLine("  'switch <profile>' - Switch to a profile");
+					AnsiConsole.WriteLine("  'find <key>' - Find command by key");
+					AnsiConsole.WriteLine("  'patterns' - Show common phrase patterns");
+					AnsiConsole.WriteLine("  'status' - Show current status");
+					AnsiConsole.WriteLine("  'quit' - Exit interactive mode");
 					break;
 
 				default:
-					Console.WriteLine($"❌ Unknown command: {command}");
+					AnsiConsole.WriteLine($"❌ Unknown command: {command}");
 					break;
 			}
 		}
 		catch (ArgumentException ex)
 		{
-			Console.WriteLine($"❌ Invalid argument: {ex.Message}");
+			AnsiConsole.WriteLine($"❌ Invalid argument: {ex.Message}");
 		}
 		catch (InvalidOperationException ex)
 		{
-			Console.WriteLine($"❌ Operation error: {ex.Message}");
+			AnsiConsole.WriteLine($"❌ Operation error: {ex.Message}");
 		}
 
-		Console.WriteLine();
+		AnsiConsole.WriteLine();
 	}
 
 	/// <summary>
@@ -471,16 +488,16 @@ public static class Program
 	/// </summary>
 	private static void ListProfiles()
 	{
-		Console.WriteLine("📋 Available Profiles:");
+		AnsiConsole.WriteLine("📋 Available Profiles:");
 		IReadOnlyCollection<Profile> profiles = _manager!.Profiles.GetAllProfiles();
 		Profile? activeProfile = _manager.Profiles.GetActiveProfile();
 
 		foreach (Profile profile in profiles.OrderBy(p => p.Id))
 		{
 			string isActive = profile.Id == activeProfile?.Id ? " (active)" : "";
-			Console.WriteLine($"   {profile.Id}: {profile.Name}{isActive}");
-			Console.WriteLine($"      {profile.Description}");
-			Console.WriteLine($"      Keybindings: {profile.Keybindings.Count}");
+			AnsiConsole.WriteLine($"   {profile.Id}: {profile.Name}{isActive}");
+			AnsiConsole.WriteLine($"      {profile.Description}");
+			AnsiConsole.WriteLine($"      Chords: {profile.Chords.Count}");
 		}
 	}
 
@@ -494,11 +511,11 @@ public static class Program
 		{
 			_manager.Profiles.SetActiveProfile(profileId);
 			Profile? profile = _manager.Profiles.GetProfile(profileId);
-			Console.WriteLine($"✅ Switched to profile: {profile?.Name} ({profileId})");
+			AnsiConsole.WriteLine($"✅ Switched to profile: {profile?.Name} ({profileId})");
 		}
 		else
 		{
-			Console.WriteLine($"❌ Profile not found: {profileId}");
+			AnsiConsole.WriteLine($"❌ Profile not found: {profileId}");
 		}
 	}
 
@@ -508,24 +525,30 @@ public static class Program
 	/// <param name="keyStr">Key combination string</param>
 	private static void FindCommandByKey(string keyStr)
 	{
+		if (_manager is null)
+		{
+			AnsiConsole.WriteLine("❌ Manager not initialized");
+			return;
+		}
+
 		try
 		{
-			KeyCombination key = KeyCombination.Parse(keyStr);
-			string? commandId = _manager!.Keybindings.FindCommandByKeybinding(key);
+			Chord key = _manager.Keybindings.ParseChord(keyStr);
+			string? commandId = _manager.Keybindings.FindCommandByChord(key);
 
 			if (!string.IsNullOrEmpty(commandId))
 			{
 				Command? command = _manager.Commands.GetCommand(commandId);
-				Console.WriteLine($"✅ {keyStr} → {command?.Name ?? "Unknown"} ({commandId})");
+				AnsiConsole.WriteLine($"✅ {keyStr} → {command?.Name ?? "Unknown"} ({commandId})");
 			}
 			else
 			{
-				Console.WriteLine($"❌ No command assigned to: {keyStr}");
+				AnsiConsole.WriteLine($"❌ No command assigned to: {keyStr}");
 			}
 		}
 		catch (ArgumentException ex)
 		{
-			Console.WriteLine($"❌ Invalid key combination '{keyStr}': {ex.Message}");
+			AnsiConsole.WriteLine($"❌ Invalid key combination '{keyStr}': {ex.Message}");
 		}
 	}
 }
