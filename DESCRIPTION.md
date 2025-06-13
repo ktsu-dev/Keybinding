@@ -1,1 +1,1 @@
-Placeholder description, a single line concise description of the project, suitable for the package description in the nuget list UI.
+A comprehensive .NET library for managing keyboard shortcuts and keybindings with multi-profile support, command registry, and persistent storage.

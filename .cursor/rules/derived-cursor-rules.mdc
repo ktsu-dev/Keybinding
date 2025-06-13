@@ -57,6 +57,8 @@ globs: *
 *   Set the console to use UTF-8 output encoding at the start of the application.
 *   Use the Spectre.Console AnsiConsole for any console writing.
 *   Remove obsoleted code.
+*   Ensure the README, tags, and description are correct before releasing.
+*   When updating `TAGS.md` and `DESCRIPTION.md`, ensure they have the `status: draft` frontmatter.
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 

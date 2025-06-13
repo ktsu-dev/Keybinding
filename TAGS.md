@@ -1,1 +1,1 @@
-placeholder tags;use semicolons to separate tags;and spaces to separate words;
+keyboard shortcuts;keybindings;key combinations;command registry;profiles;hotkeys;input handling;shortcuts management;chord parsing;musical keybindings;multi profile;dotnet library;csharp;configuration;persistence;json storage;thread safe;SOLID architecture
