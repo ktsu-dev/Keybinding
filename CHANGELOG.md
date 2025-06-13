@@ -2,8 +2,7 @@
 
 Changes since v1.0.3:
 
-- Add Web API example project and update dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
-- Add Coverlet packages for enhanced code coverage analysis ([@matt-edmondson](https://github.com/matt-edmondson))
+- Bump the ktsu group with 3 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
 ## v1.0.3 (patch)
 
 Changes since v1.0.2:
