@@ -26,6 +26,7 @@ globs: *
 *   Spectre.Console (to be used in the console app demo)
 *   Microsoft.Extensions.DependencyInjection
 *   coverlet.msbuild (for code coverage analysis)
+*   coverlet.collector
 
 ## PROJECT STRUCTURE
 
@@ -35,6 +36,9 @@ globs: *
 *   Constants: Defines shared constants like error messages and file names.
 *   Extensions: Contains extension methods, such as those for dependency injection.
 *   Helpers: Contains helper classes for validation and other common operations.
+*   Examples: Contains example applications demonstrating library usage.
+    *   Keybinding.ConsoleApp: Demonstrates standalone usage.
+    *   Keybinding.WebAPI.Example: Demonstrates dependency injection usage in a Web API.
 
 ## CODING STANDARDS
 
@@ -93,3 +97,4 @@ globs: *
 *   Use Coverlet for code coverage analysis.
 *   Run tests with the following command from the root directory: `dotnet test /p:CollectCoverage=true /p:CoverletOutput=./TestResults/ /p:CoverletOutputFormat=cobertura /p:Exclude="[*Test*]*"`
 *   To run code coverage from the `Keybinding.Test` directory, use: `dotnet test /p:CollectCoverage=true /p:CoverletOutput=../TestResults/ /p:CoverletOutputFormat=cobertura /p:Exclude="[*Test*]*"`
+*   The `.runsettings` file is configured for coverage collection.

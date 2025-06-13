@@ -1,0 +1,6 @@
+@Keybinding.WebAPI.Example_HostAddress = http://localhost:5249
+
+GET {{Keybinding.WebAPI.Example_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
