@@ -2,6 +2,7 @@
 
 Changes since v1.0.2:
 
+- Refactor test files to ensure proper namespace usage and enhance code clarity ([@matt-edmondson](https://github.com/matt-edmondson))
 - Add Microsoft.Extensions.DependencyInjection package and enhance test coverage ([@matt-edmondson](https://github.com/matt-edmondson))
 ## v1.0.2 (patch)
 
