@@ -16,6 +16,7 @@ globs: *
     *   **Phrases** 🎼 → Commands or actions that can be triggered by chords, for example like ctrl + (r, r) in visual studio for tool assisted rename. A phrase could be a single chord, a sequence of chords, a sequence mixing notes and chords.
     *   **Profiles** 📝 → Collections of phrases (familiar terminology)
     *   A chord should be able to support any number of simultaneous notes, and modifiers should be treated the same as notes
+*   The library must be usable both standalone and with dependency injection.
 
 ## TECH STACK
 
@@ -23,6 +24,7 @@ globs: *
 *   CommandLineParser (to be used in the console app demo)
 *   ktsu.SemanticString
 *   Spectre.Console (to be used in the console app demo)
+*   Microsoft.Extensions.DependencyInjection
 
 ## PROJECT STRUCTURE
 
@@ -30,6 +32,7 @@ globs: *
 *   Models: Defines the data structures used in the library.
 *   Services: Implements the business logic for managing keybindings.
 *   Constants: Defines shared constants like error messages and file names.
+*   Extensions: Contains extension methods, such as those for dependency injection.
 
 ## CODING STANDARDS
 
@@ -61,6 +64,8 @@ globs: *
 *   When updating `TAGS.md` and `DESCRIPTION.md`, ensure they have the `status: draft` frontmatter.
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
+
+*   The library architecture implements SOLID and DRY principles and supports both standalone and dependency injection usage patterns.
 
 ## DEBUGGING
 

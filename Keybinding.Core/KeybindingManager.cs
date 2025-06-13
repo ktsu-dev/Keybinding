@@ -13,7 +13,6 @@ using ktsu.Keybinding.Core.Services;
 public sealed class KeybindingManager : IDisposable
 {
 	private bool _disposed;
-
 	/// <summary>
 	/// Initializes a new instance of the <see cref="KeybindingManager"/> class with default services
 	/// </summary>

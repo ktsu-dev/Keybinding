@@ -1,5 +1,6 @@
 <Project Sdk="ktsu.Sdk.Lib">
   <ItemGroup>
     <PackageReference Include="ktsu.SemanticString" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 </Project>
