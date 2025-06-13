@@ -9,7 +9,7 @@ using CommandLine;
 using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Models;
 using Spectre.Console;
-using Profile = ktsu.Keybinding.Core.Models.Profile;
+using Profile = Core.Models.Profile;
 
 /// <summary>
 /// Demo application showcasing the Keybinding library functionality
@@ -32,7 +32,8 @@ public static class Program
 		AnsiConsole.WriteLine("========================");
 		AnsiConsole.WriteLine();
 
-		var parser = new Parser(with => {
+		using Parser parser = new(with =>
+		{
 			with.CaseSensitive = false;
 			with.IgnoreUnknownArguments = false;
 		});
@@ -291,13 +292,11 @@ public static class Program
 		AnsiConsole.WriteLine("🔄 Switching between profiles...");
 		AnsiConsole.WriteLine();
 
-		foreach (string profileId in new[] { "vim", "mac", "default" })
+		string[] profiles = ["vim", "mac", "default"];
+		foreach (string profileId in profiles.Where(_manager.Profiles.ProfileExists))
 		{
-			if (_manager.Profiles.ProfileExists(profileId))
-			{
-				_manager.Profiles.SetActiveProfile(profileId);
-				ShowProfileKeybindings(profileId);
-			}
+			_manager.Profiles.SetActiveProfile(profileId);
+			ShowProfileKeybindings(profileId);
 		}
 
 		// Demonstrate finding commands by key
