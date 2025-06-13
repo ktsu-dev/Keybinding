@@ -1,3 +1,8 @@
+## v1.0.3 (patch)
+
+Changes since v1.0.2:
+
+- Add Microsoft.Extensions.DependencyInjection package and enhance test coverage ([@matt-edmondson](https://github.com/matt-edmondson))
 ## v1.0.2 (patch)
 
 Changes since v1.0.1:
