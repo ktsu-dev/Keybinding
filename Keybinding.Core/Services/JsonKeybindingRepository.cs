@@ -64,7 +64,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 				kvp => kvp.Key,
 				kvp => new ChordDto
 				{
-					Notes = [.. kvp.Value.Notes]
+					Notes = [.. kvp.Value.Notes.Select(n => n.ToString())]
 				})
 		});
 
@@ -107,7 +107,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 				Profile profile = new(dto.Id, dto.Name, dto.Description);
 				foreach (KeyValuePair<string, ChordDto> kvp in dto.Chords ?? [])
 				{
-					Chord chord = new(kvp.Value.Notes);
+					Chord chord = new(kvp.Value.Notes.Select(noteString => new Note(noteString)));
 					profile.SetChord(kvp.Key, chord);
 				}
 
@@ -142,7 +142,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 				kvp => kvp.Key,
 				kvp => new ChordDto
 				{
-					Notes = [.. kvp.Value.Notes]
+					Notes = [.. kvp.Value.Notes.Select(n => n.ToString())]
 				})
 		});
 
@@ -267,7 +267,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 
 	private sealed class ChordDto
 	{
-		public List<Note> Notes { get; set; } = [];
+		public List<string> Notes { get; set; } = [];
 	}
 
 	private sealed class CommandDto

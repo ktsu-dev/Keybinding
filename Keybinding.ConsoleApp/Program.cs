@@ -6,8 +6,8 @@ namespace ktsu.Keybinding.CLI;
 
 using System.Text;
 using CommandLine;
+using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Models;
-using ktsu.Keybinding.Core.Services;
 using Spectre.Console;
 using Profile = ktsu.Keybinding.Core.Models.Profile;
 
@@ -32,10 +32,12 @@ public static class Program
 		AnsiConsole.WriteLine("========================");
 		AnsiConsole.WriteLine();
 
-		Parser.Default.Settings.CaseSensitive = false;
-		Parser.Default.Settings.IgnoreUnknownArguments = false;
+		var parser = new Parser(with => {
+			with.CaseSensitive = false;
+			with.IgnoreUnknownArguments = false;
+		});
 
-		int result = await Parser.Default.ParseArguments<DemoOptions>(args)
+		int result = await parser.ParseArguments<DemoOptions>(args)
 			.MapResult(
 				async opts => await RunDemo(opts).ConfigureAwait(false),
 				errs => Task.FromResult(1)).ConfigureAwait(false);

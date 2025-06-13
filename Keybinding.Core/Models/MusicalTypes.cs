@@ -4,6 +4,8 @@
 
 namespace ktsu.Keybinding.Core.Models;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Represents a musical note - a single key
 /// </summary>
@@ -14,6 +16,7 @@ public sealed class Note : IEquatable<Note>
 	/// </summary>
 	/// <param name="key">The key that this note represents</param>
 	/// <exception cref="ArgumentException">Thrown when key is null or whitespace</exception>
+	[JsonConstructor]
 	public Note(NoteName key)
 	{
 		ArgumentNullException.ThrowIfNull(key);
