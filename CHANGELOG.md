@@ -1,9 +1,8 @@
-## v1.0.4-pre.1 (prerelease)
+## v1.0.4 (patch)
 
 Changes since v1.0.3:
 
-- Bump the microsoft group with 3 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump the ktsu group with 3 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Update project configuration and dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
 ## v1.0.3 (patch)
 
 Changes since v1.0.2:
