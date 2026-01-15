@@ -4,9 +4,8 @@
 
 namespace ktsu.Keybinding.Core.Models;
 
-using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using ktsu.Semantics;
+using ktsu.Semantics.Strings;
 
 /// <summary>
 /// Represents a semantic command identifier with validation
@@ -20,10 +19,10 @@ public partial record class CommandId : SemanticString<CommandId>
 	/// Validates that the command ID follows the required format (e.g., "edit.copy", "file.save")
 	/// </summary>
 	/// <param name="value">The value to validate</param>
-	/// <returns>ValidationResult indicating success or failure</returns>
-	public static ValidationResult ValidateCommandId(string value) =>
-		string.IsNullOrWhiteSpace(value) ? new ValidationResult("Command ID cannot be null or whitespace") :
-		value.Length > 100 ? new ValidationResult("Command ID must be 100 characters or less") :
-		!CommandIdPattern().IsMatch(value) ? new ValidationResult("Command ID must follow the format 'category.action' with lowercase letters, numbers, and dots") :
-		ValidationResult.Success!;
+	/// <returns>System.ComponentModel.DataAnnotations.ValidationResult indicating success or failure</returns>
+	public static System.ComponentModel.DataAnnotations.ValidationResult ValidateCommandId(string value) =>
+		string.IsNullOrWhiteSpace(value) ? new System.ComponentModel.DataAnnotations.ValidationResult("Command ID cannot be null or whitespace") :
+		value.Length > 100 ? new System.ComponentModel.DataAnnotations.ValidationResult("Command ID must be 100 characters or less") :
+		!CommandIdPattern().IsMatch(value) ? new System.ComponentModel.DataAnnotations.ValidationResult("Command ID must follow the format 'category.action' with lowercase letters, numbers, and dots") :
+		System.ComponentModel.DataAnnotations.ValidationResult.Success!;
 }

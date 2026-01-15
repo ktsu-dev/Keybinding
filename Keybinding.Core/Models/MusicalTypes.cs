@@ -35,7 +35,7 @@ public sealed class Note : IEquatable<Note>
 			throw new ArgumentException("Key cannot be null or whitespace", nameof(key));
 		}
 
-		Key = (NoteName)key.Trim().ToUpperInvariant();
+		Key = NoteName.Create(key.Trim().ToUpperInvariant());
 	}
 
 	/// <summary>

@@ -54,7 +54,7 @@ public class AsyncBatchHelperTests
 		IEnumerable<int>? nullItems = null;
 
 		// Act & Assert
-		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+		await Assert.ThrowsExactlyAsync<ArgumentNullException>(
 			() => AsyncBatchHelper.ForEachAsync(nullItems!, async item =>
 				await Task.Delay(1).ConfigureAwait(false)
 			)).ConfigureAwait(false);
@@ -68,7 +68,7 @@ public class AsyncBatchHelperTests
 		Func<int, Task>? nullOperation = null;
 
 		// Act & Assert
-		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+		await Assert.ThrowsExactlyAsync<ArgumentNullException>(
 			() => AsyncBatchHelper.ForEachAsync(items, nullOperation!)).ConfigureAwait(false);
 	}
 
@@ -159,7 +159,7 @@ public class AsyncBatchHelperTests
 		IEnumerable<int>? nullItems = null;
 
 		// Act & Assert
-		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+		await Assert.ThrowsExactlyAsync<ArgumentNullException>(
 			() => AsyncBatchHelper.BatchSaveAsync(nullItems!, async item =>
 				await Task.Delay(1).ConfigureAwait(false)
 			)).ConfigureAwait(false);
@@ -173,7 +173,7 @@ public class AsyncBatchHelperTests
 		Func<int, Task>? nullOperation = null;
 
 		// Act & Assert
-		await Assert.ThrowsExceptionAsync<ArgumentNullException>(
+		await Assert.ThrowsExactlyAsync<ArgumentNullException>(
 			() => AsyncBatchHelper.BatchSaveAsync(items, nullOperation!)).ConfigureAwait(false);
 	}
 }

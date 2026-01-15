@@ -30,7 +30,7 @@ public class DisposalHelperTests
 		bool disposed = true;
 
 		// Act & Assert
-		ObjectDisposedException exception = Assert.ThrowsException<ObjectDisposedException>(
+		ObjectDisposedException exception = Assert.ThrowsExactly<ObjectDisposedException>(
 			() => DisposalHelper.ThrowIfDisposed(disposed, _testInstance));
 
 		Assert.IsNotNull(exception);
@@ -45,7 +45,7 @@ public class DisposalHelperTests
 		object? nullInstance = null;
 
 		// Act & Assert
-		ObjectDisposedException exception = Assert.ThrowsException<ObjectDisposedException>(
+		ObjectDisposedException exception = Assert.ThrowsExactly<ObjectDisposedException>(
 			() => DisposalHelper.ThrowIfDisposed(disposed, nullInstance!));
 
 		Assert.IsNotNull(exception);
@@ -60,11 +60,11 @@ public class DisposalHelperTests
 		int intInstance = 42;
 
 		// Act & Assert
-		ObjectDisposedException stringException = Assert.ThrowsException<ObjectDisposedException>(
+		ObjectDisposedException stringException = Assert.ThrowsExactly<ObjectDisposedException>(
 			() => DisposalHelper.ThrowIfDisposed(disposed, stringInstance));
 		Assert.AreEqual(typeof(string).FullName, stringException.ObjectName);
 
-		ObjectDisposedException intException = Assert.ThrowsException<ObjectDisposedException>(
+		ObjectDisposedException intException = Assert.ThrowsExactly<ObjectDisposedException>(
 			() => DisposalHelper.ThrowIfDisposed(disposed, intInstance));
 		Assert.AreEqual(typeof(int).FullName, intException.ObjectName);
 	}

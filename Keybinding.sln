@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keybinding.Core", "Keybindi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keybinding.Test", "Keybinding.Test\Keybinding.Test.csproj", "{70C62042-8EAE-47A2-8816-26C747D112FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keybinding.ConsoleApp", "Keybinding.ConsoleApp\Keybinding.ConsoleApp.csproj", "{AE3310E2-EB3D-9B07-7DDD-631986A82731}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keybinding.Demo", "Keybinding.Demo\Keybinding.Demo.csproj", "{AE3310E2-EB3D-9B07-7DDD-631986A82731}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

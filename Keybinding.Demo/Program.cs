@@ -2,7 +2,7 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
-namespace ktsu.Keybinding.CLI;
+namespace ktsu.Keybinding.Demo;
 
 using System.Text;
 using CommandLine;

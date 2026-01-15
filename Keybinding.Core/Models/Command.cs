@@ -47,10 +47,10 @@ public sealed class Command : IEquatable<Command>
 			throw new ArgumentException("Command name cannot be null or whitespace", nameof(name));
 		}
 
-		Id = (CommandId)id.Trim();
-		Name = (CommandName)name.Trim();
-		Description = !string.IsNullOrWhiteSpace(description) ? (CommandDescription)description.Trim() : null;
-		Category = !string.IsNullOrWhiteSpace(category) ? (CommandCategory)category.Trim() : null;
+		Id = CommandId.Create(id.Trim());
+		Name = CommandName.Create(name.Trim());
+		Description = !string.IsNullOrWhiteSpace(description) ? CommandDescription.Create(description.Trim()) : null;
+		Category = !string.IsNullOrWhiteSpace(category) ? CommandCategory.Create(category.Trim()) : null;
 	}
 
 	/// <summary>

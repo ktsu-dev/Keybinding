@@ -212,40 +212,14 @@ if (manager.Commands.CommandExists("file.save"))
 }
 ```
 
-## Sample Applications
+## Sample Application
 
-The solution includes two sample applications:
-
-### CLI Tool (`Keybinding.CLI`)
-
-A command-line interface for managing keybindings:
-
-```bash
-# Show status
-dotnet run --project Keybinding.CLI status
-
-# List profiles
-dotnet run --project Keybinding.CLI profile list
-
-# Create a new profile
-dotnet run --project Keybinding.CLI profile create --id "gaming" --name "Gaming Profile"
-
-# Register a command
-dotnet run --project Keybinding.CLI command register --id "game.jump" --name "Jump" --category "Game"
-
-# Set a keybinding
-dotnet run --project Keybinding.CLI keybinding set --command "game.jump" --key "Space"
-
-# Find command by key
-dotnet run --project Keybinding.CLI keybinding find --key "Ctrl+S"
-```
-
-### Interactive Demo (`Keybinding.App`)
+### Interactive Demo (`Keybinding.Demo`)
 
 An interactive console application demonstrating all library features:
 
 ```bash
-dotnet run --project Keybinding.App
+dotnet run --project Keybinding.Demo
 ```
 
 The demo includes:
@@ -254,7 +228,7 @@ The demo includes:
 -   Profile management
 -   Command registration
 -   Keybinding configuration
--   Key lookup testing
+-   Phrase binding and lookup
 -   Profile switching demonstration
 
 ## Data Storage

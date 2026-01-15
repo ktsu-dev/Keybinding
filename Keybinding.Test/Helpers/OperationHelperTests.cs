@@ -80,7 +80,7 @@ public class OperationHelperTests
 			: item % 2 == 0;
 
 		// Act & Assert
-		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
+		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => OperationHelper.ExecuteWithCount(items, ThrowingOperation, shouldContinueOnError: false));
 
 		Assert.AreEqual("Invalid item", exception.Message);
@@ -108,7 +108,7 @@ public class OperationHelperTests
 		static bool AlwaysTrue(int item) => true;
 
 		// Act & Assert
-		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
+		ArgumentNullException exception = Assert.ThrowsExactly<ArgumentNullException>(
 			() => OperationHelper.ExecuteWithCount(nullItems!, AlwaysTrue));
 
 		Assert.AreEqual("items", exception.ParamName);
@@ -122,7 +122,7 @@ public class OperationHelperTests
 		Func<int, bool>? nullOperation = null;
 
 		// Act & Assert
-		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
+		ArgumentNullException exception = Assert.ThrowsExactly<ArgumentNullException>(
 			() => OperationHelper.ExecuteWithCount(items, nullOperation!));
 
 		Assert.AreEqual("operation", exception.ParamName);
@@ -184,7 +184,7 @@ public class OperationHelperTests
 			: value % 2 == 0;
 
 		// Act & Assert
-		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
+		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => OperationHelper.ExecuteWithCount(items, ThrowingOperation, shouldContinueOnError: false));
 
 		Assert.AreEqual("Invalid key", exception.Message);
@@ -198,7 +198,7 @@ public class OperationHelperTests
 		static bool AlwaysTrue(string key, int value) => true;
 
 		// Act & Assert
-		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
+		ArgumentNullException exception = Assert.ThrowsExactly<ArgumentNullException>(
 			() => OperationHelper.ExecuteWithCount(nullItems!, AlwaysTrue));
 
 		Assert.AreEqual("items", exception.ParamName);
@@ -212,7 +212,7 @@ public class OperationHelperTests
 		Func<string, int, bool>? nullOperation = null;
 
 		// Act & Assert
-		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
+		ArgumentNullException exception = Assert.ThrowsExactly<ArgumentNullException>(
 			() => OperationHelper.ExecuteWithCount(items, nullOperation!));
 
 		Assert.AreEqual("operation", exception.ParamName);

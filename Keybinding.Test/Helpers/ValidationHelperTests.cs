@@ -28,7 +28,7 @@ public class ValidationHelperTests
 		string? nullString = null;
 
 		// Act & Assert
-		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
+		ArgumentNullException exception = Assert.ThrowsExactly<ArgumentNullException>(
 			() => ValidationHelper.ThrowIfNullOrWhiteSpace(nullString, nameof(nullString)));
 
 		Assert.AreEqual(nameof(nullString), exception.ParamName);
@@ -41,7 +41,7 @@ public class ValidationHelperTests
 		string emptyString = "";
 
 		// Act & Assert
-		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
+		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => ValidationHelper.ThrowIfNullOrWhiteSpace(emptyString, nameof(emptyString)));
 
 		Assert.AreEqual(nameof(emptyString), exception.ParamName);
@@ -55,7 +55,7 @@ public class ValidationHelperTests
 		string whitespaceString = "   ";
 
 		// Act & Assert
-		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
+		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => ValidationHelper.ThrowIfNullOrWhiteSpace(whitespaceString, nameof(whitespaceString)));
 
 		Assert.AreEqual(nameof(whitespaceString), exception.ParamName);
@@ -69,7 +69,7 @@ public class ValidationHelperTests
 		string customMessage = "Custom error message";
 
 		// Act & Assert
-		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
+		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => ValidationHelper.ThrowIfNullOrWhiteSpace(emptyString, nameof(emptyString), customMessage));
 
 		Assert.IsTrue(exception.Message.Contains(customMessage));
@@ -95,7 +95,7 @@ public class ValidationHelperTests
 		string? nullString = null;
 
 		// Act & Assert
-		ArgumentNullException exception = Assert.ThrowsException<ArgumentNullException>(
+		ArgumentNullException exception = Assert.ThrowsExactly<ArgumentNullException>(
 			() => ValidationHelper.ValidateAndTrim(nullString, nameof(nullString)));
 
 		Assert.AreEqual(nameof(nullString), exception.ParamName);
@@ -116,7 +116,7 @@ public class ValidationHelperTests
 	public void ThrowIfAnyNullOrWhiteSpace_WithOneInvalidString_ThrowsException()
 	{
 		// Arrange & Act & Assert
-		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
+		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => ValidationHelper.ThrowIfAnyNullOrWhiteSpace(
 				("valid", "param1", null),
 				("", "param2", null),
@@ -132,7 +132,7 @@ public class ValidationHelperTests
 		string customMessage = "Custom validation error";
 
 		// Act & Assert
-		ArgumentException exception = Assert.ThrowsException<ArgumentException>(
+		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => ValidationHelper.ThrowIfAnyNullOrWhiteSpace(
 				("valid", "param1", null),
 				("", "param2", customMessage)));

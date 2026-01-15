@@ -4,9 +4,8 @@
 
 namespace ktsu.Keybinding.Core.Models;
 
-using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using ktsu.Semantics;
+using ktsu.Semantics.Strings;
 
 /// <summary>
 /// Represents a semantic profile identifier
@@ -20,11 +19,11 @@ public partial record class ProfileId : SemanticString<ProfileId>
 	/// Validates that the profile ID follows the required format (kebab-case identifiers)
 	/// </summary>
 	/// <param name="value">The value to validate</param>
-	/// <returns>ValidationResult indicating success or failure</returns>
-	public static ValidationResult ValidateProfileId(string value) =>
-		string.IsNullOrWhiteSpace(value) ? new ValidationResult("Profile ID cannot be null or whitespace") :
-		value.Length > 50 ? new ValidationResult("Profile ID must be 50 characters or less") :
-		value.Length < 2 ? new ValidationResult("Profile ID must be at least 2 characters") :
-		!ProfileIdPattern().IsMatch(value) ? new ValidationResult("Profile ID must use kebab-case format with lowercase letters, numbers, and hyphens") :
-		ValidationResult.Success!;
+	/// <returns>System.ComponentModel.DataAnnotations.ValidationResult indicating success or failure</returns>
+	public static System.ComponentModel.DataAnnotations.ValidationResult ValidateProfileId(string value) =>
+		string.IsNullOrWhiteSpace(value) ? new System.ComponentModel.DataAnnotations.ValidationResult("Profile ID cannot be null or whitespace") :
+		value.Length > 50 ? new System.ComponentModel.DataAnnotations.ValidationResult("Profile ID must be 50 characters or less") :
+		value.Length < 2 ? new System.ComponentModel.DataAnnotations.ValidationResult("Profile ID must be at least 2 characters") :
+		!ProfileIdPattern().IsMatch(value) ? new System.ComponentModel.DataAnnotations.ValidationResult("Profile ID must use kebab-case format with lowercase letters, numbers, and hyphens") :
+		System.ComponentModel.DataAnnotations.ValidationResult.Success!;
 }

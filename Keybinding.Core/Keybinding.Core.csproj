@@ -1,6 +1,13 @@
-<Project Sdk="ktsu.Sdk.Lib">
+<Project>
+  <Sdk Name="Microsoft.NET.Sdk" />
+  <Sdk Name="ktsu.Sdk" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="ktsu.SemanticString" />
+    <PackageReference Include="ktsu.Semantics.Strings" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 </Project>

@@ -4,9 +4,8 @@
 
 namespace ktsu.Keybinding.Core.Models;
 
-using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using ktsu.Semantics;
+using ktsu.Semantics.Strings;
 
 /// <summary>
 /// Represents a semantic command name with validation
@@ -20,11 +19,11 @@ public partial record class CommandName : SemanticString<CommandName>
 	/// Validates that the command name follows the required format
 	/// </summary>
 	/// <param name="value">The value to validate</param>
-	/// <returns>ValidationResult indicating success or failure</returns>
-	public static ValidationResult ValidateCommandName(string value) =>
-		string.IsNullOrWhiteSpace(value) ? new ValidationResult("Command name cannot be null or whitespace") :
-		value.Length > 100 ? new ValidationResult("Command name must be 100 characters or less") :
-		value.Length < 2 ? new ValidationResult("Command name must be at least 2 characters") :
-		!CommandNamePattern().IsMatch(value) ? new ValidationResult("Command name must contain only letters, numbers, spaces, hyphens, and underscores") :
-		ValidationResult.Success!;
+	/// <returns>System.ComponentModel.DataAnnotations.ValidationResult indicating success or failure</returns>
+	public static System.ComponentModel.DataAnnotations.ValidationResult ValidateCommandName(string value) =>
+		string.IsNullOrWhiteSpace(value) ? new System.ComponentModel.DataAnnotations.ValidationResult("Command name cannot be null or whitespace") :
+		value.Length > 100 ? new System.ComponentModel.DataAnnotations.ValidationResult("Command name must be 100 characters or less") :
+		value.Length < 2 ? new System.ComponentModel.DataAnnotations.ValidationResult("Command name must be at least 2 characters") :
+		!CommandNamePattern().IsMatch(value) ? new System.ComponentModel.DataAnnotations.ValidationResult("Command name must contain only letters, numbers, spaces, hyphens, and underscores") :
+		System.ComponentModel.DataAnnotations.ValidationResult.Success!;
 }

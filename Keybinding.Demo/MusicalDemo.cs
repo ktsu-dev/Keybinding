@@ -2,7 +2,7 @@
 // All rights reserved.
 // Licensed under the MIT license.
 
-namespace ktsu.Keybinding.CLI;
+namespace ktsu.Keybinding.Demo;
 
 using ktsu.Keybinding.Core.Models;
 using Spectre.Console;
@@ -22,9 +22,9 @@ public static class MusicalDemo
 		AnsiConsole.WriteLine();
 
 		// �� Notes - Individual keys (with semantic typing)
-		NoteName escapeKey = (NoteName)"ESCAPE";
-		NoteName enterKey = (NoteName)"ENTER";
-		NoteName rKey = (NoteName)"R";
+		NoteName escapeKey = NoteName.Create("ESCAPE");
+		NoteName enterKey = NoteName.Create("ENTER");
+		NoteName rKey = NoteName.Create("R");
 
 		Note escapeNote = new(escapeKey);
 		Note enterNote = new(enterKey);
@@ -41,16 +41,16 @@ public static class MusicalDemo
 		Phrase uncommentPhrase = Phrase.FromStrings("Ctrl+K", "Ctrl+U");
 
 		// 📝 Commands with semantic typing
-		CommandId copyCommandId = (CommandId)"edit.copy";
-		CommandName copyCommandName = (CommandName)"Copy to Clipboard";
-		CommandDescription copyDescription = (CommandDescription)"Copies the selected text to the clipboard";
-		CommandCategory editCategory = (CommandCategory)"Edit";
+		CommandId copyCommandId = CommandId.Create("edit.copy");
+		CommandName copyCommandName = CommandName.Create("Copy to Clipboard");
+		CommandDescription copyDescription = CommandDescription.Create("Copies the selected text to the clipboard");
+		CommandCategory editCategory = CommandCategory.Create("Edit");
 
 		Command copyCommand = new(copyCommandId, copyCommandName, copyDescription, editCategory);
 
 		// 🎹 Profiles - Collections of phrase-to-command mappings
-		ProfileId vsProfileId = (ProfileId)"visual-studio";
-		ProfileName vsProfileName = (ProfileName)"Visual Studio";
+		ProfileId vsProfileId = ProfileId.Create("visual-studio");
+		ProfileName vsProfileName = ProfileName.Create("Visual Studio");
 
 		// Display the musical metaphor
 		AnsiConsole.WriteLine($"🎵 Notes (individual keys):");
