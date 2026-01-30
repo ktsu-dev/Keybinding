@@ -45,7 +45,7 @@ public class ValidationHelperTests
 			() => ValidationHelper.ThrowIfNullOrWhiteSpace(emptyString, nameof(emptyString)));
 
 		Assert.AreEqual(nameof(emptyString), exception.ParamName);
-		Assert.IsTrue(exception.Message.Contains("cannot be null or whitespace"));
+		Assert.IsTrue(exception.Message.Contains("cannot be null or whitespace"), "Exception message should indicate null or whitespace error");
 	}
 
 	[TestMethod]
@@ -72,7 +72,7 @@ public class ValidationHelperTests
 		ArgumentException exception = Assert.ThrowsExactly<ArgumentException>(
 			() => ValidationHelper.ThrowIfNullOrWhiteSpace(emptyString, nameof(emptyString), customMessage));
 
-		Assert.IsTrue(exception.Message.Contains(customMessage));
+		Assert.IsTrue(exception.Message.Contains(customMessage), "Exception message should contain the custom message");
 	}
 
 	[TestMethod]
@@ -137,7 +137,7 @@ public class ValidationHelperTests
 				("valid", "param1", null),
 				("", "param2", customMessage)));
 
-		Assert.IsTrue(exception.Message.Contains(customMessage));
+		Assert.IsTrue(exception.Message.Contains(customMessage), "Exception message should contain the custom message");
 		Assert.AreEqual("param2", exception.ParamName);
 	}
 

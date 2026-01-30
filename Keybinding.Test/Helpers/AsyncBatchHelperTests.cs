@@ -44,7 +44,7 @@ public class AsyncBatchHelperTests
 		}).ConfigureAwait(false);
 
 		// Assert
-		Assert.IsFalse(operationCalled);
+		Assert.IsFalse(operationCalled, "Operation should not be called for empty collection");
 	}
 
 	[TestMethod]

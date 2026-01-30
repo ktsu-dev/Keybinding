@@ -37,7 +37,7 @@ public class KeybindingManagerTests
 		await manager.InitializeAsync().ConfigureAwait(false);
 
 		// Assert
-		Assert.IsTrue(Directory.Exists(_testDataDirectory));
+		Assert.IsTrue(Directory.Exists(_testDataDirectory), "Data directory should exist after initialization");
 	}
 
 	[TestMethod]
@@ -78,8 +78,8 @@ public class KeybindingManagerTests
 
 		// Assert
 		Assert.AreEqual(2, registeredCount);
-		Assert.IsTrue(manager.Commands.IsCommandRegistered("copy"));
-		Assert.IsTrue(manager.Commands.IsCommandRegistered("paste"));
+		Assert.IsTrue(manager.Commands.IsCommandRegistered("copy"), "The 'copy' command should be registered");
+		Assert.IsTrue(manager.Commands.IsCommandRegistered("paste"), "The 'paste' command should be registered");
 	}
 
 	[TestMethod]
