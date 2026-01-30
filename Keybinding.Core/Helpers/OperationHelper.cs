@@ -22,8 +22,8 @@ internal static class OperationHelper
 		Func<T, bool> operation,
 		bool shouldContinueOnError = true)
 	{
-		ArgumentNullException.ThrowIfNull(items);
-		ArgumentNullException.ThrowIfNull(operation);
+		Ensure.NotNull(items);
+		Ensure.NotNull(operation);
 
 		int successCount = 0;
 
@@ -63,8 +63,8 @@ internal static class OperationHelper
 		Func<TKey, TValue, bool> operation,
 		bool shouldContinueOnError = true)
 	{
-		ArgumentNullException.ThrowIfNull(items);
-		ArgumentNullException.ThrowIfNull(operation);
+		Ensure.NotNull(items);
+		Ensure.NotNull(operation);
 
 		int successCount = 0;
 

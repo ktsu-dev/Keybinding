@@ -3,8 +3,8 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core.Services;
+
 using System.Collections.Concurrent;
-using System.Threading;
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Models;
 
@@ -14,13 +14,17 @@ using ktsu.Keybinding.Core.Models;
 public sealed class ProfileManager : IProfileManager
 {
 	private readonly ConcurrentDictionary<string, Profile> _profiles = new();
+#if NET9_0_OR_GREATER
 	private readonly Lock _lock = new();
+#else
+	private readonly object _lock = new();
+#endif
 	private volatile string? _activeProfileId;
 
 	/// <inheritdoc/>
 	public bool CreateProfile(Profile profile)
 	{
-		ArgumentNullException.ThrowIfNull(profile);
+		Ensure.NotNull(profile);
 
 		return _profiles.TryAdd(profile.Id, profile);
 	}

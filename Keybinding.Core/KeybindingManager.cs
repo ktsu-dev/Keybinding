@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core;
+
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Helpers;
 using ktsu.Keybinding.Core.Models;
@@ -156,7 +157,7 @@ public sealed class KeybindingManager : IDisposable
 	public int RegisterCommands(IEnumerable<Command> commands)
 	{
 		DisposalHelper.ThrowIfDisposed(_disposed, this);
-		ArgumentNullException.ThrowIfNull(commands);
+		Ensure.NotNull(commands);
 
 		return OperationHelper.ExecuteWithCount(commands, Commands.RegisterCommand, shouldContinueOnError: false);
 	}
@@ -169,7 +170,7 @@ public sealed class KeybindingManager : IDisposable
 	public int SetChords(IReadOnlyDictionary<string, Chord> chords)
 	{
 		DisposalHelper.ThrowIfDisposed(_disposed, this);
-		ArgumentNullException.ThrowIfNull(chords);
+		Ensure.NotNull(chords);
 
 		Profile activeProfile = Profiles.GetActiveProfile() ?? throw new InvalidOperationException("No active profile is set");
 

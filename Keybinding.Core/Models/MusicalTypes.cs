@@ -19,7 +19,7 @@ public sealed class Note : IEquatable<Note>
 	[JsonConstructor]
 	public Note(NoteName key)
 	{
-		ArgumentNullException.ThrowIfNull(key);
+		Ensure.NotNull(key);
 		Key = key;
 	}
 
@@ -61,7 +61,7 @@ public sealed class Note : IEquatable<Note>
 	/// <summary>
 	/// Equality operator
 	/// </summary>
-	public static bool operator ==(Note? left, Note? right) => left?.Equals(right) ?? right is null;
+	public static bool operator ==(Note? left, Note? right) => (left?.Equals(right)) ?? (right is null);
 
 	/// <summary>
 	/// Inequality operator
@@ -97,7 +97,7 @@ public sealed class Chord : IEquatable<Chord>
 	/// <exception cref="ArgumentException">Thrown when notes collection is null or empty</exception>
 	public Chord(IEnumerable<Note> notes)
 	{
-		ArgumentNullException.ThrowIfNull(notes);
+		Ensure.NotNull(notes);
 		_notes = [.. notes.Distinct().OrderBy(n => n.Key.ToString())];
 
 		if (_notes.Count == 0)
@@ -113,7 +113,7 @@ public sealed class Chord : IEquatable<Chord>
 	/// <exception cref="ArgumentNullException">Thrown when note is null</exception>
 	public Chord(Note note)
 	{
-		ArgumentNullException.ThrowIfNull(note);
+		Ensure.NotNull(note);
 		_notes = [note];
 	}
 
@@ -230,7 +230,7 @@ public sealed class Chord : IEquatable<Chord>
 	/// <summary>
 	/// Equality operator
 	/// </summary>
-	public static bool operator ==(Chord? left, Chord? right) => left?.Equals(right) ?? right is null;
+	public static bool operator ==(Chord? left, Chord? right) => (left?.Equals(right)) ?? (right is null);
 
 	/// <summary>
 	/// Inequality operator
@@ -305,7 +305,7 @@ public sealed class Phrase : IEquatable<Phrase>
 	/// <exception cref="ArgumentException">Thrown when sequence is null or empty</exception>
 	public Phrase(IEnumerable<Chord> sequence)
 	{
-		ArgumentNullException.ThrowIfNull(sequence);
+		Ensure.NotNull(sequence);
 		_sequence = [.. sequence];
 
 		if (_sequence.Count == 0)
@@ -364,7 +364,7 @@ public sealed class Phrase : IEquatable<Phrase>
 	/// <summary>
 	/// Equality operator
 	/// </summary>
-	public static bool operator ==(Phrase? left, Phrase? right) => left?.Equals(right) ?? right is null;
+	public static bool operator ==(Phrase? left, Phrase? right) => (left?.Equals(right)) ?? (right is null);
 
 	/// <summary>
 	/// Inequality operator

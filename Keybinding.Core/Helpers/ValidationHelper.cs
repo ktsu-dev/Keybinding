@@ -19,7 +19,7 @@ internal static class ValidationHelper
 	/// <exception cref="ArgumentException">Thrown when the string is whitespace</exception>
 	public static void ThrowIfNullOrWhiteSpace(string? value, string parameterName, string? customMessage = null)
 	{
-		ArgumentNullException.ThrowIfNull(value, parameterName);
+		Ensure.NotNull(value, parameterName);
 
 		if (string.IsNullOrWhiteSpace(value))
 		{

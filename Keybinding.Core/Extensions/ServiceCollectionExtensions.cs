@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core.Extensions;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ktsu.Keybinding.Core.Contracts;

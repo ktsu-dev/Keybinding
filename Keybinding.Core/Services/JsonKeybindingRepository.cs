@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core.Services;
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ktsu.Keybinding.Core.Contracts;
@@ -43,7 +44,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	/// <inheritdoc/>
 	public async Task SaveProfileAsync(Profile profile)
 	{
-		ArgumentNullException.ThrowIfNull(profile);
+		Ensure.NotNull(profile);
 
 		await EnsureInitializedAsync().ConfigureAwait(false);
 
@@ -153,7 +154,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	/// <inheritdoc/>
 	public async Task SaveCommandsAsync(IEnumerable<Command> commands)
 	{
-		ArgumentNullException.ThrowIfNull(commands);
+		Ensure.NotNull(commands);
 
 		await EnsureInitializedAsync().ConfigureAwait(false);
 

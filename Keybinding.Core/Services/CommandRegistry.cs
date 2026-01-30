@@ -3,9 +3,9 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core.Services;
+
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Threading;
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Models;
 
@@ -15,12 +15,16 @@ using ktsu.Keybinding.Core.Models;
 public sealed class CommandRegistry : ICommandRegistry
 {
 	private readonly ConcurrentDictionary<string, Command> _commands = new();
+#if NET9_0_OR_GREATER
 	private readonly Lock _lock = new();
+#else
+	private readonly object _lock = new();
+#endif
 
 	/// <inheritdoc/>
 	public bool RegisterCommand(Command command)
 	{
-		ArgumentNullException.ThrowIfNull(command);
+		Ensure.NotNull(command);
 
 		return _commands.TryAdd(command.Id, command);
 	}

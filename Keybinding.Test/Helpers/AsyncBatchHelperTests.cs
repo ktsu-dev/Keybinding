@@ -25,7 +25,7 @@ public class AsyncBatchHelperTests
 		}).ConfigureAwait(false);
 
 		// Assert
-		Assert.AreEqual(5, processedItems.Count);
+		Assert.HasCount(5, processedItems);
 		CollectionAssert.AreEqual(new List<int> { 2, 4, 6, 8, 10 }, processedItems);
 	}
 
@@ -86,7 +86,7 @@ public class AsyncBatchHelperTests
 		}).ConfigureAwait(false);
 
 		// Assert
-		Assert.AreEqual(4, results.Count);
+		Assert.HasCount(4, results);
 		string[] expectedResults = ["Item_1", "Item_2", "Item_3", "Item_4"];
 		CollectionAssert.AreEqual(expectedResults, results.ToArray());
 	}
@@ -105,7 +105,7 @@ public class AsyncBatchHelperTests
 		}).ConfigureAwait(false);
 
 		// Assert
-		Assert.AreEqual(0, results.Count);
+		Assert.IsEmpty(results);
 	}
 
 	[TestMethod]
@@ -124,7 +124,7 @@ public class AsyncBatchHelperTests
 
 		// Assert
 		Assert.AreEqual(3, successCount);
-		Assert.AreEqual(3, savedItems.Count);
+		Assert.HasCount(3, savedItems);
 		CollectionAssert.AreEqual(items, savedItems);
 	}
 
@@ -148,7 +148,7 @@ public class AsyncBatchHelperTests
 
 		// Assert
 		Assert.AreEqual(4, successCount); // 4 out of 5 succeeded
-		Assert.AreEqual(4, savedItems.Count);
+		Assert.HasCount(4, savedItems);
 		CollectionAssert.AreEqual(new List<int> { 1, 2, 4, 5 }, savedItems);
 	}
 

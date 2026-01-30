@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Test;
+
 using ktsu.Keybinding.Core;
 using ktsu.Keybinding.Core.Models;
 

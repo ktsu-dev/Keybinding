@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core.Services;
+
 using ktsu.Keybinding.Core.Contracts;
 using ktsu.Keybinding.Core.Models;
 
@@ -70,7 +71,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 			return false;
 		}
 
-		ArgumentNullException.ThrowIfNull(chord);
+		Ensure.NotNull(chord);
 
 		Profile? profile = _profileManager.GetProfile(profileId);
 		if (profile is null)
@@ -227,7 +228,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public string? ExecuteChord(string profileId, Chord chord)
 	{
-		ArgumentNullException.ThrowIfNull(chord);
+		Ensure.NotNull(chord);
 
 		string? commandId = FindCommandByChord(profileId, chord);
 		if (commandId is not null && _commandRegistry.IsCommandRegistered(commandId))
@@ -269,7 +270,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public string? FindCommandByChord(string profileId, Chord chord)
 	{
-		ArgumentNullException.ThrowIfNull(chord);
+		Ensure.NotNull(chord);
 
 		if (string.IsNullOrWhiteSpace(profileId))
 		{

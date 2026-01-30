@@ -70,7 +70,7 @@ public sealed class Profile : IEquatable<Profile>
 			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
 		}
 
-		ArgumentNullException.ThrowIfNull(chord);
+		Ensure.NotNull(chord);
 
 		Chords[commandId.Trim()] = chord;
 	}
@@ -152,7 +152,7 @@ public sealed class Profile : IEquatable<Profile>
 	/// Equality operator
 	/// </summary>
 	public static bool operator ==(Profile? left, Profile? right) =>
-		left?.Equals(right) ?? right is null;
+		(left?.Equals(right)) ?? (right is null);
 
 	/// <summary>
 	/// Inequality operator

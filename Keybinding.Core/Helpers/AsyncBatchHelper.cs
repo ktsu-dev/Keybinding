@@ -18,8 +18,8 @@ internal static class AsyncBatchHelper
 	/// <returns>Task representing the completion of all operations</returns>
 	public static async Task ForEachAsync<T>(IEnumerable<T> items, Func<T, Task> operation)
 	{
-		ArgumentNullException.ThrowIfNull(items);
-		ArgumentNullException.ThrowIfNull(operation);
+		Ensure.NotNull(items);
+		Ensure.NotNull(operation);
 
 		foreach (T item in items)
 		{
@@ -39,8 +39,8 @@ internal static class AsyncBatchHelper
 		IEnumerable<TInput> items,
 		Func<TInput, Task<TOutput>> operation)
 	{
-		ArgumentNullException.ThrowIfNull(items);
-		ArgumentNullException.ThrowIfNull(operation);
+		Ensure.NotNull(items);
+		Ensure.NotNull(operation);
 
 		List<TOutput> results = [];
 
@@ -66,8 +66,8 @@ internal static class AsyncBatchHelper
 		Func<T, Task> saveOperation,
 		string operationName = "save")
 	{
-		ArgumentNullException.ThrowIfNull(items);
-		ArgumentNullException.ThrowIfNull(saveOperation);
+		Ensure.NotNull(items);
+		Ensure.NotNull(saveOperation);
 
 		int successCount = 0;
 

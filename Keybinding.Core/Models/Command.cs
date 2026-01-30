@@ -3,6 +3,7 @@
 // Licensed under the MIT license.
 
 namespace ktsu.Keybinding.Core.Models;
+
 /// <summary>
 /// Represents a command that can be executed via keybindings
 /// </summary>
@@ -18,8 +19,8 @@ public sealed class Command : IEquatable<Command>
 	/// <exception cref="ArgumentException">Thrown when id or name is null or whitespace</exception>
 	public Command(CommandId id, CommandName name, CommandDescription? description = null, CommandCategory? category = null)
 	{
-		ArgumentNullException.ThrowIfNull(id);
-		ArgumentNullException.ThrowIfNull(name);
+		Ensure.NotNull(id);
+		Ensure.NotNull(name);
 
 		Id = id;
 		Name = name;
@@ -94,7 +95,7 @@ public sealed class Command : IEquatable<Command>
 	/// Equality operator
 	/// </summary>
 	public static bool operator ==(Command? left, Command? right) =>
-		left?.Equals(right) ?? right is null;
+		(left?.Equals(right)) ?? (right is null);
 
 	/// <summary>
 	/// Inequality operator
