@@ -38,9 +38,9 @@ public sealed class KeybindingManager : IDisposable
 		IProfileManager profileManager,
 		IKeybindingRepository repository)
 	{
-		Commands = commandRegistry ?? throw new ArgumentNullException(nameof(commandRegistry));
-		Profiles = profileManager ?? throw new ArgumentNullException(nameof(profileManager));
-		Repository = repository ?? throw new ArgumentNullException(nameof(repository));
+		Commands = Ensure.NotNull(commandRegistry);
+		Profiles = Ensure.NotNull(profileManager);
+		Repository = Ensure.NotNull(repository);
 
 		Keybindings = new KeybindingService(Commands, Profiles);
 	}

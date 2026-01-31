@@ -38,9 +38,9 @@ public sealed class KeybindingConfiguration : IKeybindingConfiguration
 		bool autoSave = true,
 		int autoSaveIntervalMilliseconds = 5000)
 	{
-		DataDirectory = dataDirectory ?? throw new ArgumentNullException(nameof(dataDirectory));
-		DefaultProfileId = defaultProfileId ?? throw new ArgumentNullException(nameof(defaultProfileId));
-		DefaultProfileName = defaultProfileName ?? throw new ArgumentNullException(nameof(defaultProfileName));
+		DataDirectory = Ensure.NotNull(dataDirectory);
+		DefaultProfileId = Ensure.NotNull(defaultProfileId);
+		DefaultProfileName = Ensure.NotNull(defaultProfileName);
 		AutoSave = autoSave;
 		AutoSaveIntervalMilliseconds = Math.Max(0, autoSaveIntervalMilliseconds);
 	}

@@ -24,7 +24,7 @@ public sealed class KeybindingManagerFactory : IKeybindingManagerFactory
 	/// </summary>
 	/// <param name="serviceProvider">The service provider for resolving dependencies</param>
 	public KeybindingManagerFactory(IServiceProvider serviceProvider) =>
-		_serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+		_serviceProvider = Ensure.NotNull(serviceProvider);
 
 	/// <inheritdoc/>
 	public KeybindingManager CreateManager()

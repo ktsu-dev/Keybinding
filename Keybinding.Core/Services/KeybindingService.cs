@@ -17,8 +17,8 @@ using ktsu.Keybinding.Core.Models;
 /// <param name="profileManager">The profile manager instance</param>
 public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfileManager profileManager) : IKeybindingService
 {
-	private readonly ICommandRegistry _commandRegistry = commandRegistry ?? throw new ArgumentNullException(nameof(commandRegistry));
-	private readonly IProfileManager _profileManager = profileManager ?? throw new ArgumentNullException(nameof(profileManager));
+	private readonly ICommandRegistry _commandRegistry = Ensure.NotNull(commandRegistry);
+	private readonly IProfileManager _profileManager = Ensure.NotNull(profileManager);
 
 	/// <inheritdoc/>
 	public Profile? ActiveProfile => _profileManager.GetActiveProfile();
