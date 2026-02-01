@@ -1,3 +1,6 @@
-## v1.0.6
+## v1.0.7-pre.1 (prerelease)
 
-No significant changes detected since v1.0.6.
+Changes since v1.0.6:
+
+- Merge remote-tracking branch 'refs/remotes/origin/main' ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync global.json ([@ktsu[bot]](https://github.com/ktsu[bot]))
