@@ -6,6 +6,14 @@ Changes since v1.0.7-pre.1:
 - Sync scripts\PSBuild.psm1 ([@ktsu[bot]](https://github.com/ktsu[bot]))
 - Sync scripts\PSBuild.psm1 ([@ktsu[bot]](https://github.com/ktsu[bot]))
 - Merge remote-tracking branch 'refs/remotes/origin/main' ([@ktsu[bot]](https://github.com/ktsu[bot]))
+## v1.0.7-pre.2 (prerelease)
+
+Changes since v1.0.7-pre.1:
+
+- Sync global.json ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync scripts\PSBuild.psm1 ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync scripts\PSBuild.psm1 ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Merge remote-tracking branch 'refs/remotes/origin/main' ([@ktsu[bot]](https://github.com/ktsu[bot]))
 ## v1.0.7-pre.1 (prerelease)
 
 Changes since v1.0.6:
