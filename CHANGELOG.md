@@ -1,3 +1,11 @@
+## v1.0.11 (patch)
+
+Changes since v1.0.10:
+
+- Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump Spectre.Console from 0.56.0 to 0.57.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
 ## v1.0.10 (patch)
 
 Changes since v1.0.9:
@@ -26,9 +34,7 @@ Changes since v1.0.9:
 
 ## v1.0.10-pre.1 (prerelease)
 
-Changes since v1.0.9:
-
-- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
+No significant changes detected since v1.0.10.
 
 ## v1.0.9 (patch)
 
