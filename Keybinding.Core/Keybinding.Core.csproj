@@ -9,8 +9,7 @@
   <ItemGroup>
     <PackageReference Include="ktsu.Semantics.Strings" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.SourceLink.AzureRepos.Git" PrivateAssets="All" />
     <PackageReference Include="Polyfill" PrivateAssets="All" />
-  </ItemGroup>
+  
+    <PackageReference Include="System.Text.Json" /></ItemGroup>
 </Project>
