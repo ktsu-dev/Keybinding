@@ -1,6 +1,6 @@
-## v1.0.17 (patch)
+## v1.0.18 (patch)
 
-Changes since v1.0.16:
+Changes since v1.0.17:
 
-- Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump Spectre.Console from 0.57.1 to 0.57.2 ([@dependabot[bot]](https://github.com/dependabot[bot]))
 
