@@ -4,6 +4,7 @@ Changes since v1.0.20:
 
 - Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
 - Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
 - Bump MSTest.Sdk from 4.3.2 to 4.3.3 ([@dependabot[bot]](https://github.com/dependabot[bot]))
 - Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
 - Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
