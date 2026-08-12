@@ -1,6 +1,6 @@
-## v1.0.23 (patch)
+## v1.0.24 (patch)
 
-Changes since v1.0.22:
+Changes since v1.0.23:
 
-- Sync global.json ([@KtsuTools](https://github.com/KtsuTools))
+- Sync .editorconfig ([@KtsuTools](https://github.com/KtsuTools))
 
