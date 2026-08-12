@@ -1,6 +1,6 @@
-## v1.0.24 (patch)
+## v1.0.25-pre.1 (prerelease)
 
-Changes since v1.0.23:
+Changes since v1.0.24:
 
-- Sync .editorconfig ([@KtsuTools](https://github.com/KtsuTools))
+- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 
