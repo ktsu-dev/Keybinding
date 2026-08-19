@@ -8,7 +8,7 @@ A comprehensive .NET library for managing keyboard shortcuts and keybindings wit
 [![NuGet Downloads](https://img.shields.io/nuget/dt/ktsu.Keybinding.Core?label=Downloads&logo=nuget)](https://nuget.org/packages/ktsu.Keybinding.Core)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ktsu-dev/Keybinding?label=Commits&logo=github)](https://github.com/ktsu-dev/Keybinding/commits/main)
 [![GitHub contributors](https://img.shields.io/github/contributors/ktsu-dev/Keybinding?label=Contributors&logo=github)](https://github.com/ktsu-dev/Keybinding/graphs/contributors)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ktsu-dev/Keybinding/dotnet.yml?label=Build&logo=github)](https://github.com/ktsu-dev/Keybinding/actions)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ktsu-dev/Keybinding/dotnet.yml?branch=main&label=Build&logo=github)](https://github.com/ktsu-dev/Keybinding/actions)
 
 ## Features
 
