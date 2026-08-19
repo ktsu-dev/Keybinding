@@ -2,6 +2,14 @@
 
 A comprehensive .NET library for managing keyboard shortcuts and keybindings with support for multiple profiles, command registration, and persistent storage.
 
+[![License](https://img.shields.io/github/license/ktsu-dev/Keybinding.svg?label=License&logo=nuget)](LICENSE.md)
+[![NuGet Version](https://img.shields.io/nuget/v/ktsu.Keybinding.Core?label=Stable&logo=nuget)](https://nuget.org/packages/ktsu.Keybinding.Core)
+[![NuGet Version](https://img.shields.io/nuget/vpre/ktsu.Keybinding.Core?label=Latest&logo=nuget)](https://nuget.org/packages/ktsu.Keybinding.Core)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/ktsu.Keybinding.Core?label=Downloads&logo=nuget)](https://nuget.org/packages/ktsu.Keybinding.Core)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ktsu-dev/Keybinding?label=Commits&logo=github)](https://github.com/ktsu-dev/Keybinding/commits/main)
+[![GitHub contributors](https://img.shields.io/github/contributors/ktsu-dev/Keybinding?label=Contributors&logo=github)](https://github.com/ktsu-dev/Keybinding/graphs/contributors)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ktsu-dev/Keybinding/dotnet.yml?label=Build&logo=github)](https://github.com/ktsu-dev/Keybinding/actions)
+
 ## Features
 
 -   **Multi-Profile Support**: Create and manage multiple keybinding profiles
