@@ -1,6 +1,6 @@
-## v1.0.50 (patch)
+## v1.0.51 (patch)
 
-Changes since v1.0.49:
+Changes since v1.0.50:
 
-- Gate Dependabot auto-merge on CI actually being green ([@Claude](https://github.com/Claude))
+- Add dotnet to TAGS.md ([@matt-edmondson](https://github.com/matt-edmondson))
 
