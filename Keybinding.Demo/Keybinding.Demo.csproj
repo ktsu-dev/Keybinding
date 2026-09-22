@@ -16,6 +16,6 @@
     <PackageReference Include="ktsu.Semantics.Strings" /></ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Keybinding.Core\Keybinding.Core.csproj" />
+    <ProjectReference Include="..\Keybinding\Keybinding.csproj" />
   </ItemGroup>
 </Project>

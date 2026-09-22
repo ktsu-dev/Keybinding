@@ -149,7 +149,7 @@ data-directory/
 ## Project Structure
 
 ```
-Keybinding.Core/              # Main library
+Keybinding/              # Main library
 ├── Contracts/                # Interfaces
 ├── Models/                   # Domain models and musical types
 ├── Services/                 # Service implementations
