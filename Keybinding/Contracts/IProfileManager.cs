@@ -85,7 +85,8 @@ public interface IProfileManager
 	/// </summary>
 	/// <param name="profileId">The ID of the profile to rename</param>
 	/// <param name="newName">The new name for the profile</param>
-	/// <param name="newDescription">Optional new description for the profile</param>
+	/// <param name="newDescription">Optional new description for the profile; when null, the current description is kept</param>
 	/// <returns>True if the profile was renamed, false if it doesn't exist</returns>
+	/// <remarks>The profile is renamed in place, so references already held to it remain valid.</remarks>
 	public bool RenameProfile(string profileId, string newName, string? newDescription = null);
 }

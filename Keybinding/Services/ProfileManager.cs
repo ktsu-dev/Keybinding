@@ -182,23 +182,21 @@ public sealed class ProfileManager : IProfileManager
 			throw new ArgumentException("New name cannot be null or whitespace", nameof(newName));
 		}
 
-		Profile? profile = GetProfile(profileId);
-		if (profile is null)
+		lock (_lock)
 		{
-			return false;
+			Profile? profile = GetProfile(profileId);
+			if (profile is null)
+			{
+				return false;
+			}
+
+			// Rename the stored instance rather than swapping in a copy. A copy would detach every
+			// reference a caller already holds (from CreateProfile, GetActiveProfile and the like), so
+			// chords set through it would never reach GetProfile or SaveAsync. It would also leave a
+			// window between removing and re-adding in which the profile did not exist at all.
+			// A description that is not passed is kept, as the optional parameter implies.
+			profile.Rename(newName, newDescription ?? profile.Description);
+			return true;
 		}
-
-		// Create a new profile with the same ID but new name/description
-		Profile updatedProfile = new(profile.Id, newName.Trim(), newDescription);
-
-		// Copy all chords
-		foreach (KeyValuePair<string, Chord> kvp in profile.Chords)
-		{
-			updatedProfile.SetChord(kvp.Key, kvp.Value);
-		}
-
-		// Replace the profile (this will preserve the same ID)
-		_profiles.TryRemove(profile.Id, out _);
-		return _profiles.TryAdd(profile.Id, updatedProfile);
 	}
 }

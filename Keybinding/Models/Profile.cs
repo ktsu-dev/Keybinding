@@ -42,12 +42,30 @@ public sealed class Profile : IEquatable<Profile>
 	/// <summary>
 	/// Gets the profile name
 	/// </summary>
-	public string Name { get; }
+	public string Name { get; private set; }
 
 	/// <summary>
 	/// Gets the profile description
 	/// </summary>
-	public string? Description { get; }
+	public string? Description { get; private set; }
+
+	/// <summary>
+	/// Renames this profile in place, so every reference already held to it stays attached to the
+	/// manager that stores it.
+	/// </summary>
+	/// <param name="name">The new profile name</param>
+	/// <param name="description">The new profile description</param>
+	/// <exception cref="ArgumentException">Thrown when name is null or whitespace</exception>
+	internal void Rename(string name, string? description)
+	{
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			throw new ArgumentException("Profile name cannot be null or whitespace", nameof(name));
+		}
+
+		Name = name.Trim();
+		Description = description?.Trim();
+	}
 
 	/// <summary>
 	/// Gets the chord bindings for this profile (command ID to chord mapping)
