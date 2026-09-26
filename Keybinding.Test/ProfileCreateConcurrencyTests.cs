@@ -11,6 +11,8 @@ public class ProfileCreateConcurrencyTests
 	private const int ThreadCount = 8;
 	private const int Trials = 500;
 
+	public TestContext TestContext { get; set; } = null!;
+
 	[TestMethod]
 	public void CreateProfile_CalledConcurrentlyForOneId_ReturnsTheStoredProfileToEveryCaller()
 	{
@@ -22,7 +24,7 @@ public class ProfileCreateConcurrencyTests
 
 			Thread[] threads = [.. Enumerable.Range(0, ThreadCount).Select(i => new Thread(() =>
 			{
-				barrier.SignalAndWait();
+				barrier.SignalAndWait(TestContext.CancellationToken);
 				returned[i] = profiles.CreateProfile("p", "P");
 			}))];
 

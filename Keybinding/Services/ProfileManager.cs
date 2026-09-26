@@ -45,7 +45,7 @@ public sealed class ProfileManager : IProfileManager
 		// Return the existing profile, or store a new one, in one atomic step: a separate lookup
 		// and add let two concurrent callers each return their own Profile while only one of
 		// them was stored (ktsu-dev/Keybinding#112)
-		return _profiles.GetOrAdd(normalizedId, _ => new Profile(normalizedId, name.Trim(), description));
+		return _profiles.GetOrAdd(normalizedId, key => new Profile(key, name.Trim(), description));
 	}
 
 	/// <inheritdoc/>
