@@ -262,7 +262,7 @@ public sealed class Chord : IEquatable<Chord>
 			throw new ArgumentException("Value cannot be null or whitespace", nameof(value));
 		}
 
-		string[] parts = [.. value.Split('+', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim())];
+		string[] parts = KeyStringTokenizer.SplitChord(value);
 
 		if (parts.Length == 0)
 		{
@@ -396,8 +396,7 @@ public sealed class Phrase : IEquatable<Phrase>
 			throw new ArgumentException("Value cannot be null or whitespace", nameof(value));
 		}
 
-		string[] chordStrings = [.. value.Split(',', StringSplitOptions.RemoveEmptyEntries)
-			.Select(s => s.Trim())];
+		string[] chordStrings = KeyStringTokenizer.SplitPhrase(value);
 
 		return chordStrings.Length == 0
 			? throw new ArgumentException("Invalid phrase format", nameof(value))
