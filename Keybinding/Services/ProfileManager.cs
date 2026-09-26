@@ -42,16 +42,10 @@ public sealed class ProfileManager : IProfileManager
 
 		string normalizedId = id.Trim();
 
-		// Return existing profile if it already exists
-		if (_profiles.TryGetValue(normalizedId, out Profile? existingProfile))
-		{
-			return existingProfile;
-		}
-
-		// Create new profile
-		Profile newProfile = new(normalizedId, name.Trim(), description);
-		_profiles.TryAdd(normalizedId, newProfile);
-		return newProfile;
+		// Return the existing profile, or store a new one, in one atomic step: a separate lookup
+		// and add let two concurrent callers each return their own Profile while only one of
+		// them was stored (ktsu-dev/Keybinding#112)
+		return _profiles.GetOrAdd(normalizedId, key => new Profile(key, name.Trim(), description));
 	}
 
 	/// <inheritdoc/>
