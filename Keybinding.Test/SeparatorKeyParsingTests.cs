@@ -22,7 +22,7 @@ public class SeparatorKeyParsingTests
 
 		Assert.AreNotEqual(Chord.Parse("Ctrl"), chord);
 		Assert.HasCount(2, chord.Notes);
-		Assert.IsTrue(chord.Notes.Any(n => n.Key.ToString() == "+"));
+		Assert.Contains(n => n.Key.ToString() == "+", chord.Notes);
 	}
 
 	[TestMethod]
@@ -31,7 +31,7 @@ public class SeparatorKeyParsingTests
 		Chord chord = Chord.Parse("Ctrl+,");
 
 		Assert.HasCount(2, chord.Notes);
-		Assert.IsTrue(chord.Notes.Any(n => n.Key.ToString() == ","));
+		Assert.Contains(n => n.Key.ToString() == ",", chord.Notes);
 	}
 
 	[TestMethod]

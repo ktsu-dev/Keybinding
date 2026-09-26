@@ -42,36 +42,26 @@ internal static class KeyStringTokenizer
 		{
 			char c = value[i];
 
+			if (separators.Contains(c) && !expectKey)
+			{
+				// A separator after a key ends the note, and ends the token when it is the one being split on
+				if (c == splitOn)
+				{
+					tokens.Add(current.ToString().Trim());
+					current.Clear();
+				}
+				else
+				{
+					current.Append(c);
+				}
+
+				expectKey = true;
+				continue;
+			}
+
 			if (separators.Contains(c))
 			{
-				if (!expectKey)
-				{
-					if (c == splitOn)
-					{
-						tokens.Add(current.ToString().Trim());
-						current.Clear();
-					}
-					else
-					{
-						current.Append(c);
-					}
-
-					expectKey = true;
-					continue;
-				}
-
-				// A separator where a key is expected is the key itself, but only when nothing else follows it
-				// before the next separator. Otherwise the input has an empty key, which must not be dropped.
-				int next = i + 1;
-				while (next < value.Length && char.IsWhiteSpace(value[next]))
-				{
-					next++;
-				}
-
-				if (next < value.Length && !separators.Contains(value[next]))
-				{
-					throw new ArgumentException($"Missing key before '{c}' at position {i} in \"{value}\"", nameof(value));
-				}
+				EnsureSeparatorIsKey(value, i, separators);
 			}
 
 			current.Append(c);
@@ -94,5 +84,23 @@ internal static class KeyStringTokenizer
 
 		tokens.Add(current.ToString().Trim());
 		return [.. tokens];
+	}
+
+	/// <summary>
+	/// A separator where a key is expected is the key itself, but only when nothing else follows it before the next
+	/// separator. Otherwise the input has an empty key, which must not be dropped.
+	/// </summary>
+	private static void EnsureSeparatorIsKey(string value, int index, string separators)
+	{
+		int next = index + 1;
+		while (next < value.Length && char.IsWhiteSpace(value[next]))
+		{
+			next++;
+		}
+
+		if (next < value.Length && !separators.Contains(value[next]))
+		{
+			throw new ArgumentException($"Missing key before '{value[index]}' at position {index} in \"{value}\"", nameof(value));
+		}
 	}
 }
