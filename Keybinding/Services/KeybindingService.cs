@@ -183,7 +183,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 		}
 
 		// Split by comma to get individual chord strings
-		string[] chordStrings = phraseString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+		string[] chordStrings = KeyStringTokenizer.SplitPhrase(phraseString);
 		List<Chord> chords = [];
 
 		foreach (string chordString in chordStrings)
@@ -204,7 +204,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 		}
 
 		// Split by + to get individual note strings
-		string[] noteStrings = chordString.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+		string[] noteStrings = KeyStringTokenizer.SplitChord(chordString);
 		List<Note> notes = [];
 
 		foreach (string noteString in noteStrings)
