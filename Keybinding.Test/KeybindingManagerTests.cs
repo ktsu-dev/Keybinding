@@ -135,6 +135,42 @@ public class KeybindingManagerTests
 	}
 
 	[TestMethod]
+	public async Task DeleteProfile_ThenSaveAndReload_ProfileStaysDeleted()
+	{
+		// Create two profiles and save them
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
+
+			manager.Profiles.CreateProfile("default", "Default");
+			manager.Profiles.CreateProfile("vim", "Vim");
+
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		// Delete one and save again
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
+
+			Assert.IsTrue(manager.Profiles.DeleteProfile("vim"));
+
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		// Reload and verify the deleted profile is gone
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
+
+			IReadOnlyCollection<Profile> profiles = manager.Profiles.GetAllProfiles();
+			Assert.HasCount(1, profiles);
+			Assert.AreEqual("default", profiles.Single().Id);
+			Assert.IsNull(manager.Profiles.GetProfile("vim"));
+		}
+	}
+
+	[TestMethod]
 	public async Task SaveAndLoadData_PersistsDataCorrectly()
 	{
 		// Arrange

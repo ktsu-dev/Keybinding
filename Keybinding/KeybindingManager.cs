@@ -107,8 +107,14 @@ public sealed class KeybindingManager : IDisposable
 		IReadOnlyCollection<Command> commands = Commands.GetAllCommands();
 		await Repository.SaveCommandsAsync(commands).ConfigureAwait(false);
 
-		// Save profiles using batch helper
+		// Remove stored profiles that were deleted in memory, so they do not come back on the next load
 		IReadOnlyCollection<Profile> profiles = Profiles.GetAllProfiles();
+		HashSet<string> profileIds = [.. profiles.Select(p => p.Id)];
+		IReadOnlyCollection<Profile> storedProfiles = await Repository.LoadAllProfilesAsync().ConfigureAwait(false);
+		IEnumerable<string> deletedProfileIds = storedProfiles.Select(p => p.Id).Where(id => !profileIds.Contains(id));
+		await AsyncBatchHelper.ForEachAsync(deletedProfileIds, Repository.DeleteProfileAsync).ConfigureAwait(false);
+
+		// Save profiles using batch helper
 		await AsyncBatchHelper.ForEachAsync(profiles, Repository.SaveProfileAsync).ConfigureAwait(false);
 
 		// Save active profile
