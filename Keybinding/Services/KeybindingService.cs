@@ -228,15 +228,22 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	{
 		Ensure.NotNull(chord);
 
-		string? commandId = FindCommandByChord(profileId, chord);
-		if (commandId is not null && _commandRegistry.IsCommandRegistered(commandId))
+		if (string.IsNullOrWhiteSpace(profileId))
 		{
-			// In a real implementation, this would trigger command execution
-			// For now, we just return the command ID that would be executed
-			return commandId;
+			return null;
 		}
 
-		return null;
+		// A chord can be bound to more than one command, and unregistering a command leaves its
+		// bindings in place, so skip bindings whose command is no longer registered rather than
+		// giving up on the first match.
+		Profile? profile = _profileManager.GetProfile(profileId);
+		string? commandId = profile?.Chords
+			.FirstOrDefault(kvp => kvp.Value.Equals(chord) && _commandRegistry.IsCommandRegistered(kvp.Key))
+			.Key;
+
+		// In a real implementation, this would trigger command execution
+		// For now, we just return the command ID that would be executed
+		return commandId;
 	}
 
 	/// <inheritdoc/>
