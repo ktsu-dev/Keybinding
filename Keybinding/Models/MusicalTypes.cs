@@ -18,7 +18,8 @@ public sealed class Note : IEquatable<Note>
 	public Note(NoteName key)
 	{
 		Ensure.NotNull(key);
-		Key = key;
+		string canonical = CanonicalizeKey(key.ToString());
+		Key = canonical == key.ToString() ? key : NoteName.Create(canonical);
 	}
 
 	/// <summary>
@@ -33,8 +34,21 @@ public sealed class Note : IEquatable<Note>
 			throw new ArgumentException("Key cannot be null or whitespace", nameof(key));
 		}
 
-		Key = NoteName.Create(key.Trim().ToUpperInvariant());
+		Key = NoteName.Create(CanonicalizeKey(key.Trim().ToUpperInvariant()));
 	}
+
+	/// <summary>
+	/// Maps a modifier alias to its canonical key name, so that every way of building a note
+	/// (parsing, constructing directly, or loading a stored profile) compares and hashes the same.
+	/// </summary>
+	/// <param name="key">An uppercase key name</param>
+	/// <returns>The canonical key name</returns>
+	private static string CanonicalizeKey(string key) => key switch
+	{
+		"CONTROL" => "CTRL",
+		"WIN" or "WINDOWS" or "CMD" or "COMMAND" => "META",
+		_ => key
+	};
 
 	/// <summary>
 	/// Gets the key that this note represents
@@ -274,15 +288,8 @@ public sealed class Chord : IEquatable<Chord>
 
 		foreach (string part in parts)
 		{
-			// Normalize modifier key names for consistency
-			string normalizedPart = part.ToUpperInvariant() switch
-			{
-				"CONTROL" => "CTRL",
-				"WIN" or "WINDOWS" or "CMD" or "COMMAND" => "META",
-				_ => part.ToUpperInvariant()
-			};
-
-			notes.Add(new Note(normalizedPart));
+			// The Note constructor normalizes modifier aliases such as "Control" and "Cmd"
+			notes.Add(new Note(part));
 		}
 
 		return new Chord(notes);
