@@ -18,7 +18,7 @@ public sealed class Note : IEquatable<Note>
 	public Note(NoteName key)
 	{
 		Ensure.NotNull(key);
-		string canonical = CanonicalizeKey(key.ToString());
+		string canonical = NormalizeKey(key.ToString());
 		Key = canonical == key.ToString() ? key : NoteName.Create(canonical);
 	}
 
@@ -34,8 +34,16 @@ public sealed class Note : IEquatable<Note>
 			throw new ArgumentException("Key cannot be null or whitespace", nameof(key));
 		}
 
-		Key = NoteName.Create(CanonicalizeKey(key.Trim().ToUpperInvariant()));
+		Key = NoteName.Create(NormalizeKey(key));
 	}
+
+	/// <summary>
+	/// Trims, uppercases and canonicalizes a key name. Both constructors go through this, so a note
+	/// compares and hashes the same however it was built.
+	/// </summary>
+	/// <param name="key">A key name in any case</param>
+	/// <returns>The canonical key name</returns>
+	private static string NormalizeKey(string key) => CanonicalizeKey(key.Trim().ToUpperInvariant());
 
 	/// <summary>
 	/// Maps a modifier alias to its canonical key name, so that every way of building a note

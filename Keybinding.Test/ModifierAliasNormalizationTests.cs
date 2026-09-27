@@ -55,6 +55,8 @@ public class ModifierAliasNormalizationTests
 			Chord.Parse($"{alias}+S"),
 			new Chord([new Note(alias), new Note("S")]),
 			new Chord([new Note(NoteName.Create(alias.ToUpperInvariant())), new Note("S")]),
+			new Chord([new Note(NoteName.Create(alias)), new Note(NoteName.Create("s"))]),
+			new Chord([new Note(NoteName.Create(alias.ToLowerInvariant())), new Note("S")]),
 		];
 
 		foreach (Chord chord in built)
@@ -62,6 +64,23 @@ public class ModifierAliasNormalizationTests
 			Assert.AreEqual(expected, chord, $"{chord} should equal {expected}");
 			Assert.AreEqual(expected.GetHashCode(), chord.GetHashCode(), $"{chord} should hash like {expected}");
 		}
+	}
+
+	[TestMethod]
+	[DataRow("control")]
+	[DataRow("Control")]
+	[DataRow("ctrl")]
+	[DataRow("s")]
+	[DataRow("f5")]
+	[DataRow(" cmd ")]
+	public void NoteNameConstructor_MatchesStringConstructor(string key)
+	{
+		Note fromString = new(key);
+		Note fromNoteName = new(NoteName.Create(key));
+
+		Assert.AreEqual(fromString, fromNoteName);
+		Assert.AreEqual(fromString.GetHashCode(), fromNoteName.GetHashCode());
+		Assert.AreEqual(fromString.Key.ToString(), fromNoteName.Key.ToString());
 	}
 
 	[TestMethod]
