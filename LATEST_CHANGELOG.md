@@ -1,9 +1,9 @@
-## v2.0.8 (patch)
+## v2.0.9 (patch)
 
-Changes since v2.0.7:
+Changes since v2.0.8:
 
-- Reject blank input in ParsePhrase with its own argument name [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
-- Guard blank command ids in the active-profile lookup overloads [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
-- Return snapshots from GetAllChords and BoundCommands [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
-- Normalize the key in the Note(NoteName) constructor as the string one does ([@matt-edmondson](https://github.com/matt-edmondson))
+- Split note construction out of NoteJsonConverter.Read and use Assert.AreSequenceEqual ([@matt-edmondson](https://github.com/matt-edmondson))
+- Only prune stored profiles this manager loaded or saved [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
+- Trim the id in the Command(CommandId) constructor as the string one does [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
+- Serialize Note as {"Key":"CTRL"} so it round-trips through System.Text.Json [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
 
