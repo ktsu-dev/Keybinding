@@ -20,7 +20,16 @@ public sealed class Command : IEquatable<Command>
 		Ensure.NotNull(id);
 		Ensure.NotNull(name);
 
-		Id = id;
+		// Trim as the string constructor does: the registry's lookups trim the id they are given, so an
+		// untrimmed id would be stored under a key no lookup can produce.
+		string rawId = id.ToString();
+		string trimmedId = rawId.Trim();
+		if (trimmedId.Length == 0)
+		{
+			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(id));
+		}
+
+		Id = trimmedId == rawId ? id : CommandId.Create(trimmedId);
 		Name = name;
 		Description = description;
 		Category = category;
