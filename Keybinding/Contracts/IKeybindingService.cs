@@ -128,6 +128,7 @@ public interface IKeybindingService
 	/// </summary>
 	/// <param name="phraseString">The phrase string to parse</param>
 	/// <returns>Phrase containing the sequence of chords</returns>
+	/// <exception cref="ArgumentException">Thrown when phraseString is null or whitespace</exception>
 	public Phrase ParsePhrase(string phraseString);
 
 	/// <summary>

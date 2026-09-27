@@ -179,7 +179,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	{
 		if (string.IsNullOrWhiteSpace(phraseString))
 		{
-			return new Phrase([]);
+			throw new ArgumentException("Phrase string cannot be null or whitespace", nameof(phraseString));
 		}
 
 		// Split by comma to get individual chord strings
