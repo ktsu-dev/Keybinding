@@ -13,6 +13,12 @@ using ktsu.Keybinding.Core.Services;
 public sealed class KeybindingManager : IDisposable
 {
 	private bool _disposed;
+
+	// Ids of the stored profiles this manager has loaded or saved. SaveAsync deletes a stored profile only if
+	// it is in here and no longer in memory, so profiles this manager never saw are not taken as deleted.
+	private readonly HashSet<string> _persistedProfileIds = [];
+	private readonly Lock _persistedProfileIdsLock = new();
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="KeybindingManager"/> class with default services
 	/// </summary>
@@ -87,6 +93,11 @@ public sealed class KeybindingManager : IDisposable
 			Profiles.CreateProfile(profile);
 		}
 
+		lock (_persistedProfileIdsLock)
+		{
+			_persistedProfileIds.UnionWith(profiles.Select(p => p.Id));
+		}
+
 		// Load active profile
 		string? activeProfileId = await Repository.LoadActiveProfileAsync().ConfigureAwait(false);
 		if (!string.IsNullOrEmpty(activeProfileId) && Profiles.ProfileExists(activeProfileId))
@@ -107,15 +118,27 @@ public sealed class KeybindingManager : IDisposable
 		IReadOnlyCollection<Command> commands = Commands.GetAllCommands();
 		await Repository.SaveCommandsAsync(commands).ConfigureAwait(false);
 
-		// Remove stored profiles that were deleted in memory, so they do not come back on the next load
+		// Remove stored profiles that were deleted in memory, so they do not come back on the next load. Only
+		// profiles this manager loaded or saved count: one it never saw is not in memory because it was never
+		// loaded, not because it was deleted.
 		IReadOnlyCollection<Profile> profiles = Profiles.GetAllProfiles();
 		HashSet<string> profileIds = [.. profiles.Select(p => p.Id)];
-		IReadOnlyCollection<Profile> storedProfiles = await Repository.LoadAllProfilesAsync().ConfigureAwait(false);
-		IEnumerable<string> deletedProfileIds = storedProfiles.Select(p => p.Id).Where(id => !profileIds.Contains(id));
+		List<string> deletedProfileIds;
+		lock (_persistedProfileIdsLock)
+		{
+			deletedProfileIds = [.. _persistedProfileIds.Where(id => !profileIds.Contains(id))];
+		}
+
 		await AsyncBatchHelper.ForEachAsync(deletedProfileIds, Repository.DeleteProfileAsync).ConfigureAwait(false);
 
 		// Save profiles using batch helper
 		await AsyncBatchHelper.ForEachAsync(profiles, Repository.SaveProfileAsync).ConfigureAwait(false);
+
+		lock (_persistedProfileIdsLock)
+		{
+			_persistedProfileIds.ExceptWith(deletedProfileIds);
+			_persistedProfileIds.UnionWith(profileIds);
+		}
 
 		// Save active profile
 		Profile? activeProfile = Profiles.GetActiveProfile();
