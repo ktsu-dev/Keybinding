@@ -66,7 +66,7 @@ public class NoteJsonSerializationTests
 	{
 		List<Note> notes = [new("Ctrl"), new("Shift"), new("S")];
 		List<Note>? roundTripped = JsonSerializer.Deserialize<List<Note>>(JsonSerializer.Serialize(notes));
-		CollectionAssert.AreEqual(notes, roundTripped);
+		Assert.AreSequenceEqual(notes, roundTripped);
 	}
 
 	[TestMethod]

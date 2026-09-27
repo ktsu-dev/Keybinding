@@ -28,19 +28,9 @@ internal sealed class NoteJsonConverter : JsonConverter<Note>
 		{
 			if (reader.TokenType == JsonTokenType.EndObject)
 			{
-				if (!foundKey)
-				{
-					throw new JsonException($"{nameof(Note)} is missing its {KeyPropertyName} property.");
-				}
-
-				try
-				{
-					return new Note(key!);
-				}
-				catch (ArgumentException ex)
-				{
-					throw new JsonException($"'{key}' is not a valid {nameof(Note)} key.", ex);
-				}
+				return foundKey
+					? CreateNote(key!)
+					: throw new JsonException($"{nameof(Note)} is missing its {KeyPropertyName} property.");
 			}
 
 			string propertyName = reader.GetString()!;
@@ -62,6 +52,18 @@ internal sealed class NoteJsonConverter : JsonConverter<Note>
 		}
 
 		throw new JsonException($"Unexpected end of JSON while reading a {nameof(Note)}.");
+	}
+
+	private static Note CreateNote(string key)
+	{
+		try
+		{
+			return new Note(key);
+		}
+		catch (ArgumentException ex)
+		{
+			throw new JsonException($"'{key}' is not a valid {nameof(Note)} key.", ex);
+		}
 	}
 
 	/// <inheritdoc/>
