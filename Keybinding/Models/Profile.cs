@@ -110,7 +110,7 @@ public sealed class Profile : IEquatable<Profile>
 	/// Gets all chord bindings for this profile
 	/// </summary>
 	/// <returns>Dictionary of command ID to chord mappings</returns>
-	public IReadOnlyDictionary<string, Chord> GetAllChords() => Chords.AsReadOnly();
+	public IReadOnlyDictionary<string, Chord> GetAllChords() => new Dictionary<string, Chord>(Chords).AsReadOnly();
 
 	/// <summary>
 	/// Checks if a command has a chord binding in this profile
@@ -142,7 +142,7 @@ public sealed class Profile : IEquatable<Profile>
 	/// Gets all command IDs that have chord bindings in this profile
 	/// </summary>
 	/// <returns>Collection of command IDs</returns>
-	public IReadOnlyCollection<string> BoundCommands => Chords.Keys;
+	public IReadOnlyCollection<string> BoundCommands => [.. Chords.Keys];
 
 	/// <summary>
 	/// Clears all chord bindings from this profile
