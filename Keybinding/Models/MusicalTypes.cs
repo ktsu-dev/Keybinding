@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents a musical note - a single key
 /// </summary>
+[JsonConverter(typeof(NoteJsonConverter))]
 public sealed class Note : IEquatable<Note>
 {
 	/// <summary>
