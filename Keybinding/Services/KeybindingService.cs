@@ -89,6 +89,11 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public Chord? GetChord(string commandId)
 	{
+		if (string.IsNullOrWhiteSpace(commandId))
+		{
+			return null;
+		}
+
 		Profile? activeProfile = _profileManager.GetActiveProfile();
 		return activeProfile?.GetChord(commandId);
 	}
@@ -127,6 +132,11 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public bool UnbindChord(string commandId)
 	{
+		if (string.IsNullOrWhiteSpace(commandId))
+		{
+			return false;
+		}
+
 		Profile? activeProfile = _profileManager.GetActiveProfile();
 		return activeProfile?.RemoveChord(commandId) ?? false;
 	}
@@ -249,6 +259,11 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public bool HasChordBinding(string commandId)
 	{
+		if (string.IsNullOrWhiteSpace(commandId))
+		{
+			return false;
+		}
+
 		Profile? activeProfile = _profileManager.GetActiveProfile();
 		return activeProfile?.HasChord(commandId) ?? false;
 	}
