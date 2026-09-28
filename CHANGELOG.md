@@ -1,6 +1,9 @@
-## v2.0.9
+## v2.0.10-pre.1 (prerelease)
 
-No significant changes detected since v2.0.9.
+Changes since v2.0.9:
+
+- Bump Polyfill from 11.4.0 to 11.4.1 ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
 
 ## v2.0.9 (patch)
 
@@ -80,17 +83,21 @@ Changes since v1.0.0:
 - chore: store icon.png in LFS as .gitattributes declares ([@matt-edmondson](https://github.com/matt-edmondson))
 - docs: scope build badge to the default branch ([@matt-edmondson](https://github.com/matt-edmondson))
 - docs: correct README, DESCRIPTION and TAGS metadata ([@matt-edmondson](https://github.com/matt-edmondson))
+- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 - Sync .editorconfig ([@KtsuTools](https://github.com/KtsuTools))
 - Sync global.json ([@KtsuTools](https://github.com/KtsuTools))
+- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 - chore: update ktsu.Sdk to 2.21.1 [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
 - chore: remove unused SourceLink package versions ([@matt-edmondson](https://github.com/matt-edmondson))
 - chore: trim unused package references and central versions ([@matt-edmondson](https://github.com/matt-edmondson))
+- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 - Remove legacy build scripts ([@matt-edmondson](https://github.com/matt-edmondson))
 - Refactor null checks to use Ensure.NotNull for improved readability ([@matt-edmondson](https://github.com/matt-edmondson))
 - Add CompatibilitySuppressions.xml for package validation diagnostics ([@matt-edmondson](https://github.com/matt-edmondson))
 - Add Polyfill package and update project configurations; refactor null checks to use Ensure helper ([@matt-edmondson](https://github.com/matt-edmondson))
 - Enhance test assertions with descriptive messages for clarity ([@matt-edmondson](https://github.com/matt-edmondson))
 - Update ktsu.Semantics package versions to 1.0.28 ([@matt-edmondson](https://github.com/matt-edmondson))
+- Remove .github\workflows\project.yml ([@matt-edmondson](https://github.com/matt-edmondson))
 - Renamed demo project, removed old examples, and updated dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
 - Update project configuration and dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
 - Add Web API example project and update dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
@@ -292,13 +299,13 @@ Changes since v1.0.25:
 
 Changes since v1.0.24:
 
-- Bump Polyfill from 11.0.2 to 11.2.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump the ktsu group with 9 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
 - Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 
 ## v1.0.25-pre.1 (prerelease)
 
-No significant changes detected since v1.0.25.
+Changes since v1.0.24:
+
+- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 
 ## v1.0.24 (patch)
 
@@ -311,6 +318,7 @@ Changes since v1.0.23:
 Changes since v1.0.22:
 
 - Sync global.json ([@KtsuTools](https://github.com/KtsuTools))
+- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 
 ## v1.0.22 (patch)
 
@@ -396,31 +404,13 @@ Changes since v1.0.10:
 
 Changes since v1.0.9:
 
-- Sync .github\workflows\dotnet.yml ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Sync .github\dependabot.yml ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Sync .gitignore ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Sync .gitattributes ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Sync global.json ([@ktsu[bot]](https://github.com/ktsu[bot]))
-- Bump Spectre.Console from 0.55.2 to 0.56.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump the microsoft group with 2 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump Polyfill from 10.8.0 to 10.8.1 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump the ktsu group with 3 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump Polyfill from 10.7.0 to 10.8.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump Polyfill from 10.6.0 to 10.7.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump Polyfill from 10.5.1 to 10.6.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump MSTest.Sdk from 4.2.2 to 4.2.3 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump the microsoft group with 4 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump Polyfill from 10.5.0 to 10.5.1 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump Spectre.Console from 0.50.0 to 0.55.2 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump Polyfill from 9.13.0 to 10.5.0 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump MSTest.Sdk from 4.1.0 to 4.2.2 ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump the microsoft group with 4 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
-- Bump the ktsu group with 2 updates ([@dependabot[bot]](https://github.com/dependabot[bot]))
 - Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 
 ## v1.0.10-pre.1 (prerelease)
 
-No significant changes detected since v1.0.10.
+Changes since v1.0.9:
+
+- Sync .github\workflows\dotnet.yml ([@KtsuTools](https://github.com/KtsuTools))
 
 ## v1.0.9 (patch)
 
@@ -434,7 +424,11 @@ Changes since v1.0.8:
 
 ## v1.0.9-pre.1 (prerelease)
 
-No significant changes detected since v1.0.9.
+Changes since v1.0.8:
+
+- Sync .github\workflows\dotnet.yml ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync .github\workflows\dotnet.yml ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync .github\workflows\dotnet.yml ([@ktsu[bot]](https://github.com/ktsu[bot]))
 
 ## v1.0.8 (patch)
 
@@ -486,7 +480,10 @@ Changes since v1.0.7-pre.1:
 
 ## v1.0.7-pre.1 (prerelease)
 
-No significant changes detected since v1.0.7.
+Changes since v1.0.6:
+
+- Merge remote-tracking branch 'refs/remotes/origin/main' ([@ktsu[bot]](https://github.com/ktsu[bot]))
+- Sync global.json ([@ktsu[bot]](https://github.com/ktsu[bot]))
 
 ## v1.0.6 (patch)
 
@@ -507,6 +504,7 @@ Changes since v1.0.3:
 - Add Polyfill package and update project configurations; refactor null checks to use Ensure helper ([@matt-edmondson](https://github.com/matt-edmondson))
 - Enhance test assertions with descriptive messages for clarity ([@matt-edmondson](https://github.com/matt-edmondson))
 - Update ktsu.Semantics package versions to 1.0.28 ([@matt-edmondson](https://github.com/matt-edmondson))
+- Remove .github\workflows\project.yml ([@matt-edmondson](https://github.com/matt-edmondson))
 - Renamed demo project, removed old examples, and updated dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
 - Update project configuration and dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
 - Add Web API example project and update dependencies ([@matt-edmondson](https://github.com/matt-edmondson))
