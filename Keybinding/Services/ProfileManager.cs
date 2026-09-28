@@ -155,7 +155,7 @@ public sealed class ProfileManager : IProfileManager
 		Profile newProfile = new(normalizedNewId, newProfileName.Trim(), newDescription);
 
 		// Copy all chords from source profile
-		foreach (KeyValuePair<string, Chord> kvp in sourceProfile.Chords)
+		foreach (KeyValuePair<string, Chord> kvp in sourceProfile.GetAllChords())
 		{
 			newProfile.SetChord(kvp.Key, kvp.Value);
 		}

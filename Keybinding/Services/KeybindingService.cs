@@ -247,9 +247,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 		// bindings in place, so skip bindings whose command is no longer registered rather than
 		// giving up on the first match.
 		Profile? profile = _profileManager.GetProfile(profileId);
-		string? commandId = profile?.Chords
-			.FirstOrDefault(kvp => kvp.Value.Equals(chord) && _commandRegistry.IsCommandRegistered(kvp.Key))
-			.Key;
+		string? commandId = profile?.FindCommand(chord, _commandRegistry.IsCommandRegistered);
 
 		// In a real implementation, this would trigger command execution
 		// For now, we just return the command ID that would be executed
@@ -298,8 +296,6 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 		}
 
 		Profile? profile = _profileManager.GetProfile(profileId);
-		return profile?.Chords
-			.FirstOrDefault(kvp => kvp.Value.Equals(chord))
-			.Key;
+		return profile?.FindCommand(chord);
 	}
 }

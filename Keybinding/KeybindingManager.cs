@@ -215,7 +215,7 @@ public sealed class KeybindingManager : IDisposable
 		Profile? activeProfile = Profiles.GetActiveProfile();
 		int totalCommands = Commands.GetAllCommands().Count;
 		int totalProfiles = Profiles.GetAllProfiles().Count;
-		int activeKeybindings = activeProfile?.Chords.Count ?? 0;
+		int activeKeybindings = activeProfile?.ChordCount ?? 0;
 
 		return new KeybindingSummary
 		{
