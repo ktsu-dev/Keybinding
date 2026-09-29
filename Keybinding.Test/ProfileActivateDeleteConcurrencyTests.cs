@@ -28,6 +28,7 @@ public class ProfileActivateDeleteConcurrencyTests
 				// Keep activating until the delete lands, so the activation is in flight when it does
 				while (profiles.SetActiveProfile("x"))
 				{
+					// Intentionally empty: each iteration is another activation racing the delete
 				}
 			});
 			Thread delete = new(() =>
