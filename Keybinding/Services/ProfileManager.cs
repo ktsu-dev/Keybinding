@@ -57,15 +57,22 @@ public sealed class ProfileManager : IProfileManager
 		}
 
 		string normalizedId = profileId.Trim();
-		bool removed = _profiles.TryRemove(normalizedId, out _);
 
-		// Clear active profile if it was the one being deleted
-		if (removed && _activeProfileId == normalizedId)
+		// Remove and clear under the lock SetActiveProfile checks and sets under, so an activation
+		// cannot land between them and leave the active id naming the deleted profile
+		// (ktsu-dev/Keybinding#120)
+		lock (_lock)
 		{
-			_activeProfileId = null;
-		}
+			bool removed = _profiles.TryRemove(normalizedId, out _);
 
-		return removed;
+			// Clear active profile if it was the one being deleted
+			if (removed && _activeProfileId == normalizedId)
+			{
+				_activeProfileId = null;
+			}
+
+			return removed;
+		}
 	}
 
 	/// <inheritdoc/>
@@ -102,13 +109,16 @@ public sealed class ProfileManager : IProfileManager
 
 		string normalizedId = profileId.Trim();
 
-		if (!_profiles.ContainsKey(normalizedId))
+		lock (_lock)
 		{
-			return false;
-		}
+			if (!_profiles.ContainsKey(normalizedId))
+			{
+				return false;
+			}
 
-		_activeProfileId = normalizedId;
-		return true;
+			_activeProfileId = normalizedId;
+			return true;
+		}
 	}
 
 	/// <inheritdoc/>
