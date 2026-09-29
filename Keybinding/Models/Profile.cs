@@ -31,8 +31,13 @@ public sealed class Profile : IEquatable<Profile>
 		Id = id.Trim();
 		Name = name.Trim();
 		Description = description?.Trim();
-		Chords = [];
 	}
+
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The only property over this field is obsolete, and the field is what the lock guards.")]
+	private readonly Dictionary<string, Chord> _chords = [];
+
+	// Every read and write of _chords takes this lock, so bindings can change from any thread.
+	private readonly Lock _chordsLock = new();
 
 	/// <summary>
 	/// Gets the unique profile identifier
@@ -68,9 +73,29 @@ public sealed class Profile : IEquatable<Profile>
 	}
 
 	/// <summary>
-	/// Gets the chord bindings for this profile (command ID to chord mapping)
+	/// Gets the live chord bindings for this profile (command ID to chord mapping)
 	/// </summary>
-	public Dictionary<string, Chord> Chords { get; }
+	/// <remarks>
+	/// Reading or changing this dictionary bypasses the profile's synchronization, so it is not
+	/// thread-safe. Use <see cref="GetAllChords"/>, <see cref="SetChord"/>, <see cref="RemoveChord"/>
+	/// and <see cref="ClearChords"/> instead.
+	/// </remarks>
+	[Obsolete("Chords is not thread-safe. Use GetAllChords, SetChord, RemoveChord or ClearChords instead.")]
+	public Dictionary<string, Chord> Chords => _chords;
+
+	/// <summary>
+	/// Gets the number of chord bindings in this profile
+	/// </summary>
+	public int ChordCount
+	{
+		get
+		{
+			lock (_chordsLock)
+			{
+				return _chords.Count;
+			}
+		}
+	}
 
 	/// <summary>
 	/// Sets a chord binding for a command in this profile
@@ -88,7 +113,10 @@ public sealed class Profile : IEquatable<Profile>
 
 		Ensure.NotNull(chord);
 
-		Chords[commandId.Trim()] = chord;
+		lock (_chordsLock)
+		{
+			_chords[commandId.Trim()] = chord;
+		}
 	}
 
 	/// <summary>
@@ -99,18 +127,47 @@ public sealed class Profile : IEquatable<Profile>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	public Chord? GetChord(string commandId)
 	{
-		return string.IsNullOrWhiteSpace(commandId)
-			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
-			: Chords.TryGetValue(commandId.Trim(), out Chord? chord)
-			? chord
-			: null;
+		if (string.IsNullOrWhiteSpace(commandId))
+		{
+			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+		}
+
+		lock (_chordsLock)
+		{
+			return _chords.TryGetValue(commandId.Trim(), out Chord? chord) ? chord : null;
+		}
 	}
 
 	/// <summary>
 	/// Gets all chord bindings for this profile
 	/// </summary>
 	/// <returns>Dictionary of command ID to chord mappings</returns>
-	public IReadOnlyDictionary<string, Chord> GetAllChords() => new Dictionary<string, Chord>(Chords).AsReadOnly();
+	public IReadOnlyDictionary<string, Chord> GetAllChords()
+	{
+		lock (_chordsLock)
+		{
+			return new Dictionary<string, Chord>(_chords).AsReadOnly();
+		}
+	}
+
+	/// <summary>
+	/// Finds the first command bound to a chord in this profile that satisfies a condition
+	/// </summary>
+	/// <param name="chord">The chord to look up</param>
+	/// <param name="predicate">An optional condition the command ID must satisfy</param>
+	/// <returns>The command ID if found, null otherwise</returns>
+	internal string? FindCommand(Chord chord, Func<string, bool>? predicate = null)
+	{
+		foreach (KeyValuePair<string, Chord> binding in GetAllChords())
+		{
+			if (binding.Value.Equals(chord) && (predicate is null || predicate(binding.Key)))
+			{
+				return binding.Key;
+			}
+		}
+
+		return null;
+	}
 
 	/// <summary>
 	/// Checks if a command has a chord binding in this profile
@@ -120,9 +177,15 @@ public sealed class Profile : IEquatable<Profile>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	public bool HasChord(string commandId)
 	{
-		return string.IsNullOrWhiteSpace(commandId)
-			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
-			: Chords.ContainsKey(commandId.Trim());
+		if (string.IsNullOrWhiteSpace(commandId))
+		{
+			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+		}
+
+		lock (_chordsLock)
+		{
+			return _chords.ContainsKey(commandId.Trim());
+		}
 	}
 
 	/// <summary>
@@ -133,21 +196,42 @@ public sealed class Profile : IEquatable<Profile>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	public bool RemoveChord(string commandId)
 	{
-		return string.IsNullOrWhiteSpace(commandId)
-			? throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId))
-			: Chords.Remove(commandId.Trim());
+		if (string.IsNullOrWhiteSpace(commandId))
+		{
+			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+		}
+
+		lock (_chordsLock)
+		{
+			return _chords.Remove(commandId.Trim());
+		}
 	}
 
 	/// <summary>
 	/// Gets all command IDs that have chord bindings in this profile
 	/// </summary>
 	/// <returns>Collection of command IDs</returns>
-	public IReadOnlyCollection<string> BoundCommands => [.. Chords.Keys];
+	public IReadOnlyCollection<string> BoundCommands
+	{
+		get
+		{
+			lock (_chordsLock)
+			{
+				return [.. _chords.Keys];
+			}
+		}
+	}
 
 	/// <summary>
 	/// Clears all chord bindings from this profile
 	/// </summary>
-	public void ClearChords() => Chords.Clear();
+	public void ClearChords()
+	{
+		lock (_chordsLock)
+		{
+			_chords.Clear();
+		}
+	}
 
 	/// <summary>
 	/// Returns a string representation of the profile

@@ -59,7 +59,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			Id = p.Id,
 			Name = p.Name,
 			Description = p.Description,
-			Chords = p.Chords.ToDictionary(
+			Chords = p.GetAllChords().ToDictionary(
 				kvp => kvp.Key,
 				kvp => new ChordDto
 				{
@@ -137,7 +137,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			Id = p.Id,
 			Name = p.Name,
 			Description = p.Description,
-			Chords = p.Chords.ToDictionary(
+			Chords = p.GetAllChords().ToDictionary(
 				kvp => kvp.Key,
 				kvp => new ChordDto
 				{
