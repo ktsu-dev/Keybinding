@@ -50,20 +50,10 @@ public sealed class KeybindingManagerFactory : IKeybindingManagerFactory
 	}
 
 	/// <inheritdoc/>
-	public KeybindingManager CreateManager(string dataDirectory)
-	{
-		if (_serviceProvider != null)
-		{
-			// If we have a service provider, try to resolve services but use custom directory
-			if (_serviceProvider.GetService(typeof(ICommandRegistry)) is ICommandRegistry commandRegistry &&
-				_serviceProvider.GetService(typeof(IProfileManager)) is IProfileManager profileManager)
-			{
-				JsonKeybindingRepository repository = new(dataDirectory);
-				return new KeybindingManager(commandRegistry, profileManager, repository);
-			}
-		}
-
-		// Fallback to standard constructor
-		return new KeybindingManager(dataDirectory);
-	}
+	/// <remarks>
+	/// The manager always gets its own command registry and profile manager. Reusing the singletons registered in
+	/// the service provider would let managers for different directories share profiles, so saving one directory
+	/// would write another directory's profiles into it.
+	/// </remarks>
+	public KeybindingManager CreateManager(string dataDirectory) => new(dataDirectory);
 }
