@@ -8,15 +8,18 @@ namespace ktsu.Keybinding.Core.Contracts;
 public interface IKeybindingManagerFactory
 {
 	/// <summary>
-	/// Creates a new KeybindingManager instance
+	/// Gets a KeybindingManager for the default data directory
 	/// </summary>
-	/// <returns>A new KeybindingManager instance</returns>
+	/// <returns>
+	/// The KeybindingManager registered with dependency injection when there is one, which is shared rather than new;
+	/// otherwise a new instance
+	/// </returns>
 	public KeybindingManager CreateManager();
 
 	/// <summary>
 	/// Creates a new KeybindingManager instance with specified data directory
 	/// </summary>
 	/// <param name="dataDirectory">Directory to store keybinding data</param>
-	/// <returns>A new KeybindingManager instance</returns>
+	/// <returns>A new KeybindingManager instance whose commands and profiles are not shared with any other manager</returns>
 	public KeybindingManager CreateManager(string dataDirectory);
 }
