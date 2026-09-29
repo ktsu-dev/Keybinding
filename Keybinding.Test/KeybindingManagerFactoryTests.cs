@@ -25,12 +25,9 @@ public class KeybindingManagerFactoryTests
 	[TestCleanup]
 	public void Cleanup()
 	{
-		foreach (string dir in new[] { _dirA, _dirB })
+		foreach (string dir in new[] { _dirA, _dirB }.Where(Directory.Exists))
 		{
-			if (Directory.Exists(dir))
-			{
-				Directory.Delete(dir, recursive: true);
-			}
+			Directory.Delete(dir, recursive: true);
 		}
 	}
 
