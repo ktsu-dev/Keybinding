@@ -101,23 +101,62 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			string json = await File.ReadAllTextAsync(profilesPath).ConfigureAwait(false);
 			List<ProfileDto> profileDtos = JsonSerializer.Deserialize<List<ProfileDto>>(json, _jsonOptions) ?? [];
 
-			return [.. profileDtos.Select(dto =>
+			List<Profile> profiles = [];
+			foreach (ProfileDto? dto in profileDtos)
 			{
-				Profile profile = new(dto.Id, dto.Name, dto.Description);
-				foreach (KeyValuePair<string, ChordDto> kvp in dto.Chords ?? [])
+				Profile? profile = ToProfile(dto);
+				if (profile is not null)
 				{
-					Chord chord = new(kvp.Value.Notes.Select(noteString => new Note(noteString)));
-					profile.SetChord(kvp.Key, chord);
+					profiles.Add(profile);
 				}
+			}
 
-				return profile;
-			})];
+			return profiles;
 		}
 		catch (JsonException)
 		{
 			// If JSON is corrupted, return empty list
 			return [];
 		}
+	}
+
+	/// <summary>
+	/// Converts a stored profile, skipping it when its id or name is invalid and skipping any chord
+	/// whose notes are invalid, so one bad entry does not stop the rest of the file from loading.
+	/// A skipped entry is not written back by a later save.
+	/// </summary>
+	private static Profile? ToProfile(ProfileDto? dto)
+	{
+		if (dto is null)
+		{
+			return null;
+		}
+
+		Profile profile;
+		try
+		{
+			profile = new(dto.Id, dto.Name, dto.Description);
+		}
+		catch (ArgumentException ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"Skipping stored profile '{dto.Id}': {ex.Message}");
+			return null;
+		}
+
+		foreach (KeyValuePair<string, ChordDto> kvp in dto.Chords ?? [])
+		{
+			try
+			{
+				Chord chord = new((kvp.Value?.Notes ?? []).Select(noteString => new Note(noteString)));
+				profile.SetChord(kvp.Key, chord);
+			}
+			catch (ArgumentException ex)
+			{
+				System.Diagnostics.Debug.WriteLine($"Skipping chord for '{kvp.Key}' in profile '{profile.Id}': {ex.Message}");
+			}
+		}
+
+		return profile;
 	}
 
 	/// <inheritdoc/>
