@@ -20,7 +20,7 @@ internal static class KeyStringTokenizer
 	/// </summary>
 	/// <param name="value">The chord string.</param>
 	/// <returns>The trimmed note strings, or an empty array for whitespace input.</returns>
-	/// <exception cref="ArgumentException">Thrown when a key is missing, as in "Ctrl+" or "A++B".</exception>
+	/// <exception cref="ArgumentException">Thrown when a key is missing, as in "Ctrl+" or "A++B", or when a ',' follows a key, as in the phrase "Ctrl+K, Ctrl+C".</exception>
 	internal static string[] SplitChord(string value) => Split(value, NoteSeparator, ChordSeparators);
 
 	/// <summary>
@@ -41,6 +41,13 @@ internal static class KeyStringTokenizer
 		for (int i = 0; i < value.Length; i++)
 		{
 			char c = value[i];
+
+			// In a chord, a ',' after a key starts the next chord of a phrase, which a chord cannot hold.
+			// A ',' where a key is expected is still the comma key, as in "Ctrl+,".
+			if (splitOn == NoteSeparator && c == ChordSeparator && !expectKey)
+			{
+				throw new ArgumentException($"Unexpected '{ChordSeparator}' at position {i} in \"{value}\": a chord cannot contain a sequence of chords; parse it as a phrase instead", nameof(value));
+			}
 
 			if (separators.Contains(c) && !expectKey)
 			{
