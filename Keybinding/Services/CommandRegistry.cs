@@ -57,9 +57,13 @@ public sealed class CommandRegistry : ICommandRegistry
 	{
 		lock (_lock)
 		{
-			string? normalizedCategory = category?.Trim();
+			// Compare explicitly: a null CommandCategory converts to "" rather than null, so passing
+			// it straight to string.Equals made null find nothing while "" found the uncategorized commands.
+			string? wanted = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
 			return _commands.Values
-				.Where(c => string.Equals(c.Category, normalizedCategory, StringComparison.OrdinalIgnoreCase))
+				.Where(c => wanted is null
+					? string.IsNullOrWhiteSpace(c.Category)
+					: string.Equals(c.Category?.ToString(), wanted, StringComparison.OrdinalIgnoreCase))
 				.ToList()
 				.AsReadOnly();
 		}
