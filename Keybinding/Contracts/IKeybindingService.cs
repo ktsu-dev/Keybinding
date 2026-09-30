@@ -169,14 +169,16 @@ public interface IKeybindingService
 	public bool HasChordBinding(string profileId, string commandId);
 
 	/// <summary>
-	/// Finds the command ID bound to a specific chord in the active profile
+	/// Finds the command ID bound to a specific chord in the active profile, skipping bindings whose command is
+	/// no longer registered, so the result is the command <see cref="ExecuteChord(string, Chord)"/> would run
 	/// </summary>
 	/// <param name="chord">The chord to search for</param>
 	/// <returns>The command ID if found, null otherwise</returns>
 	public string? FindCommandByChord(Chord chord);
 
 	/// <summary>
-	/// Finds the command ID bound to a specific chord in a specific profile
+	/// Finds the command ID bound to a specific chord in a specific profile, skipping bindings whose command is
+	/// no longer registered, so the result is the command <see cref="ExecuteChord(string, Chord)"/> would run
 	/// </summary>
 	/// <param name="profileId">The profile ID</param>
 	/// <param name="chord">The chord to search for</param>

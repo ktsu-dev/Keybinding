@@ -82,6 +82,6 @@ public class ProfileChordAccessTests
 
 		registry.UnregisterCommand("b");
 		Assert.IsNull(service.ExecuteChord(CtrlB), "A binding whose command is unregistered is skipped");
-		Assert.AreEqual("b", service.FindCommandByChord(CtrlB), "FindCommandByChord does not filter by registration");
+		Assert.IsNull(service.FindCommandByChord(CtrlB), "FindCommandByChord skips it too, matching ExecuteChord");
 	}
 }
