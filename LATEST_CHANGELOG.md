@@ -1,8 +1,7 @@
-## v2.1.4 (patch)
+## v2.1.5 (patch)
 
-Changes since v2.1.3:
+Changes since v2.1.4:
 
-- Skip invalid stored commands instead of failing the load [patch] ([@Claude](https://github.com/Claude))
-- Skip unregistered commands in FindCommandByChord, matching ExecuteChord [patch] ([@Claude](https://github.com/Claude))
-- Return uncategorized commands for a null category in GetCommandsByCategory [patch] ([@Claude](https://github.com/Claude))
+- Move the chord-separator check out of Split to keep its complexity under the limit ([@Claude](https://github.com/Claude))
+- Reject phrase strings and keys with spaces or commas when parsing a chord [patch] ([@Claude](https://github.com/Claude))
 
