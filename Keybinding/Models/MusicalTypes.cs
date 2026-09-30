@@ -14,7 +14,7 @@ public sealed class Note : IEquatable<Note>
 	/// Initializes a new instance of the <see cref="Note"/> class
 	/// </summary>
 	/// <param name="key">The key that this note represents</param>
-	/// <exception cref="ArgumentException">Thrown when key is null or whitespace</exception>
+	/// <exception cref="ArgumentException">Thrown when key is null or whitespace, or contains whitespace, '+' or ',' other than as the single-character key "+" or ","</exception>
 	[JsonConstructor]
 	public Note(NoteName key)
 	{
@@ -27,7 +27,7 @@ public sealed class Note : IEquatable<Note>
 	/// Initializes a new instance of the <see cref="Note"/> class from a string
 	/// </summary>
 	/// <param name="key">The key string that this note represents</param>
-	/// <exception cref="ArgumentException">Thrown when key is null or whitespace</exception>
+	/// <exception cref="ArgumentException">Thrown when key is null or whitespace, or contains whitespace, '+' or ',' other than as the single-character key "+" or ","</exception>
 	public Note(string key)
 	{
 		if (string.IsNullOrWhiteSpace(key))
@@ -44,7 +44,19 @@ public sealed class Note : IEquatable<Note>
 	/// </summary>
 	/// <param name="key">A key name in any case</param>
 	/// <returns>The canonical key name</returns>
-	private static string NormalizeKey(string key) => CanonicalizeKey(key.Trim().ToUpperInvariant());
+	private static string NormalizeKey(string key) => CanonicalizeKey(ValidateKey(key.Trim()).ToUpperInvariant());
+
+	/// <summary>
+	/// Rejects a key that contains whitespace or a separator, such as "Page Up" or "K, Ctrl", which no key press
+	/// can produce. The separator keys "+" and "," are valid on their own.
+	/// </summary>
+	/// <param name="key">A trimmed key name</param>
+	/// <returns>The key name, unchanged</returns>
+	/// <exception cref="ArgumentException">Thrown when the key contains whitespace, '+' or ','</exception>
+	private static string ValidateKey(string key) =>
+		key.Length > 1 && key.Any(c => char.IsWhiteSpace(c) || c is ',' or '+')
+			? throw new ArgumentException($"Key \"{key}\" cannot contain whitespace, '+' or ','", nameof(key))
+			: key;
 
 	/// <summary>
 	/// Maps a modifier alias to its canonical key name, so that every way of building a note
