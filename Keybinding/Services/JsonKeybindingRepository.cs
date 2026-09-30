@@ -224,15 +224,45 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			string json = await File.ReadAllTextAsync(commandsPath).ConfigureAwait(false);
 			List<CommandDto> commandDtos = JsonSerializer.Deserialize<List<CommandDto>>(json, _jsonOptions) ?? [];
 
-			return commandDtos
-				.Select(dto => new Command(dto.Id, dto.Name, dto.Description, dto.Category))
-				.ToList()
-				.AsReadOnly();
+			List<Command> commands = [];
+			foreach (CommandDto? dto in commandDtos)
+			{
+				Command? command = ToCommand(dto);
+				if (command is not null)
+				{
+					commands.Add(command);
+				}
+			}
+
+			return commands.AsReadOnly();
 		}
 		catch (JsonException)
 		{
 			// If JSON is corrupted, return empty list
 			return new List<Command>().AsReadOnly();
+		}
+	}
+
+	/// <summary>
+	/// Converts a stored command, skipping it when it is null or its id or name is invalid, so one
+	/// bad entry does not stop the rest of the file from loading. A skipped entry is not written back
+	/// by a later save.
+	/// </summary>
+	private static Command? ToCommand(CommandDto? dto)
+	{
+		if (dto is null)
+		{
+			return null;
+		}
+
+		try
+		{
+			return new(dto.Id, dto.Name, dto.Description, dto.Category);
+		}
+		catch (ArgumentException ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"Skipping stored command '{dto.Id}': {ex.Message}");
+			return null;
 		}
 	}
 
