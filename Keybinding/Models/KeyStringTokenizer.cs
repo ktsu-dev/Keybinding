@@ -42,12 +42,7 @@ internal static class KeyStringTokenizer
 		{
 			char c = value[i];
 
-			// In a chord, a ',' after a key starts the next chord of a phrase, which a chord cannot hold.
-			// A ',' where a key is expected is still the comma key, as in "Ctrl+,".
-			if (splitOn == NoteSeparator && c == ChordSeparator && !expectKey)
-			{
-				throw new ArgumentException($"Unexpected '{ChordSeparator}' at position {i} in \"{value}\": a chord cannot contain a sequence of chords; parse it as a phrase instead", nameof(value));
-			}
+			EnsureNotChordSeparatorInChord(value, i, splitOn, expectKey);
 
 			if (separators.Contains(c) && !expectKey)
 			{
@@ -91,6 +86,18 @@ internal static class KeyStringTokenizer
 
 		tokens.Add(current.ToString().Trim());
 		return [.. tokens];
+	}
+
+	/// <summary>
+	/// In a chord, a ',' after a key starts the next chord of a phrase, which a chord cannot hold.
+	/// A ',' where a key is expected is still the comma key, as in "Ctrl+,".
+	/// </summary>
+	private static void EnsureNotChordSeparatorInChord(string value, int index, char splitOn, bool expectKey)
+	{
+		if (splitOn == NoteSeparator && !expectKey && value[index] == ChordSeparator)
+		{
+			throw new ArgumentException($"Unexpected '{ChordSeparator}' at position {index} in \"{value}\": a chord cannot contain a sequence of chords; parse it as a phrase instead", nameof(value));
+		}
 	}
 
 	/// <summary>
