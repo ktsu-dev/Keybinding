@@ -39,7 +39,7 @@ public interface ICommandRegistry
 	/// <summary>
 	/// Gets commands by category
 	/// </summary>
-	/// <param name="category">The category to filter by</param>
+	/// <param name="category">The category to filter by, compared case-insensitively. Null, empty or whitespace selects the uncategorized commands.</param>
 	/// <returns>Collection of commands in the specified category</returns>
 	public IReadOnlyCollection<Command> GetCommandsByCategory(string? category);
 
