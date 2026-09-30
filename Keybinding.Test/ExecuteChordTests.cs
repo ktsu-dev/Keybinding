@@ -59,6 +59,35 @@ public class ExecuteChordTests
 	}
 
 	[TestMethod]
+	public void FindCommandByChord_FirstBindingUnregistered_AgreesWithExecuteChord()
+	{
+		Chord chord = Chord.Parse("Ctrl+S");
+		_service.BindChord("a", chord);
+		_service.BindChord("b", chord);
+
+		_registry.UnregisterCommand("a");
+
+		Assert.AreEqual("b", _service.FindCommandByChord(chord), "A stale binding should not hide the command that will run.");
+		Assert.AreEqual("b", _service.FindCommandByChord("p", chord));
+		Assert.AreEqual(_service.ExecuteChord(chord), _service.FindCommandByChord(chord));
+		Assert.AreEqual(_service.ExecuteChord("p", chord), _service.FindCommandByChord("p", chord));
+	}
+
+	[TestMethod]
+	public void FindCommandByChord_OnlyBindingUnregistered_ReturnsNull()
+	{
+		Chord chord = Chord.Parse("Ctrl+S");
+		_service.BindChord("a", chord);
+
+		_registry.UnregisterCommand("a");
+
+		Assert.IsNull(_service.FindCommandByChord(chord), "A chord bound only to an unregistered command does nothing.");
+		Assert.IsNull(_service.FindCommandByChord("p", chord));
+		Assert.AreEqual(_service.ExecuteChord(chord), _service.FindCommandByChord(chord));
+		Assert.AreEqual(_service.ExecuteChord("p", chord), _service.FindCommandByChord("p", chord));
+	}
+
+	[TestMethod]
 	public void ExecuteChord_UnknownProfile_ReturnsNull()
 	{
 		Chord chord = Chord.Parse("Ctrl+S");

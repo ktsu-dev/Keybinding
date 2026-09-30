@@ -243,11 +243,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 			return null;
 		}
 
-		// A chord can be bound to more than one command, and unregistering a command leaves its
-		// bindings in place, so skip bindings whose command is no longer registered rather than
-		// giving up on the first match.
-		Profile? profile = _profileManager.GetProfile(profileId);
-		string? commandId = profile?.FindCommand(chord, _commandRegistry.IsCommandRegistered);
+		string? commandId = FindRegisteredCommand(profileId, chord);
 
 		// In a real implementation, this would trigger command execution
 		// For now, we just return the command ID that would be executed
@@ -295,7 +291,19 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 			return null;
 		}
 
+		return FindRegisteredCommand(profileId, chord);
+	}
+
+	/// <summary>
+	/// Finds the command a chord runs: the first binding whose command is still registered.
+	/// ExecuteChord and FindCommandByChord share this so they cannot disagree.
+	/// </summary>
+	private string? FindRegisteredCommand(string profileId, Chord chord)
+	{
+		// A chord can be bound to more than one command, and unregistering a command leaves its
+		// bindings in place, so skip bindings whose command is no longer registered rather than
+		// giving up on the first match.
 		Profile? profile = _profileManager.GetProfile(profileId);
-		return profile?.FindCommand(chord);
+		return profile?.FindCommand(chord, _commandRegistry.IsCommandRegistered);
 	}
 }
