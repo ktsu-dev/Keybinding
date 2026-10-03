@@ -59,17 +59,36 @@ public sealed class Note : IEquatable<Note>
 			: key;
 
 	/// <summary>
-	/// Maps a modifier alias to its canonical key name, so that every way of building a note
+	/// Maps key aliases to canonical key names, so that every way of building a note
 	/// (parsing, constructing directly, or loading a stored profile) compares and hashes the same.
 	/// </summary>
 	/// <param name="key">An uppercase key name</param>
 	/// <returns>The canonical key name</returns>
-	private static string CanonicalizeKey(string key) => key switch
+	private static string CanonicalizeKey(string key)
 	{
-		"CONTROL" => "CTRL",
-		"WIN" or "WINDOWS" or "CMD" or "COMMAND" => "META",
-		_ => key
-	};
+		if (key.Length == 2 && key[0] == 'D' && key[1] is >= '0' and <= '9')
+		{
+			return key[1..];
+		}
+
+		return key switch
+		{
+			"CONTROL" => "CTRL",
+			"OPTION" => "ALT",
+			"WIN" or "WINDOWS" or "CMD" or "COMMAND" or "SUPER" => "META",
+			"ESC" => nameof(SpecialKeys.Escape).ToUpperInvariant(),
+			"RETURN" => nameof(SpecialKeys.Enter).ToUpperInvariant(),
+			"DEL" => nameof(SpecialKeys.Delete).ToUpperInvariant(),
+			"INS" => nameof(SpecialKeys.Insert).ToUpperInvariant(),
+			"PGUP" => nameof(SpecialKeys.PageUp).ToUpperInvariant(),
+			"PGDN" => nameof(SpecialKeys.PageDown).ToUpperInvariant(),
+			"UP" or "UPARROW" => nameof(SpecialKeys.ArrowUp).ToUpperInvariant(),
+			"DOWN" or "DOWNARROW" => nameof(SpecialKeys.ArrowDown).ToUpperInvariant(),
+			"LEFT" or "LEFTARROW" => nameof(SpecialKeys.ArrowLeft).ToUpperInvariant(),
+			"RIGHT" or "RIGHTARROW" => nameof(SpecialKeys.ArrowRight).ToUpperInvariant(),
+			_ => key
+		};
+	}
 
 	/// <summary>
 	/// Gets the key that this note represents
@@ -309,7 +328,7 @@ public sealed class Chord : IEquatable<Chord>
 
 		foreach (string part in parts)
 		{
-			// The Note constructor normalizes modifier aliases such as "Control" and "Cmd"
+			// The Note constructor normalizes key aliases such as "Control" and "Esc"
 			notes.Add(new Note(part));
 		}
 

@@ -67,6 +67,44 @@ public class ModifierAliasNormalizationTests
 	}
 
 	[TestMethod]
+	[DataRow("Esc", "Escape")]
+	[DataRow("Return", "Enter")]
+	[DataRow("Del", "Delete")]
+	[DataRow("Ins", "Insert")]
+	[DataRow("PgUp", "PageUp")]
+	[DataRow("PgDn", "PageDown")]
+	[DataRow("Up", "ArrowUp")]
+	[DataRow("UpArrow", "ArrowUp")]
+	[DataRow("Down", "ArrowDown")]
+	[DataRow("DownArrow", "ArrowDown")]
+	[DataRow("Left", "ArrowLeft")]
+	[DataRow("LeftArrow", "ArrowLeft")]
+	[DataRow("Right", "ArrowRight")]
+	[DataRow("RightArrow", "ArrowRight")]
+	[DataRow("Option", "Alt")]
+	[DataRow("Super", "Meta")]
+	[DataRow("D0", "0")]
+	[DataRow("D1", "1")]
+	[DataRow("D2", "2")]
+	[DataRow("D3", "3")]
+	[DataRow("D4", "4")]
+	[DataRow("D5", "5")]
+	[DataRow("D6", "6")]
+	[DataRow("D7", "7")]
+	[DataRow("D8", "8")]
+	[DataRow("D9", "9")]
+	public void ChordParse_KeyAliasesMatchCanonicalName(string alias, string canonical)
+	{
+		ArgumentNullException.ThrowIfNull(alias);
+		Chord expected = Chord.Parse($"Ctrl+{canonical}");
+		Chord actual = Chord.Parse($"Ctrl+{alias}");
+
+		Assert.AreEqual(expected, actual);
+		Assert.AreEqual(expected.GetHashCode(), actual.GetHashCode());
+		Assert.AreEqual(new Note(canonical), new Note(NoteName.Create(alias.ToUpperInvariant())));
+	}
+
+	[TestMethod]
 	[DataRow("control")]
 	[DataRow("Control")]
 	[DataRow("ctrl")]
@@ -124,5 +162,21 @@ public class ModifierAliasNormalizationTests
 		Assert.IsNotNull(profile);
 		Assert.AreEqual(Chord.Parse("Ctrl+S"), profile.GetChord("save"));
 		Assert.AreEqual(Chord.Parse("Meta+F"), profile.GetChord("find"));
+	}
+
+	[TestMethod]
+	public async Task StoredProfileWithKeyAlias_ExecutesCanonicalChordAfterLoad()
+	{
+		string json = """
+			[{"id":"p","name":"Profile","chords":{"save":{"notes":["CTRL","ESC"]}}}]
+			""";
+		await File.WriteAllTextAsync(Path.Combine(_testDataDirectory, Constants.Files.ProfilesFileName), json).ConfigureAwait(false);
+
+		using KeybindingManager manager = new(_testDataDirectory);
+		await manager.InitializeAsync().ConfigureAwait(false);
+		manager.Commands.RegisterCommand(new Command("save", "Save"));
+		manager.Profiles.SetActiveProfile("p");
+
+		Assert.AreEqual("save", manager.Keybindings.ExecuteChord(Chord.Parse("Ctrl+Escape")));
 	}
 }
