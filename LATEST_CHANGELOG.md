@@ -1,4 +1,6 @@
-## v2.1.6-pre.1 (prerelease)
+## v2.1.6 (patch)
 
-No significant changes detected since v2.1.6-pre.1.
+Changes since v2.1.5:
+
+- Migrate the demo off the obsolete Profile.Chords property ([@Claude](https://github.com/Claude))
 
