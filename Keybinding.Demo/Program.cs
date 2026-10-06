@@ -342,9 +342,10 @@ public static class Program
 
 		AnsiConsole.WriteLine($"⌨️  Keybindings for '{profile.Name}' profile:");
 
-		if (profile.Chords.Count != 0)
+		IReadOnlyDictionary<string, Chord> chords = profile.GetAllChords();
+		if (chords.Count != 0)
 		{
-			foreach (KeyValuePair<string, Chord> kvp in profile.Chords.OrderBy(k => k.Key))
+			foreach (KeyValuePair<string, Chord> kvp in chords.OrderBy(k => k.Key))
 			{
 				Command? command = _manager.Commands.GetCommand(kvp.Key);
 				AnsiConsole.WriteLine($"   {kvp.Value} → {command?.Name ?? kvp.Key}");
@@ -496,7 +497,7 @@ public static class Program
 			string isActive = profile.Id == activeProfile?.Id ? " (active)" : "";
 			AnsiConsole.WriteLine($"   {profile.Id}: {profile.Name}{isActive}");
 			AnsiConsole.WriteLine($"      {profile.Description}");
-			AnsiConsole.WriteLine($"      Chords: {profile.Chords.Count}");
+			AnsiConsole.WriteLine($"      Chords: {profile.ChordCount}");
 		}
 	}
 
