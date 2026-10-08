@@ -169,6 +169,14 @@ public sealed class Chord : IEquatable<Chord>
 		_notes = [note];
 	}
 
+	// The serializer binds constructor parameters by name and exact type, so it needs a constructor that
+	// takes the Notes property's own type.
+	[JsonConstructor]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
+	private Chord(IReadOnlyList<Note> notes) : this((IEnumerable<Note>)notes)
+	{
+	}
+
 	/// <summary>
 	/// Gets all notes in this chord
 	/// </summary>
@@ -364,6 +372,14 @@ public sealed class Phrase : IEquatable<Phrase>
 	/// </summary>
 	/// <param name="chord">The single chord that makes up this phrase</param>
 	public Phrase(Chord chord) : this([chord])
+	{
+	}
+
+	// The serializer binds constructor parameters by name and exact type, so it needs a constructor that
+	// takes the Sequence property's own type.
+	[JsonConstructor]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
+	private Phrase(IReadOnlyList<Chord> sequence) : this((IEnumerable<Chord>)sequence)
 	{
 	}
 

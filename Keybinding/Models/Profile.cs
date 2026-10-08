@@ -3,6 +3,7 @@
 namespace ktsu.Keybinding.Core.Models;
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a keybinding profile with command to chord mappings
@@ -31,6 +32,21 @@ public sealed class Profile : IEquatable<Profile>
 		Id = id.Trim();
 		Name = name.Trim();
 		Description = description?.Trim();
+	}
+
+	// The Chords property is get-only, so the serializer can only restore the bindings through a
+	// constructor parameter of the same name and type. Without it a round-tripped profile comes back empty.
+	[JsonConstructor]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
+	private Profile(string id, string name, string? description, Dictionary<string, Chord>? chords) : this(id, name, description)
+	{
+		if (chords is not null)
+		{
+			foreach (KeyValuePair<string, Chord> binding in chords)
+			{
+				SetChord(binding.Key, binding.Value);
+			}
+		}
 	}
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The only property over this field is obsolete, and the field is what the lock guards.")]
