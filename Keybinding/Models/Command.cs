@@ -2,6 +2,8 @@
 
 namespace ktsu.Keybinding.Core.Models;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Represents a command that can be executed via keybindings
 /// </summary>
@@ -15,6 +17,7 @@ public sealed class Command : IEquatable<Command>
 	/// <param name="description">Optional description of what the command does</param>
 	/// <param name="category">Optional category for grouping commands</param>
 	/// <exception cref="ArgumentException">Thrown when id or name is null or whitespace</exception>
+	[JsonConstructor]
 	public Command(CommandId id, CommandName name, CommandDescription? description = null, CommandCategory? category = null)
 	{
 		Ensure.NotNull(id);
@@ -64,21 +67,25 @@ public sealed class Command : IEquatable<Command>
 	/// <summary>
 	/// Gets the unique identifier for the command
 	/// </summary>
+	[JsonConverter(typeof(SemanticStringJsonConverter<CommandId>))]
 	public CommandId Id { get; }
 
 	/// <summary>
 	/// Gets the display name of the command
 	/// </summary>
+	[JsonConverter(typeof(SemanticStringJsonConverter<CommandName>))]
 	public CommandName Name { get; }
 
 	/// <summary>
 	/// Gets the description of what the command does
 	/// </summary>
+	[JsonConverter(typeof(SemanticStringJsonConverter<CommandDescription>))]
 	public CommandDescription? Description { get; }
 
 	/// <summary>
 	/// Gets the category for grouping commands
 	/// </summary>
+	[JsonConverter(typeof(SemanticStringJsonConverter<CommandCategory>))]
 	public CommandCategory? Category { get; }
 
 	/// <summary>
