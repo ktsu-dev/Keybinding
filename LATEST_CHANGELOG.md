@@ -1,7 +1,6 @@
-## v2.1.7 (patch)
+## v2.1.8-pre.1 (prerelease)
 
-Changes since v2.1.6:
+Changes since v2.1.7:
 
-- Activate an existing default profile when none is active [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
-- Round-trip Chord, Phrase, Command and Profile through System.Text.Json [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
+- Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
 
