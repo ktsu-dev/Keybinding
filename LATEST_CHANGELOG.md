@@ -1,6 +1,7 @@
-## v2.1.7-pre.2 (prerelease)
+## v2.1.7 (patch)
 
-Changes since v2.1.7-pre.1:
+Changes since v2.1.6:
 
-- Bump the ktsu group with 1 update ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Activate an existing default profile when none is active [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
+- Round-trip Chord, Phrase, Command and Profile through System.Text.Json [patch] ([@matt-edmondson](https://github.com/matt-edmondson))
 
