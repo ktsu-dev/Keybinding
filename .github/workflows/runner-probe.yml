@@ -1,0 +1,21 @@
+name: Runner Probe
+on:
+  push:
+    branches: [claude/runner-probe-2h1toj]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ktsu-dev-runners
+    timeout-minutes: 15
+    steps:
+      - name: What the image has
+        run: |
+          set +e
+          uname -a; cat /etc/os-release | head -3; id; nproc; free -h; df -h . /tmp
+          echo "workspace=$GITHUB_WORKSPACE"
+          for t in pwsh git git-lfs gh jq python3 java dotnet curl wget unzip zip sudo apt-get docker node clang gcc fc-list; do
+            printf '%-8s ' "$t"; command -v $t || echo MISSING
+          done
+          git lfs version; pwsh -v; dotnet --list-sdks; sudo -n true && echo "passwordless sudo"
+          ldconfig -p | grep -E "fontconfig|freetype|libicu|libssl|libX11|libGL" | head
