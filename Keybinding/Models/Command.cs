@@ -33,9 +33,14 @@ public sealed class Command : IEquatable<Command>
 		}
 
 		Id = trimmedId == rawId ? id : CommandId.Create(trimmedId);
-		Name = name;
-		Description = description;
-		Category = category;
+
+		// Normalize the rest the same way too, so a command reads the same before and after a save and reload.
+		string trimmedName = TrimToNull(name.ToString())
+			?? throw new ArgumentException("Command name cannot be null or whitespace", nameof(name));
+
+		Name = trimmedName == name.ToString() ? name : CommandName.Create(trimmedName);
+		Description = TrimToNull(description?.ToString()) is string trimmedDescription ? CommandDescription.Create(trimmedDescription) : null;
+		Category = TrimToNull(category?.ToString()) is string trimmedCategory ? CommandCategory.Create(trimmedCategory) : null;
 	}
 
 	/// <summary>
@@ -60,9 +65,12 @@ public sealed class Command : IEquatable<Command>
 
 		Id = CommandId.Create(id.Trim());
 		Name = CommandName.Create(name.Trim());
-		Description = !string.IsNullOrWhiteSpace(description) ? CommandDescription.Create(description.Trim()) : null;
-		Category = !string.IsNullOrWhiteSpace(category) ? CommandCategory.Create(category.Trim()) : null;
+		Description = TrimToNull(description) is string trimmedDescription ? CommandDescription.Create(trimmedDescription) : null;
+		Category = TrimToNull(category) is string trimmedCategory ? CommandCategory.Create(trimmedCategory) : null;
 	}
+
+	private static string? TrimToNull(string? value) =>
+		string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
 	/// <summary>
 	/// Gets the unique identifier for the command
