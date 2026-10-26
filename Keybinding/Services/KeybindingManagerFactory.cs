@@ -25,17 +25,17 @@ public sealed class KeybindingManagerFactory : IKeybindingManagerFactory
 		_serviceProvider = Ensure.NotNull(serviceProvider);
 
 	/// <inheritdoc/>
+	/// <remarks>
+	/// The manager is always new, even when a <see cref="KeybindingManager"/> is registered with the service
+	/// provider, because the caller owns and disposes what a factory returns. Handing out the registered singleton
+	/// meant disposing it broke every other user of that instance for the rest of the process.
+	/// </remarks>
 	public KeybindingManager CreateManager()
 	{
 		if (_serviceProvider != null)
 		{
-			// Try to resolve from DI container first
-			if (_serviceProvider.GetService(typeof(KeybindingManager)) is KeybindingManager manager)
-			{
-				return manager;
-			}
-
-			// If not registered in DI, create with DI services
+			// Build over the registered services, so the new manager sees the same commands and profiles as the
+			// registered one without sharing its lifetime
 			if (_serviceProvider.GetService(typeof(ICommandRegistry)) is ICommandRegistry commandRegistry &&
 				_serviceProvider.GetService(typeof(IProfileManager)) is IProfileManager profileManager &&
 				_serviceProvider.GetService(typeof(IKeybindingRepository)) is IKeybindingRepository repository)

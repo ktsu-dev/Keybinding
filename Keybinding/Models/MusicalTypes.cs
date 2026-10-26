@@ -73,9 +73,24 @@ public sealed class Note : IEquatable<Note>
 
 		return key switch
 		{
-			"CONTROL" => "CTRL",
-			"OPTION" => "ALT",
-			"WIN" or "WINDOWS" or "CMD" or "COMMAND" or "SUPER" => "META",
+			// Modifiers, including the left and right variants and the names UI frameworks give them
+			// (WinForms Keys.ControlKey/LMenu/LWin, WPF Key.LeftCtrl/LeftAlt/LWin)
+			"CONTROL" or "CONTROLKEY" or "LCONTROLKEY" or "RCONTROLKEY" or "LEFTCTRL" or "RIGHTCTRL"
+				or "LCTRL" or "RCTRL" or "LEFTCONTROL" or "RIGHTCONTROL" => "CTRL",
+			"OPTION" or "MENU" or "LMENU" or "RMENU" or "LEFTALT" or "RIGHTALT" or "LALT" or "RALT" => "ALT",
+			"SHIFTKEY" or "LSHIFTKEY" or "RSHIFTKEY" or "LEFTSHIFT" or "RIGHTSHIFT" or "LSHIFT" or "RSHIFT" => "SHIFT",
+			"WIN" or "WINDOWS" or "CMD" or "COMMAND" or "SUPER" or "LWIN" or "RWIN" or "LEFTWINDOWS" or "RIGHTWINDOWS"
+				or "LEFTMETA" or "RIGHTMETA" => "META",
+			// Named separators and punctuation, as written in a profile or by WinForms/WPF (Keys.Oemplus, Key.OemComma)
+			"PLUS" or "OEMPLUS" or "ADD" => "+",
+			"COMMA" or "OEMCOMMA" => ",",
+			"MINUS" or "OEMMINUS" => "-",
+			"PERIOD" or "OEMPERIOD" => ".",
+			// Framework names for special keys (WinForms/WPF Back, Prior, Next, Capital)
+			"BACK" => nameof(SpecialKeys.Backspace).ToUpperInvariant(),
+			"PRIOR" => nameof(SpecialKeys.PageUp).ToUpperInvariant(),
+			"NEXT" => nameof(SpecialKeys.PageDown).ToUpperInvariant(),
+			"CAPITAL" or "CAPS" => nameof(SpecialKeys.CapsLock).ToUpperInvariant(),
 			"ESC" => nameof(SpecialKeys.Escape).ToUpperInvariant(),
 			"RETURN" => nameof(SpecialKeys.Enter).ToUpperInvariant(),
 			"DEL" => nameof(SpecialKeys.Delete).ToUpperInvariant(),
@@ -146,11 +161,18 @@ public sealed class Chord : IEquatable<Chord>
 	/// Initializes a new instance of the <see cref="Chord"/> class
 	/// </summary>
 	/// <param name="notes">The notes that make up this chord</param>
-	/// <exception cref="ArgumentException">Thrown when notes collection is null or empty</exception>
+	/// <exception cref="ArgumentNullException">Thrown when notes is null</exception>
+	/// <exception cref="ArgumentException">Thrown when notes is empty or contains a null note</exception>
 	public Chord(IEnumerable<Note> notes)
 	{
 		Ensure.NotNull(notes);
-		_notes = [.. notes.Distinct().OrderBy(n => n.Key.ToString())];
+		List<Note> given = [.. notes];
+		if (given.Any(n => n is null))
+		{
+			throw new ArgumentException("Chord cannot contain a null note", nameof(notes));
+		}
+
+		_notes = [.. given.Distinct().OrderBy(n => n.Key.ToString())];
 
 		if (_notes.Count == 0)
 		{
@@ -173,7 +195,7 @@ public sealed class Chord : IEquatable<Chord>
 	// takes the Notes property's own type.
 	[JsonConstructor]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
-	private Chord(IReadOnlyList<Note> notes) : this((IEnumerable<Note>)notes)
+	private Chord(IReadOnlyList<Note>? notes) : this((IEnumerable<Note>)JsonArguments.RequireItems(notes, nameof(Chord), nameof(Notes)))
 	{
 	}
 
@@ -226,11 +248,8 @@ public sealed class Chord : IEquatable<Chord>
 	/// </summary>
 	/// <param name="note">The note to check</param>
 	/// <returns>True if the note is a modifier key</returns>
-	private static bool IsModifierNote(Note note)
-	{
-		string key = note.Key.ToString().ToUpperInvariant();
-		return key is "CTRL" or "CONTROL" or "ALT" or "SHIFT" or "META" or "WIN" or "WINDOWS" or "CMD" or "COMMAND";
-	}
+	/// <remarks>Notes are canonicalized on construction, so every modifier alias has already become one of these.</remarks>
+	private static bool IsModifierNote(Note note) => note.Key.ToString() is "CTRL" or "ALT" or "SHIFT" or "META";
 
 	/// <summary>
 	/// Gets the display order for modifier keys
@@ -239,12 +258,12 @@ public sealed class Chord : IEquatable<Chord>
 	/// <returns>Order value for consistent display</returns>
 	private static int GetModifierOrder(string modifier)
 	{
-		return modifier.ToUpperInvariant() switch
+		return modifier switch
 		{
-			"CTRL" or "CONTROL" => 1,
+			"CTRL" => 1,
 			"ALT" => 2,
 			"SHIFT" => 3,
-			"META" or "WIN" or "WINDOWS" or "CMD" or "COMMAND" => 4,
+			"META" => 4,
 			_ => 5
 		};
 	}
@@ -256,12 +275,12 @@ public sealed class Chord : IEquatable<Chord>
 	/// <returns>Formatted display name</returns>
 	private static string FormatModifierForDisplay(string modifier)
 	{
-		return modifier.ToUpperInvariant() switch
+		return modifier switch
 		{
-			"CTRL" or "CONTROL" => "Ctrl",
+			"CTRL" => "Ctrl",
 			"ALT" => "Alt",
 			"SHIFT" => "Shift",
-			"META" or "WIN" or "WINDOWS" or "CMD" or "COMMAND" => "Meta",
+			"META" => "Meta",
 			_ => modifier
 		};
 	}
@@ -355,11 +374,16 @@ public sealed class Phrase : IEquatable<Phrase>
 	/// Initializes a new instance of the <see cref="Phrase"/> class
 	/// </summary>
 	/// <param name="sequence">The sequence of chords that make up this phrase</param>
-	/// <exception cref="ArgumentException">Thrown when sequence is null or empty</exception>
+	/// <exception cref="ArgumentNullException">Thrown when sequence is null</exception>
+	/// <exception cref="ArgumentException">Thrown when sequence is empty or contains a null chord</exception>
 	public Phrase(IEnumerable<Chord> sequence)
 	{
 		Ensure.NotNull(sequence);
 		_sequence = [.. sequence];
+		if (_sequence.Any(c => c is null))
+		{
+			throw new ArgumentException("Phrase cannot contain a null chord", nameof(sequence));
+		}
 
 		if (_sequence.Count == 0)
 		{
@@ -371,7 +395,8 @@ public sealed class Phrase : IEquatable<Phrase>
 	/// Initializes a new instance of the <see cref="Phrase"/> class with a single chord
 	/// </summary>
 	/// <param name="chord">The single chord that makes up this phrase</param>
-	public Phrase(Chord chord) : this([chord])
+	/// <exception cref="ArgumentNullException">Thrown when chord is null</exception>
+	public Phrase(Chord chord) : this([Ensure.NotNull(chord)])
 	{
 	}
 
@@ -379,7 +404,7 @@ public sealed class Phrase : IEquatable<Phrase>
 	// takes the Sequence property's own type.
 	[JsonConstructor]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
-	private Phrase(IReadOnlyList<Chord> sequence) : this((IEnumerable<Chord>)sequence)
+	private Phrase(IReadOnlyList<Chord>? sequence) : this((IEnumerable<Chord>)JsonArguments.RequireItems(sequence, nameof(Phrase), nameof(Sequence)))
 	{
 	}
 

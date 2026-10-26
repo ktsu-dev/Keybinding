@@ -74,4 +74,40 @@ public class KeybindingManagerFactoryTests
 		Assert.AreNotSame(provider.GetRequiredService<IProfileManager>(), manager.Profiles);
 		Assert.AreNotSame(provider.GetRequiredService<ICommandRegistry>(), manager.Commands);
 	}
+
+	[TestMethod]
+	public async Task CreateManager_DisposingTheResult_LeavesTheRegisteredManagerUsable()
+	{
+		ServiceCollection services = new();
+		services.AddKeybinding(_dirA);
+		using ServiceProvider provider = services.BuildServiceProvider();
+		IKeybindingManagerFactory factory = provider.GetRequiredService<IKeybindingManagerFactory>();
+
+		using (KeybindingManager created = factory.CreateManager())
+		{
+			await created.InitializeAsync().ConfigureAwait(false);
+		}
+
+		KeybindingManager registered = provider.GetRequiredService<KeybindingManager>();
+		await registered.InitializeAsync().ConfigureAwait(false);
+		await registered.SaveAsync().ConfigureAwait(false);
+
+		using KeybindingManager another = factory.CreateManager();
+		await another.InitializeAsync().ConfigureAwait(false);
+	}
+
+	[TestMethod]
+	public void CreateManager_WithServiceProvider_SharesTheRegisteredServices()
+	{
+		ServiceCollection services = new();
+		services.AddKeybinding(_dirA);
+		using ServiceProvider provider = services.BuildServiceProvider();
+		IKeybindingManagerFactory factory = provider.GetRequiredService<IKeybindingManagerFactory>();
+
+		using KeybindingManager manager = factory.CreateManager();
+
+		Assert.AreNotSame(provider.GetRequiredService<KeybindingManager>(), manager);
+		Assert.AreSame(provider.GetRequiredService<IProfileManager>(), manager.Profiles);
+		Assert.AreSame(provider.GetRequiredService<ICommandRegistry>(), manager.Commands);
+	}
 }

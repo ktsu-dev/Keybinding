@@ -17,7 +17,15 @@ public sealed class KeybindingManager : IDisposable
 	// Ids of the stored profiles this manager has loaded or saved. SaveAsync deletes a stored profile only if
 	// it is in here and no longer in memory, so profiles this manager never saw are not taken as deleted.
 	private readonly HashSet<string> _persistedProfileIds = [];
-	private readonly Lock _persistedProfileIdsLock = new();
+	private readonly Lock _persistedStateLock = new();
+
+	// Ids of the stored commands this manager has loaded or saved, guarded by the same lock. SaveAsync keeps a
+	// stored command it never saw, and removes one only if it is in here and no longer registered.
+	private readonly HashSet<string> _persistedCommandIds = [];
+
+	// Whether this manager has read or written the stored active profile. Until it has, SaveAsync writes the
+	// active profile only when one is set, so a manager that never loaded it cannot erase the user's choice.
+	private bool _activeProfileKnown;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="KeybindingManager"/> class with default services
@@ -86,6 +94,11 @@ public sealed class KeybindingManager : IDisposable
 			Commands.RegisterCommand(command);
 		}
 
+		lock (_persistedStateLock)
+		{
+			_persistedCommandIds.UnionWith(commands.Select(c => c.Id.ToString()));
+		}
+
 		// Load profiles
 		IReadOnlyCollection<Profile> profiles = await Repository.LoadAllProfilesAsync().ConfigureAwait(false);
 		foreach (Profile profile in profiles)
@@ -93,16 +106,21 @@ public sealed class KeybindingManager : IDisposable
 			Profiles.CreateProfile(profile);
 		}
 
-		lock (_persistedProfileIdsLock)
+		lock (_persistedStateLock)
 		{
 			_persistedProfileIds.UnionWith(profiles.Select(p => p.Id));
 		}
 
 		// Load active profile
 		string? activeProfileId = await Repository.LoadActiveProfileAsync().ConfigureAwait(false);
-		if (!string.IsNullOrEmpty(activeProfileId) && Profiles.ProfileExists(activeProfileId))
+		if (!string.IsNullOrWhiteSpace(activeProfileId) && Profiles.ProfileExists(activeProfileId))
 		{
 			Profiles.SetActiveProfile(activeProfileId);
+		}
+
+		lock (_persistedStateLock)
+		{
+			_activeProfileKnown = true;
 		}
 	}
 
@@ -114,9 +132,28 @@ public sealed class KeybindingManager : IDisposable
 	{
 		DisposalHelper.ThrowIfDisposed(_disposed, this);
 
-		// Save commands
+		// Save commands, keeping stored ones this manager never loaded. As with profiles below, a command that is
+		// not registered here was removed only if this manager had it before.
 		IReadOnlyCollection<Command> commands = Commands.GetAllCommands();
-		await Repository.SaveCommandsAsync(commands).ConfigureAwait(false);
+		HashSet<string> commandIds = [.. commands.Select(c => c.Id.ToString())];
+		IReadOnlyCollection<Command> storedCommands = await Repository.LoadCommandsAsync().ConfigureAwait(false);
+		List<Command> commandsToSave;
+		lock (_persistedStateLock)
+		{
+			commandsToSave =
+			[
+				.. commands,
+				.. storedCommands.Where(c => !commandIds.Contains(c.Id.ToString()) && !_persistedCommandIds.Contains(c.Id.ToString())),
+			];
+		}
+
+		await Repository.SaveCommandsAsync(commandsToSave).ConfigureAwait(false);
+
+		lock (_persistedStateLock)
+		{
+			_persistedCommandIds.Clear();
+			_persistedCommandIds.UnionWith(commandsToSave.Select(c => c.Id.ToString()));
+		}
 
 		// Remove stored profiles that were deleted in memory, so they do not come back on the next load. Only
 		// profiles this manager loaded or saved count: one it never saw is not in memory because it was never
@@ -124,7 +161,7 @@ public sealed class KeybindingManager : IDisposable
 		IReadOnlyCollection<Profile> profiles = Profiles.GetAllProfiles();
 		HashSet<string> profileIds = [.. profiles.Select(p => p.Id)];
 		List<string> deletedProfileIds;
-		lock (_persistedProfileIdsLock)
+		lock (_persistedStateLock)
 		{
 			deletedProfileIds = [.. _persistedProfileIds.Where(id => !profileIds.Contains(id))];
 		}
@@ -134,28 +171,46 @@ public sealed class KeybindingManager : IDisposable
 		// Save profiles using batch helper
 		await AsyncBatchHelper.ForEachAsync(profiles, Repository.SaveProfileAsync).ConfigureAwait(false);
 
-		lock (_persistedProfileIdsLock)
+		lock (_persistedStateLock)
 		{
 			_persistedProfileIds.ExceptWith(deletedProfileIds);
 			_persistedProfileIds.UnionWith(profileIds);
 		}
 
-		// Save active profile
+		// Save active profile. A manager that never loaded the stored one and has none set leaves it alone, so
+		// saving without InitializeAsync does not clear the user's active profile.
 		Profile? activeProfile = Profiles.GetActiveProfile();
-		await Repository.SaveActiveProfileAsync(activeProfile?.Id).ConfigureAwait(false);
+		bool activeProfileKnown;
+		lock (_persistedStateLock)
+		{
+			activeProfileKnown = _activeProfileKnown;
+		}
+
+		if (activeProfile is not null || activeProfileKnown)
+		{
+			await Repository.SaveActiveProfileAsync(activeProfile?.Id).ConfigureAwait(false);
+			lock (_persistedStateLock)
+			{
+				_activeProfileKnown = true;
+			}
+		}
 	}
 
 	/// <summary>
-	/// Creates a default profile if none exist
+	/// Creates a default profile if no profiles exist
 	/// </summary>
 	/// <param name="profileId">The ID for the default profile</param>
 	/// <param name="profileName">The name for the default profile</param>
 	/// <param name="activation">
-	/// Whether to set as the active profile. When the profile already exists, it is activated only if no
-	/// profile is active, so a startup call recovers from a deleted or unset active profile without
-	/// overriding the one the user chose.
+	/// Whether to set as the active profile. The profile is activated only if no profile is active, whether it
+	/// was just created or already existed, so a startup call recovers from a deleted or unset active profile
+	/// without overriding the one the user chose.
 	/// </param>
-	/// <returns>The created profile, or null if a profile already exists with the given ID</returns>
+	/// <returns>
+	/// The created profile, or null if it was not created: because a profile with the given ID already exists,
+	/// or because other profiles exist. A startup call therefore does not bring back a default profile the user
+	/// deleted after making another.
+	/// </returns>
 	public Profile? CreateDefaultProfile(string profileId = "default", string profileName = "Default", ProfileActivation activation = ProfileActivation.Activate)
 	{
 		DisposalHelper.ThrowIfDisposed(_disposed, this);
@@ -170,11 +225,16 @@ public sealed class KeybindingManager : IDisposable
 			return null;
 		}
 
+		if (Profiles.GetAllProfiles().Count > 0)
+		{
+			return null;
+		}
+
 		Profile profile = new(profileId, profileName, "Default keybinding profile");
 
 		if (Profiles.CreateProfile(profile))
 		{
-			if (activation == ProfileActivation.Activate)
+			if (activation == ProfileActivation.Activate && Profiles.GetActiveProfile() is null)
 			{
 				Profiles.SetActiveProfile(profileId);
 			}
@@ -210,7 +270,8 @@ public sealed class KeybindingManager : IDisposable
 
 		Profile activeProfile = Profiles.GetActiveProfile() ?? throw new InvalidOperationException("No active profile is set");
 
-		return OperationHelper.ExecuteWithCount(chords, Keybindings.BindChord);
+		// Bind into the profile resolved above, so a concurrent SetActiveProfile cannot split the batch
+		return OperationHelper.ExecuteWithCount(chords, (commandId, chord) => Keybindings.BindChord(activeProfile.Id, commandId, chord));
 	}
 
 	/// <summary>
