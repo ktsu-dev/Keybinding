@@ -56,6 +56,10 @@ public interface IKeybindingService
 	/// <param name="commandId">The command ID</param>
 	/// <param name="chord">The chord to bind</param>
 	/// <returns>True if the binding was successful, false if no active profile</returns>
+	/// <remarks>
+	/// A chord runs one command per profile. Binding a chord that another command in the profile already uses
+	/// moves it: the other command loses that binding, as rebinding a shortcut does in most editors.
+	/// </remarks>
 	public bool BindChord(string commandId, Chord chord);
 
 	/// <summary>
@@ -65,6 +69,10 @@ public interface IKeybindingService
 	/// <param name="commandId">The command ID</param>
 	/// <param name="chord">The chord to bind</param>
 	/// <returns>True if the binding was successful, false if the profile doesn't exist</returns>
+	/// <remarks>
+	/// A chord runs one command per profile. Binding a chord that another command in the profile already uses
+	/// moves it: the other command loses that binding, as rebinding a shortcut does in most editors.
+	/// </remarks>
 	public bool BindChord(string profileId, string commandId, Chord chord);
 
 	/// <summary>

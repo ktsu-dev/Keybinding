@@ -25,12 +25,12 @@ public class ProfileChordConcurrencyTests
 			registry.RegisterCommand(new Command($"c{i}", $"C{i}"));
 		}
 
-		Chord chord = Chord.Parse("Ctrl+K");
-
-		// Odd commands stay bound, even ones are unbound again, and reads race the writes.
+		// Odd commands stay bound, even ones are unbound again, and reads race the writes. Each command gets its
+		// own chord, since binding a chord another command uses moves it.
 		Parallel.For(0, CommandCount, i =>
 		{
 			string commandId = $"c{i}";
+			Chord chord = Chord.Parse($"Ctrl+K{i}");
 			Assert.IsTrue(service.BindChord(commandId, chord));
 			_ = service.FindCommandByChord(chord);
 			_ = service.GetAllChords();
@@ -45,5 +45,25 @@ public class ProfileChordConcurrencyTests
 		Assert.AreEqual(CommandCount / 2, profile.ChordCount);
 		Assert.HasCount(CommandCount / 2, service.GetAllChords());
 		Assert.IsTrue(service.GetAllChords().Keys.All(id => int.Parse(id[1..], CultureInfo.InvariantCulture) % 2 == 1));
+	}
+
+	[TestMethod]
+	public void BindChord_SameChordInParallel_LeavesExactlyOneCommandBound()
+	{
+		CommandRegistry registry = new();
+		ProfileManager profiles = new();
+		profiles.CreateProfile("p", "Profile");
+		profiles.SetActiveProfile("p");
+		KeybindingService service = new(registry, profiles);
+
+		for (int i = 0; i < CommandCount; i++)
+		{
+			registry.RegisterCommand(new Command($"c{i}", $"C{i}"));
+		}
+
+		Chord chord = Chord.Parse("Ctrl+K");
+		Parallel.For(0, CommandCount, i => Assert.IsTrue(service.BindChord($"c{i}", chord)));
+
+		Assert.AreEqual(1, profiles.GetProfile("p")!.ChordCount, "Concurrent binds of one chord must not both keep it.");
 	}
 }

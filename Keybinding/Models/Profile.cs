@@ -3,6 +3,7 @@
 namespace ktsu.Keybinding.Core.Models;
 
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -38,13 +39,22 @@ public sealed class Profile : IEquatable<Profile>
 	// constructor parameter of the same name and type. Without it a round-tripped profile comes back empty.
 	[JsonConstructor]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
-	private Profile(string id, string name, string? description, Dictionary<string, Chord>? chords) : this(id, name, description)
+	private Profile(string? id, string? name, string? description, Dictionary<string, Chord?>? chords)
+		: this(JsonArguments.RequireText(id, nameof(Profile), nameof(Id)), JsonArguments.RequireText(name, nameof(Profile), nameof(Name)), description)
 	{
 		if (chords is not null)
 		{
-			foreach (KeyValuePair<string, Chord> binding in chords)
+			foreach (KeyValuePair<string, Chord?> binding in chords)
 			{
-				SetChord(binding.Key, binding.Value);
+				Chord chord = binding.Value ?? throw new JsonException($"{nameof(Profile)} binding '{binding.Key}' has no chord.");
+				try
+				{
+					SetChord(binding.Key, chord);
+				}
+				catch (ArgumentException ex)
+				{
+					throw new JsonException($"'{binding.Key}' is not a valid {nameof(Profile)} binding.", ex);
+				}
 			}
 		}
 	}
@@ -136,6 +146,39 @@ public sealed class Profile : IEquatable<Profile>
 	}
 
 	/// <summary>
+	/// Binds a chord to a command and removes the chord from every other command in this profile, in one step
+	/// under the profile's lock, so a chord never runs more than one command and two concurrent binds of the
+	/// same chord cannot both keep it.
+	/// </summary>
+	/// <param name="commandId">The command ID</param>
+	/// <param name="chord">The chord to bind</param>
+	/// <returns>The IDs of the commands the chord was taken from</returns>
+	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null</exception>
+	internal IReadOnlyList<string> SetChordExclusive(string commandId, Chord chord)
+	{
+		if (string.IsNullOrWhiteSpace(commandId))
+		{
+			throw new ArgumentException("Command ID cannot be null or whitespace", nameof(commandId));
+		}
+
+		Ensure.NotNull(chord);
+		string id = commandId.Trim();
+
+		lock (_chordsLock)
+		{
+			List<string> displaced = [.. _chords.Where(b => b.Key != id && b.Value.Equals(chord)).Select(b => b.Key)];
+			foreach (string other in displaced)
+			{
+				_chords.Remove(other);
+			}
+
+			_chords[id] = chord;
+			return displaced;
+		}
+	}
+
+	/// <summary>
 	/// Gets the chord binding for a command in this profile
 	/// </summary>
 	/// <param name="commandId">The command ID</param>
@@ -172,9 +215,13 @@ public sealed class Profile : IEquatable<Profile>
 	/// <param name="chord">The chord to look up</param>
 	/// <param name="predicate">An optional condition the command ID must satisfy</param>
 	/// <returns>The command ID if found, null otherwise</returns>
+	/// <remarks>
+	/// Bindings are tried in ordinal command ID order, so when stored data binds one chord to several commands
+	/// the answer does not depend on the dictionary's history of unrelated removals.
+	/// </remarks>
 	internal string? FindCommand(Chord chord, Func<string, bool>? predicate = null)
 	{
-		foreach (KeyValuePair<string, Chord> binding in GetAllChords())
+		foreach (KeyValuePair<string, Chord> binding in GetAllChords().OrderBy(b => b.Key, StringComparer.Ordinal))
 		{
 			if (binding.Value.Equals(chord) && (predicate is null || predicate(binding.Key)))
 			{

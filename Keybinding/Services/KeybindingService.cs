@@ -82,7 +82,7 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 			return false;
 		}
 
-		profile.SetChord(commandId, chord);
+		profile.SetChordExclusive(commandId, chord);
 		return true;
 	}
 
@@ -185,46 +185,18 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	}
 
 	/// <inheritdoc/>
-	public Phrase ParsePhrase(string phraseString)
-	{
-		if (string.IsNullOrWhiteSpace(phraseString))
-		{
-			throw new ArgumentException("Phrase string cannot be null or whitespace", nameof(phraseString));
-		}
-
-		// Split by comma to get individual chord strings
-		string[] chordStrings = KeyStringTokenizer.SplitPhrase(phraseString);
-		List<Chord> chords = [];
-
-		foreach (string chordString in chordStrings)
-		{
-			Chord chord = ParseChord(chordString);
-			chords.Add(chord);
-		}
-
-		return new Phrase(chords);
-	}
+	/// <remarks>Delegates to <see cref="Phrase.Parse"/>, so the service and the model cannot parse a string differently.</remarks>
+	public Phrase ParsePhrase(string phraseString) =>
+		string.IsNullOrWhiteSpace(phraseString)
+			? throw new ArgumentException("Phrase string cannot be null or whitespace", nameof(phraseString))
+			: Phrase.Parse(phraseString);
 
 	/// <inheritdoc/>
-	public Chord ParseChord(string chordString)
-	{
-		if (string.IsNullOrWhiteSpace(chordString))
-		{
-			throw new ArgumentException("Chord string cannot be null or whitespace", nameof(chordString));
-		}
-
-		// Split by + to get individual note strings
-		string[] noteStrings = KeyStringTokenizer.SplitChord(chordString);
-		List<Note> notes = [];
-
-		foreach (string noteString in noteStrings)
-		{
-			Note note = new(noteString.Trim());
-			notes.Add(note);
-		}
-
-		return notes.Count == 0 ? throw new ArgumentException("Chord must contain at least one note", nameof(chordString)) : new Chord(notes);
-	}
+	/// <remarks>Delegates to <see cref="Chord.Parse"/>, so the service and the model cannot parse a string differently.</remarks>
+	public Chord ParseChord(string chordString) =>
+		string.IsNullOrWhiteSpace(chordString)
+			? throw new ArgumentException("Chord string cannot be null or whitespace", nameof(chordString))
+			: Chord.Parse(chordString);
 
 	/// <inheritdoc/>
 	public string? ExecuteChord(Chord chord)

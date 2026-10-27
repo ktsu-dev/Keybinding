@@ -2,6 +2,8 @@
 
 namespace ktsu.Keybinding.Core.Services;
 
+using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ktsu.Keybinding.Core.Contracts;
@@ -10,10 +12,29 @@ using ktsu.Keybinding.Core.Models;
 /// <summary>
 /// JSON file-based implementation of keybinding repository
 /// </summary>
+/// <remarks>
+/// <para>
+/// Every read-modify-write of the data directory is serialized, across every repository in the process that
+/// uses the same directory, so concurrent saves cannot lose each other's profiles.
+/// </para>
+/// <para>
+/// Each file is written to a temporary file beside it and then moved over it, so a crash part-way through a
+/// save leaves either the old file or the new one, never a truncated one.
+/// </para>
+/// <para>
+/// A file that is not valid JSON at all loads as empty, but is first moved aside to
+/// <c>&lt;name&gt;.corrupt-&lt;timestamp&gt;</c>, so the next save cannot destroy the only copy. A file that
+/// parses but has a bad entry loses only that entry: each profile, chord and command is read on its own.
+/// </para>
+/// </remarks>
 public sealed class JsonKeybindingRepository : IKeybindingRepository
 {
+	// One lock per data directory, shared by every repository in the process over that directory
+	private static readonly ConcurrentDictionary<string, SemaphoreSlim> DirectoryLocks = new(StringComparer.Ordinal);
+
 	private readonly string _dataDirectory;
 	private readonly JsonSerializerOptions _jsonOptions;
+	private readonly SemaphoreSlim _lock;
 
 	private const string ProfilesFileName = Constants.Files.ProfilesFileName;
 	private const string CommandsFileName = Constants.Files.CommandsFileName;
@@ -31,6 +52,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 		}
 
 		_dataDirectory = dataDirectory.Trim();
+		_lock = DirectoryLocks.GetOrAdd(Path.GetFullPath(_dataDirectory), _ => new SemaphoreSlim(1, 1));
 		_jsonOptions = new JsonSerializerOptions
 		{
 			WriteIndented = true,
@@ -40,35 +62,20 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	}
 
 	/// <inheritdoc/>
-	public async Task SaveProfileAsync(Profile profile)
+	public Task SaveProfileAsync(Profile profile)
 	{
 		Ensure.NotNull(profile);
 
-		await EnsureInitializedAsync().ConfigureAwait(false);
-
-		List<Profile> profiles = await LoadAllProfilesInternalAsync().ConfigureAwait(false);
-		List<Profile> profileList = [.. profiles];
-
-		// Remove existing profile with same ID if it exists
-		profileList.RemoveAll(p => p.Id == profile.Id);
-		profileList.Add(profile);
-
-		string profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
-		IEnumerable<ProfileDto> profileDtos = profileList.Select(p => new ProfileDto
+		return WithLockAsync(async () =>
 		{
-			Id = p.Id,
-			Name = p.Name,
-			Description = p.Description,
-			Chords = p.GetAllChords().ToDictionary(
-				kvp => kvp.Key,
-				kvp => new ChordDto
-				{
-					Notes = [.. kvp.Value.Notes.Select(n => n.ToString())]
-				})
-		});
+			List<Profile> profiles = await LoadAllProfilesUnlockedAsync().ConfigureAwait(false);
 
-		string json = JsonSerializer.Serialize(profileDtos, _jsonOptions);
-		await File.WriteAllTextAsync(profilesPath, json).ConfigureAwait(false);
+			// Replace the stored profile with the same ID if there is one
+			profiles.RemoveAll(p => p.Id == profile.Id);
+			profiles.Add(profile);
+
+			await WriteProfilesUnlockedAsync(profiles).ConfigureAwait(false);
+		});
 	}
 
 	/// <inheritdoc/>
@@ -84,49 +91,38 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	}
 
 	/// <inheritdoc/>
-	public async Task<IReadOnlyCollection<Profile>> LoadAllProfilesAsync() => await LoadAllProfilesInternalAsync().ConfigureAwait(false);
+	public async Task<IReadOnlyCollection<Profile>> LoadAllProfilesAsync() =>
+		await WithLockAsync(LoadAllProfilesUnlockedAsync).ConfigureAwait(false);
 
-	private async Task<List<Profile>> LoadAllProfilesInternalAsync()
+	private async Task<List<Profile>> LoadAllProfilesUnlockedAsync()
 	{
-		await EnsureInitializedAsync().ConfigureAwait(false);
-
-		string profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
-		if (!File.Exists(profilesPath))
+		List<JsonElement>? entries = await ReadEntriesUnlockedAsync(ProfilesFileName).ConfigureAwait(false);
+		if (entries is null)
 		{
 			return [];
 		}
 
-		try
+		List<Profile> profiles = [];
+		foreach (JsonElement entry in entries)
 		{
-			string json = await File.ReadAllTextAsync(profilesPath).ConfigureAwait(false);
-			List<ProfileDto> profileDtos = JsonSerializer.Deserialize<List<ProfileDto>>(json, _jsonOptions) ?? [];
-
-			List<Profile> profiles = [];
-			foreach (ProfileDto? dto in profileDtos)
+			Profile? profile = ToProfile(entry);
+			if (profile is not null)
 			{
-				Profile? profile = ToProfile(dto);
-				if (profile is not null)
-				{
-					profiles.Add(profile);
-				}
+				profiles.Add(profile);
 			}
+		}
 
-			return profiles;
-		}
-		catch (JsonException)
-		{
-			// If JSON is corrupted, return empty list
-			return [];
-		}
+		return profiles;
 	}
 
 	/// <summary>
-	/// Converts a stored profile, skipping it when its id or name is invalid and skipping any chord
-	/// whose notes are invalid, so one bad entry does not stop the rest of the file from loading.
-	/// A skipped entry is not written back by a later save.
+	/// Converts a stored profile, skipping it when it does not match the schema or its id or name is invalid,
+	/// and skipping any chord that does not match the schema or whose notes are invalid, so one bad entry does
+	/// not stop the rest of the file from loading. A skipped entry is not written back by a later save.
 	/// </summary>
-	private static Profile? ToProfile(ProfileDto? dto)
+	private Profile? ToProfile(JsonElement entry)
 	{
+		StoredProfileDto? dto = Deserialize<StoredProfileDto>(entry, "profile");
 		if (dto is null)
 		{
 			return null;
@@ -143,11 +139,17 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			return null;
 		}
 
-		foreach (KeyValuePair<string, ChordDto> kvp in dto.Chords ?? [])
+		foreach (KeyValuePair<string, JsonElement> kvp in dto.Chords ?? [])
 		{
+			ChordDto? chordDto = Deserialize<ChordDto>(kvp.Value, $"chord for '{kvp.Key}' in profile '{profile.Id}'");
+			if (chordDto is null)
+			{
+				continue;
+			}
+
 			try
 			{
-				Chord chord = new((kvp.Value?.Notes ?? []).Select(noteString => new Note(noteString)));
+				Chord chord = new((chordDto.Notes ?? []).Select(noteString => new Note(noteString)));
 				profile.SetChord(kvp.Key, chord);
 			}
 			catch (ArgumentException ex)
@@ -160,17 +162,23 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	}
 
 	/// <inheritdoc/>
-	public async Task DeleteProfileAsync(string profileId)
+	public Task DeleteProfileAsync(string profileId)
 	{
 		if (string.IsNullOrWhiteSpace(profileId))
 		{
 			throw new ArgumentException("Profile ID cannot be null or whitespace", nameof(profileId));
 		}
 
-		List<Profile> profiles = await LoadAllProfilesInternalAsync().ConfigureAwait(false);
-		profiles.RemoveAll(p => p.Id == profileId.Trim());
+		return WithLockAsync(async () =>
+		{
+			List<Profile> profiles = await LoadAllProfilesUnlockedAsync().ConfigureAwait(false);
+			profiles.RemoveAll(p => p.Id == profileId.Trim());
+			await WriteProfilesUnlockedAsync(profiles).ConfigureAwait(false);
+		});
+	}
 
-		string profilesPath = Path.Combine(_dataDirectory, ProfilesFileName);
+	private Task WriteProfilesUnlockedAsync(IEnumerable<Profile> profiles)
+	{
 		IEnumerable<ProfileDto> profileDtos = profiles.Select(p => new ProfileDto
 		{
 			Id = p.Id,
@@ -184,72 +192,51 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 				})
 		});
 
-		string json = JsonSerializer.Serialize(profileDtos, _jsonOptions);
-		await File.WriteAllTextAsync(profilesPath, json).ConfigureAwait(false);
+		return WriteFileUnlockedAsync(ProfilesFileName, JsonSerializer.Serialize(profileDtos, _jsonOptions));
 	}
 
 	/// <inheritdoc/>
-	public async Task SaveCommandsAsync(IEnumerable<Command> commands)
+	public Task SaveCommandsAsync(IEnumerable<Command> commands)
 	{
 		Ensure.NotNull(commands);
 
-		await EnsureInitializedAsync().ConfigureAwait(false);
-
-		string commandsPath = Path.Combine(_dataDirectory, CommandsFileName);
-		IEnumerable<CommandDto> commandDtos = commands.Select(c => new CommandDto
+		List<CommandDto> commandDtos = [.. commands.Select(c => new CommandDto
 		{
 			Id = c.Id,
 			Name = c.Name,
 			Description = c.Description,
 			Category = c.Category
-		});
+		})];
 
-		string json = JsonSerializer.Serialize(commandDtos, _jsonOptions);
-		await File.WriteAllTextAsync(commandsPath, json).ConfigureAwait(false);
+		return WithLockAsync(() => WriteFileUnlockedAsync(CommandsFileName, JsonSerializer.Serialize(commandDtos, _jsonOptions)));
 	}
 
 	/// <inheritdoc/>
-	public async Task<IReadOnlyCollection<Command>> LoadCommandsAsync()
-	{
-		await EnsureInitializedAsync().ConfigureAwait(false);
-
-		string commandsPath = Path.Combine(_dataDirectory, CommandsFileName);
-		if (!File.Exists(commandsPath))
+	public async Task<IReadOnlyCollection<Command>> LoadCommandsAsync() =>
+		await WithLockAsync(async () =>
 		{
-			return new List<Command>().AsReadOnly();
-		}
-
-		try
-		{
-			string json = await File.ReadAllTextAsync(commandsPath).ConfigureAwait(false);
-			List<CommandDto> commandDtos = JsonSerializer.Deserialize<List<CommandDto>>(json, _jsonOptions) ?? [];
-
+			List<JsonElement>? entries = await ReadEntriesUnlockedAsync(CommandsFileName).ConfigureAwait(false);
 			List<Command> commands = [];
-			foreach (CommandDto? dto in commandDtos)
+			foreach (JsonElement entry in entries ?? [])
 			{
-				Command? command = ToCommand(dto);
+				Command? command = ToCommand(entry);
 				if (command is not null)
 				{
 					commands.Add(command);
 				}
 			}
 
-			return commands.AsReadOnly();
-		}
-		catch (JsonException)
-		{
-			// If JSON is corrupted, return empty list
-			return new List<Command>().AsReadOnly();
-		}
-	}
+			return (IReadOnlyCollection<Command>)commands.AsReadOnly();
+		}).ConfigureAwait(false);
 
 	/// <summary>
-	/// Converts a stored command, skipping it when it is null or its id or name is invalid, so one
-	/// bad entry does not stop the rest of the file from loading. A skipped entry is not written back
-	/// by a later save.
+	/// Converts a stored command, skipping it when it is null, does not match the schema, or its id or name is
+	/// invalid, so one bad entry does not stop the rest of the file from loading. A skipped entry is not written
+	/// back by a later save.
 	/// </summary>
-	private static Command? ToCommand(CommandDto? dto)
+	private Command? ToCommand(JsonElement entry)
 	{
+		CommandDto? dto = Deserialize<CommandDto>(entry, "command");
 		if (dto is null)
 		{
 			return null;
@@ -267,39 +254,141 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	}
 
 	/// <inheritdoc/>
-	public async Task SaveActiveProfileAsync(string? profileId)
+	public Task SaveActiveProfileAsync(string? profileId)
 	{
-		await EnsureInitializedAsync().ConfigureAwait(false);
-
-		string activeProfilePath = Path.Combine(_dataDirectory, ActiveProfileFileName);
 		ActiveProfileDto activeProfileDto = new() { ActiveProfileId = profileId };
-
-		string json = JsonSerializer.Serialize(activeProfileDto, _jsonOptions);
-		await File.WriteAllTextAsync(activeProfilePath, json).ConfigureAwait(false);
+		return WithLockAsync(() => WriteFileUnlockedAsync(ActiveProfileFileName, JsonSerializer.Serialize(activeProfileDto, _jsonOptions)));
 	}
 
 	/// <inheritdoc/>
-	public async Task<string?> LoadActiveProfileAsync()
-	{
-		await EnsureInitializedAsync().ConfigureAwait(false);
+	public async Task<string?> LoadActiveProfileAsync() =>
+		await WithLockAsync(async () =>
+		{
+			string? json = await ReadFileUnlockedAsync(ActiveProfileFileName).ConfigureAwait(false);
+			if (json is null)
+			{
+				return null;
+			}
 
-		string activeProfilePath = Path.Combine(_dataDirectory, ActiveProfileFileName);
-		if (!File.Exists(activeProfilePath))
+			try
+			{
+				ActiveProfileDto? activeProfileDto = JsonSerializer.Deserialize<ActiveProfileDto>(json, _jsonOptions);
+				return string.IsNullOrWhiteSpace(activeProfileDto?.ActiveProfileId) ? null : activeProfileDto.ActiveProfileId;
+			}
+			catch (JsonException)
+			{
+				// An unreadable active profile means none is active; the file holds nothing worth keeping aside
+				return null;
+			}
+		}).ConfigureAwait(false);
+
+	private async Task WithLockAsync(Func<Task> action)
+	{
+		await _lock.WaitAsync().ConfigureAwait(false);
+		try
+		{
+			await EnsureInitializedAsync().ConfigureAwait(false);
+			await action().ConfigureAwait(false);
+		}
+		finally
+		{
+			_lock.Release();
+		}
+	}
+
+	private async Task<T> WithLockAsync<T>(Func<Task<T>> action)
+	{
+		await _lock.WaitAsync().ConfigureAwait(false);
+		try
+		{
+			await EnsureInitializedAsync().ConfigureAwait(false);
+			return await action().ConfigureAwait(false);
+		}
+		finally
+		{
+			_lock.Release();
+		}
+	}
+
+	private async Task<string?> ReadFileUnlockedAsync(string fileName)
+	{
+		string path = Path.Combine(_dataDirectory, fileName);
+		return File.Exists(path) ? await File.ReadAllTextAsync(path).ConfigureAwait(false) : null;
+	}
+
+	/// <summary>
+	/// Reads a file holding a JSON array as its separate entries, so each can be converted on its own. A file
+	/// that is missing gives null; one that is not a JSON array is moved aside and also gives null.
+	/// </summary>
+	private async Task<List<JsonElement>?> ReadEntriesUnlockedAsync(string fileName)
+	{
+		string? json = await ReadFileUnlockedAsync(fileName).ConfigureAwait(false);
+		if (json is null)
 		{
 			return null;
 		}
 
 		try
 		{
-			string json = await File.ReadAllTextAsync(activeProfilePath).ConfigureAwait(false);
-			ActiveProfileDto? activeProfileDto = JsonSerializer.Deserialize<ActiveProfileDto>(json, _jsonOptions);
-
-			return activeProfileDto?.ActiveProfileId;
+			return JsonSerializer.Deserialize<List<JsonElement>>(json, _jsonOptions) ?? [];
 		}
-		catch (JsonException)
+		catch (JsonException ex)
 		{
-			// If JSON is corrupted, return null
+			MoveCorruptFileAside(fileName, ex);
 			return null;
+		}
+	}
+
+	private T? Deserialize<T>(JsonElement entry, string description) where T : class
+	{
+		try
+		{
+			return entry.Deserialize<T>(_jsonOptions);
+		}
+		catch (JsonException ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"Skipping stored {description}: {ex.Message}");
+			return null;
+		}
+	}
+
+	/// <summary>
+	/// Moves a file that is not valid JSON to a side file, so the save that follows a load cannot overwrite the
+	/// only copy of whatever it held.
+	/// </summary>
+	private void MoveCorruptFileAside(string fileName, JsonException reason)
+	{
+		string path = Path.Combine(_dataDirectory, fileName);
+		string stamp = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff", CultureInfo.InvariantCulture);
+		string sidePath = $"{path}.corrupt-{stamp}";
+		for (int attempt = 1; File.Exists(sidePath); attempt++)
+		{
+			sidePath = $"{path}.corrupt-{stamp}-{attempt}";
+		}
+
+		File.Move(path, sidePath);
+		System.Diagnostics.Debug.WriteLine($"{fileName} is not valid JSON and was moved to {sidePath}: {reason.Message}");
+	}
+
+	/// <summary>
+	/// Writes a file through a temporary file in the same directory and a move over the target, so the target
+	/// is never truncated in place.
+	/// </summary>
+	private async Task WriteFileUnlockedAsync(string fileName, string contents)
+	{
+		string path = Path.Combine(_dataDirectory, fileName);
+		string tempPath = Path.Combine(_dataDirectory, $"{fileName}.{Guid.NewGuid():N}.tmp");
+		try
+		{
+			await File.WriteAllTextAsync(tempPath, contents).ConfigureAwait(false);
+			File.Move(tempPath, path, overwrite: true);
+		}
+		finally
+		{
+			if (File.Exists(tempPath))
+			{
+				File.Delete(tempPath);
+			}
 		}
 	}
 
@@ -323,6 +412,15 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 		{
 			await InitializeAsync().ConfigureAwait(false);
 		}
+	}
+
+	// Reading a profile keeps each chord as raw JSON, so a chord that does not match the schema costs only itself
+	private sealed class StoredProfileDto
+	{
+		public string Id { get; set; } = string.Empty;
+		public string Name { get; set; } = string.Empty;
+		public string? Description { get; set; }
+		public Dictionary<string, JsonElement>? Chords { get; set; }
 	}
 
 	private sealed class ProfileDto

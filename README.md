@@ -95,6 +95,15 @@ var chord = new Chord([
 // Supported modifiers: Ctrl, Alt, Shift, Meta (Windows/Cmd key)
 ```
 
+Key names are canonicalized, so every common spelling of a key compares equal: `Control`, `LeftCtrl` and
+`LControlKey` are all `Ctrl`; `Win`, `Cmd` and `LWin` are `Meta`; `Plus`, `Comma`, `Minus` and `Period` are
+`+`, `,`, `-` and `.`; and framework names such as `Back`, `Prior`, `Next` and `Capital` are `Backspace`,
+`PageUp`, `PageDown` and `CapsLock`. A chord built from a UI framework's key names matches one parsed from a
+profile.
+
+A chord runs one command per profile. Binding a chord that another command already uses moves it to the new
+command, as rebinding a shortcut does in most editors.
+
 ### Profiles
 
 Profiles allow different keybinding configurations:
@@ -246,12 +255,15 @@ By default, the library stores data in JSON format in the specified directory:
 ```
 data-directory/
 ├── commands.json          # Registered commands
-├── active-profile.json    # Currently active profile ID
-└── profiles/
-    ├── default.json       # Default profile keybindings
-    ├── gaming.json        # Gaming profile keybindings
-    └── custom.json        # Custom profile keybindings
+├── profiles.json          # Every profile and its chord bindings
+└── active-profile.json    # Currently active profile ID
 ```
+
+Each file is written to a temporary file beside it and moved into place, so a crash during a save leaves the
+old file or the new one, never half of one. Saves from any number of managers in one process are serialized
+per directory. A file that is not valid JSON loads as empty but is first moved aside to
+`<name>.corrupt-<timestamp>`, so the next save cannot overwrite the only copy; a file with one bad entry loses
+only that entry.
 
 ## Thread Safety
 
