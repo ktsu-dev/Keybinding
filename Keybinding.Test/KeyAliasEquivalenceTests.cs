@@ -57,6 +57,22 @@ public class KeyAliasEquivalenceTests
 		Assert.AreEqual(expected, Chord.Parse(value).ToString());
 
 	[TestMethod]
+	[DataRow("Ctrl+Add", "Ctrl++")]
+	[DataRow("Ctrl+Subtract", "Ctrl+-")]
+	[DataRow("Ctrl+Decimal", "Ctrl+.")]
+	[DataRow("Ctrl+Multiply", "Ctrl+*")]
+	[DataRow("Ctrl+Divide", "Ctrl+/")]
+	[DataRow("Ctrl+NumPad1", "Ctrl+1")]
+	public void NumpadKey_StaysDistinctFromTheMainRowKey(string numpad, string mainRow)
+	{
+		Chord fromNumpad = Chord.Parse(numpad);
+		Chord fromMainRow = Chord.Parse(mainRow);
+
+		Assert.AreNotEqual(fromMainRow, fromNumpad);
+		Assert.AreNotEqual(fromMainRow.ToString(), fromNumpad.ToString());
+	}
+
+	[TestMethod]
 	public void NamedSeparator_ConstructedDirectly_MatchesTheSymbol()
 	{
 		Assert.AreEqual(new Note("+"), new Note("Plus"));

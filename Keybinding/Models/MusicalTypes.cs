@@ -81,8 +81,10 @@ public sealed class Note : IEquatable<Note>
 			"SHIFTKEY" or "LSHIFTKEY" or "RSHIFTKEY" or "LEFTSHIFT" or "RIGHTSHIFT" or "LSHIFT" or "RSHIFT" => "SHIFT",
 			"WIN" or "WINDOWS" or "CMD" or "COMMAND" or "SUPER" or "LWIN" or "RWIN" or "LEFTWINDOWS" or "RIGHTWINDOWS"
 				or "LEFTMETA" or "RIGHTMETA" => "META",
-			// Named separators and punctuation, as written in a profile or by WinForms/WPF (Keys.Oemplus, Key.OemComma)
-			"PLUS" or "OEMPLUS" or "ADD" => "+",
+			// Named separators and punctuation, as written in a profile or by WinForms/WPF (Keys.Oemplus, Key.OemComma).
+			// Only the main-row keys fold: numpad keys (Add, Subtract, Decimal, Multiply, Divide, NumPad0-9) stay
+			// distinct so an app can bind them separately.
+			"PLUS" or "OEMPLUS" => "+",
 			"COMMA" or "OEMCOMMA" => ",",
 			"MINUS" or "OEMMINUS" => "-",
 			"PERIOD" or "OEMPERIOD" => ".",
