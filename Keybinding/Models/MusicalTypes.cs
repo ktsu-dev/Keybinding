@@ -84,15 +84,24 @@ public sealed class Note : IEquatable<Note>
 			// Named separators and punctuation, as written in a profile or by WinForms/WPF (Keys.Oemplus, Key.OemComma).
 			// Only the main-row keys fold: numpad keys (Add, Subtract, Decimal, Multiply, Divide, NumPad0-9) stay
 			// distinct so an app can bind them separately.
+			// Windows defines these four OEM keys as the same character on every layout.
 			"PLUS" or "OEMPLUS" => "+",
 			"COMMA" or "OEMCOMMA" => ",",
 			"MINUS" or "OEMMINUS" => "-",
 			"PERIOD" or "OEMPERIOD" => ".",
+			// The other OEM keys (Oem1-Oem7, OemQuestion, OemSemicolon, OemQuotes, OemOpenBrackets, OemCloseBrackets,
+			// OemPipe, OemTilde) name a physical key whose character depends on the layout: Oem2 is "/" on a US
+			// keyboard but "#" on a German one. They stay distinct, so a "Ctrl+/" binding does not fire on whichever
+			// key happens to sit where the US "/" is. A host that wants characters should map the key press to one.
 			// Framework names for special keys (WinForms/WPF Back, Prior, Next, Capital)
 			"BACK" => nameof(SpecialKeys.Backspace).ToUpperInvariant(),
 			"PRIOR" => nameof(SpecialKeys.PageUp).ToUpperInvariant(),
 			"NEXT" => nameof(SpecialKeys.PageDown).ToUpperInvariant(),
 			"CAPITAL" or "CAPS" => nameof(SpecialKeys.CapsLock).ToUpperInvariant(),
+			// System.ConsoleKey.Spacebar, and WinForms Keys.Snapshot/Keys.Scroll
+			"SPACEBAR" => nameof(SpecialKeys.Space).ToUpperInvariant(),
+			"SNAPSHOT" => nameof(SpecialKeys.PrintScreen).ToUpperInvariant(),
+			"SCROLL" => nameof(SpecialKeys.ScrollLock).ToUpperInvariant(),
 			"ESC" => nameof(SpecialKeys.Escape).ToUpperInvariant(),
 			"RETURN" => nameof(SpecialKeys.Enter).ToUpperInvariant(),
 			"DEL" => nameof(SpecialKeys.Delete).ToUpperInvariant(),

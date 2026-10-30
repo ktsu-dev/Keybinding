@@ -20,6 +20,9 @@ public class KeyAliasEquivalenceTests
 	[DataRow("Prior", "PageUp")]
 	[DataRow("Next", "PageDown")]
 	[DataRow("Capital", "CapsLock")]
+	[DataRow("Ctrl+Spacebar", "Ctrl+Space")]
+	[DataRow("Snapshot", "PrintScreen")]
+	[DataRow("Scroll", "ScrollLock")]
 	[DataRow("LWin+A", "Meta+A")]
 	[DataRow("RWin+A", "Meta+A")]
 	[DataRow("LeftWindows+A", "Meta+A")]
@@ -70,6 +73,34 @@ public class KeyAliasEquivalenceTests
 
 		Assert.AreNotEqual(fromMainRow, fromNumpad);
 		Assert.AreNotEqual(fromMainRow.ToString(), fromNumpad.ToString());
+	}
+
+	/// <summary>
+	/// These OEM keys name a physical key whose character depends on the keyboard layout, so they do not fold
+	/// to the character the key produces on a US layout (ktsu-dev/Keybinding#198).
+	/// </summary>
+	[TestMethod]
+	[DataRow("Ctrl+OemQuestion", "Ctrl+/")]
+	[DataRow("Ctrl+Oem2", "Ctrl+/")]
+	[DataRow("Ctrl+OemSemicolon", "Ctrl+;")]
+	[DataRow("Ctrl+Oem1", "Ctrl+;")]
+	[DataRow("Ctrl+OemQuotes", "Ctrl+'")]
+	[DataRow("Ctrl+Oem7", "Ctrl+'")]
+	[DataRow("Ctrl+OemOpenBrackets", "Ctrl+[")]
+	[DataRow("Ctrl+Oem4", "Ctrl+[")]
+	[DataRow("Ctrl+OemCloseBrackets", "Ctrl+]")]
+	[DataRow("Ctrl+Oem6", "Ctrl+]")]
+	[DataRow("Ctrl+OemPipe", "Ctrl+\\")]
+	[DataRow("Ctrl+Oem5", "Ctrl+\\")]
+	[DataRow("Ctrl+Oemtilde", "Ctrl+`")]
+	[DataRow("Ctrl+Oem3", "Ctrl+`")]
+	public void LayoutDependentOemKey_StaysDistinctFromItsUsLayoutCharacter(string oem, string usCharacter)
+	{
+		Chord fromOem = Chord.Parse(oem);
+		Chord fromCharacter = Chord.Parse(usCharacter);
+
+		Assert.AreNotEqual(fromCharacter, fromOem);
+		Assert.AreNotEqual(fromCharacter.ToString(), fromOem.ToString());
 	}
 
 	[TestMethod]
