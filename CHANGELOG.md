@@ -2,6 +2,8 @@
 
 Changes since v2.1.0:
 
+- Activate a remaining profile at startup when default is gone and none is active [patch] (Claude)
+- Keep numpad Add distinct from the main-row plus key [patch] (Claude)
 - Fix thirteen open bugs in parsing, binding, the manager and JSON storage [minor] (Claude)
 - Commit the .editorconfig and .gitignore that ktsu.Sdk 2.31.2 writes on build (#170) (Claude)
 - Trim the semantic Command constructor's name, description and category [patch] (Claude)
