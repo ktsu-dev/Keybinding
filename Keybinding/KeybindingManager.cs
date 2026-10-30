@@ -202,9 +202,10 @@ public sealed class KeybindingManager : IDisposable
 	/// <param name="profileId">The ID for the default profile</param>
 	/// <param name="profileName">The name for the default profile</param>
 	/// <param name="activation">
-	/// Whether to set as the active profile. The profile is activated only if no profile is active, whether it
-	/// was just created or already existed, so a startup call recovers from a deleted or unset active profile
-	/// without overriding the one the user chose.
+	/// Whether to set as the active profile. A profile is activated only if no profile is active, so a startup
+	/// call recovers from a deleted or unset active profile without overriding the one the user chose. The
+	/// profile with the given ID is activated if it exists or was just created; otherwise, when other profiles
+	/// exist, the first of them by ordinal ID is activated.
 	/// </param>
 	/// <returns>
 	/// The created profile, or null if it was not created: because a profile with the given ID already exists,
@@ -225,8 +226,15 @@ public sealed class KeybindingManager : IDisposable
 			return null;
 		}
 
-		if (Profiles.GetAllProfiles().Count > 0)
+		IReadOnlyCollection<Profile> existingProfiles = Profiles.GetAllProfiles();
+		if (existingProfiles.Count > 0)
 		{
+			if (activation == ProfileActivation.Activate && Profiles.GetActiveProfile() is null)
+			{
+				string firstProfileId = existingProfiles.Select(p => p.Id).OrderBy(id => id, StringComparer.Ordinal).First();
+				Profiles.SetActiveProfile(firstProfileId);
+			}
+
 			return null;
 		}
 

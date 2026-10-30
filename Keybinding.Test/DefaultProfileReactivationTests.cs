@@ -52,6 +52,57 @@ public class DefaultProfileReactivationTests
 	}
 
 	[TestMethod]
+	public async Task CreateDefaultProfile_DefaultAndActiveProfileDeleted_ActivatesRemainingProfileOnNextLaunch()
+	{
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
+			manager.CreateDefaultProfile();
+			manager.Profiles.CreateProfile("vim", "Vim");
+			manager.Profiles.CreateProfile("emacs", "Emacs");
+			Assert.IsTrue(manager.Profiles.SetActiveProfile("vim"));
+			Assert.IsTrue(manager.Profiles.DeleteProfile("default"));
+			Assert.IsTrue(manager.Profiles.DeleteProfile("vim"));
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
+			Assert.IsNull(manager.CreateDefaultProfile());
+			manager.RegisterCommands([new Command("file.save", "Save")]);
+
+			Assert.AreEqual("emacs", manager.Profiles.GetActiveProfile()?.Id);
+			Assert.IsFalse(manager.Profiles.ProfileExists("default"));
+			Assert.IsTrue(manager.Keybindings.BindChord("file.save", Chord.Parse("Ctrl+S")));
+			Assert.AreEqual("file.save", manager.Keybindings.ExecuteChord(Chord.Parse("Ctrl+S")));
+		}
+	}
+
+	[TestMethod]
+	public void CreateDefaultProfile_NoDefaultAndNoneActive_ActivatesFirstProfileByOrdinalId()
+	{
+		using KeybindingManager manager = new(_testDataDirectory);
+		manager.Profiles.CreateProfile("vim", "Vim");
+		manager.Profiles.CreateProfile("Emacs", "Emacs");
+		manager.Profiles.CreateProfile("helix", "Helix");
+
+		Assert.IsNull(manager.CreateDefaultProfile());
+		Assert.AreEqual("Emacs", manager.Profiles.GetActiveProfile()?.Id);
+		Assert.IsFalse(manager.Profiles.ProfileExists("default"));
+	}
+
+	[TestMethod]
+	public void CreateDefaultProfile_NoDefaultAndNoneActiveWithDoNotActivate_LeavesNoActiveProfile()
+	{
+		using KeybindingManager manager = new(_testDataDirectory);
+		manager.Profiles.CreateProfile("vim", "Vim");
+
+		Assert.IsNull(manager.CreateDefaultProfile(activation: ProfileActivation.DoNotActivate));
+		Assert.IsNull(manager.Profiles.GetActiveProfile());
+	}
+
+	[TestMethod]
 	public void CreateDefaultProfile_ExistingDefaultWhileAnotherIsActive_LeavesActiveProfileAlone()
 	{
 		using KeybindingManager manager = new(_testDataDirectory);
