@@ -136,18 +136,19 @@ public sealed class KeybindingManager : IDisposable
 		// not registered here was removed only if this manager had it before.
 		IReadOnlyCollection<Command> commands = Commands.GetAllCommands();
 		HashSet<string> commandIds = [.. commands.Select(c => c.Id.ToString())];
-		IReadOnlyCollection<Command> storedCommands = await Repository.LoadCommandsAsync().ConfigureAwait(false);
-		List<Command> commandsToSave;
-		lock (_persistedStateLock)
+		// The merge runs inside the repository's update, so another manager's save cannot land between reading the
+		// stored commands and writing the merged ones.
+		IReadOnlyCollection<Command> commandsToSave = await Repository.UpdateCommandsAsync(storedCommands =>
 		{
-			commandsToSave =
-			[
-				.. commands,
-				.. storedCommands.Where(c => !commandIds.Contains(c.Id.ToString()) && !_persistedCommandIds.Contains(c.Id.ToString())),
-			];
-		}
-
-		await Repository.SaveCommandsAsync(commandsToSave).ConfigureAwait(false);
+			lock (_persistedStateLock)
+			{
+				return
+				[
+					.. commands,
+					.. storedCommands.Where(c => !commandIds.Contains(c.Id.ToString()) && !_persistedCommandIds.Contains(c.Id.ToString())),
+				];
+			}
+		}).ConfigureAwait(false);
 
 		lock (_persistedStateLock)
 		{
