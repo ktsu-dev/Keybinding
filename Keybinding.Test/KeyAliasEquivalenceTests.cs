@@ -42,6 +42,31 @@ public class KeyAliasEquivalenceTests
 	[DataRow("RMenu+A", "Alt+A")]
 	[DataRow("LeftAlt+A", "Alt+A")]
 	[DataRow("RightAlt+A", "Alt+A")]
+	// Browser KeyboardEvent.code, Silk.NET Key, ImGuiKey, GLFW and macOS spellings (ktsu-dev/Keybinding#205)
+	[DataRow("ControlLeft+C", "Ctrl+C")]
+	[DataRow("ControlRight+C", "Ctrl+C")]
+	[DataRow("ShiftLeft+C", "Shift+C")]
+	[DataRow("ShiftRight+C", "Shift+C")]
+	[DataRow("AltLeft+C", "Alt+C")]
+	[DataRow("AltRight+C", "Alt+C")]
+	[DataRow("MetaLeft+C", "Meta+C")]
+	[DataRow("MetaRight+C", "Meta+C")]
+	[DataRow("SuperLeft+C", "Meta+C")]
+	[DataRow("SuperRight+C", "Meta+C")]
+	[DataRow("LeftSuper+C", "Meta+C")]
+	[DataRow("RightSuper+C", "Meta+C")]
+	[DataRow("OSLeft+C", "Meta+C")]
+	[DataRow("OSRight+C", "Meta+C")]
+	[DataRow("LeftCommand+C", "Meta+C")]
+	[DataRow("RightCommand+C", "Meta+C")]
+	[DataRow("LEFT_CONTROL+C", "Ctrl+C")]
+	[DataRow("RIGHT_CONTROL+C", "Ctrl+C")]
+	[DataRow("LEFT_SHIFT+C", "Shift+C")]
+	[DataRow("RIGHT_SHIFT+C", "Shift+C")]
+	[DataRow("LEFT_ALT+C", "Alt+C")]
+	[DataRow("RIGHT_ALT+C", "Alt+C")]
+	[DataRow("LEFT_SUPER+C", "Meta+C")]
+	[DataRow("RIGHT_SUPER+C", "Meta+C")]
 	public void Alias_EqualsAndHashesLikeItsCanonicalForm(string alias, string canonical)
 	{
 		Chord fromAlias = Chord.Parse(alias);
@@ -56,6 +81,9 @@ public class KeyAliasEquivalenceTests
 	[DataRow("LWin+A", "Meta+A")]
 	[DataRow("A+LeftCtrl+RightShift", "Ctrl+Shift+A")]
 	[DataRow("RMenu+LWin+LControlKey+X", "Ctrl+Alt+Meta+X")]
+	[DataRow("C+ControlLeft", "Ctrl+C")]
+	[DataRow("C+SuperLeft+ShiftRight", "Shift+Meta+C")]
+	[DataRow("X+LEFT_SUPER+LEFT_ALT+LEFT_CONTROL", "Ctrl+Alt+Meta+X")]
 	public void LeftAndRightModifiers_SortAndDisplayAsModifiers(string value, string expected) =>
 		Assert.AreEqual(expected, Chord.Parse(value).ToString());
 
