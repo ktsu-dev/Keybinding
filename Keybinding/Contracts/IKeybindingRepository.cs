@@ -50,6 +50,25 @@ public interface IKeybindingRepository
 	public Task<IReadOnlyCollection<Command>> LoadCommandsAsync();
 
 	/// <summary>
+	/// Replaces the stored commands with ones computed from them, as one operation
+	/// </summary>
+	/// <param name="update">Computes the commands to store from the ones stored now</param>
+	/// <returns>The commands that were stored</returns>
+	/// <remarks>
+	/// The default implementation loads and then saves, so a save by someone else can land between the two and be
+	/// overwritten. A repository that can be shared should override it to hold its lock across both.
+	/// </remarks>
+	public async Task<IReadOnlyCollection<Command>> UpdateCommandsAsync(Func<IReadOnlyCollection<Command>, IEnumerable<Command>> update)
+	{
+		Ensure.NotNull(update);
+
+		IReadOnlyCollection<Command> storedCommands = await LoadCommandsAsync().ConfigureAwait(false);
+		List<Command> commands = [.. update(storedCommands)];
+		await SaveCommandsAsync(commands).ConfigureAwait(false);
+		return commands.AsReadOnly();
+	}
+
+	/// <summary>
 	/// Saves the active profile ID to persistent storage
 	/// </summary>
 	/// <param name="profileId">The active profile ID, or null if no profile is active</param>
