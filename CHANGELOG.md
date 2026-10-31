@@ -2,6 +2,7 @@
 
 Changes since v2.1.0:
 
+- Fold Spacebar, Snapshot and Scroll into Space, PrintScreen and ScrollLock [patch] (Claude)
 - Activate a remaining profile at startup when default is gone and none is active [patch] (Claude)
 - Keep numpad Add distinct from the main-row plus key [patch] (Claude)
 - Fix thirteen open bugs in parsing, binding, the manager and JSON storage [minor] (Claude)
