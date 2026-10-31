@@ -74,13 +74,19 @@ public sealed class Note : IEquatable<Note>
 		return key switch
 		{
 			// Modifiers, including the left and right variants and the names UI frameworks give them
-			// (WinForms Keys.ControlKey/LMenu/LWin, WPF Key.LeftCtrl/LeftAlt/LWin)
+			// (WinForms Keys.ControlKey/LMenu/LWin, WPF Key.LeftCtrl/LeftAlt/LWin, browser KeyboardEvent.code
+			// ControlLeft/OSLeft, Silk.NET Key.ControlLeft/SuperLeft, ImGuiKey.LeftSuper, GLFW LEFT_CONTROL)
 			"CONTROL" or "CONTROLKEY" or "LCONTROLKEY" or "RCONTROLKEY" or "LEFTCTRL" or "RIGHTCTRL"
-				or "LCTRL" or "RCTRL" or "LEFTCONTROL" or "RIGHTCONTROL" => "CTRL",
-			"OPTION" or "MENU" or "LMENU" or "RMENU" or "LEFTALT" or "RIGHTALT" or "LALT" or "RALT" => "ALT",
-			"SHIFTKEY" or "LSHIFTKEY" or "RSHIFTKEY" or "LEFTSHIFT" or "RIGHTSHIFT" or "LSHIFT" or "RSHIFT" => "SHIFT",
+				or "LCTRL" or "RCTRL" or "LEFTCONTROL" or "RIGHTCONTROL" or "CONTROLLEFT" or "CONTROLRIGHT"
+				or "LEFT_CONTROL" or "RIGHT_CONTROL" => "CTRL",
+			"OPTION" or "MENU" or "LMENU" or "RMENU" or "LEFTALT" or "RIGHTALT" or "LALT" or "RALT"
+				or "ALTLEFT" or "ALTRIGHT" or "LEFT_ALT" or "RIGHT_ALT" => "ALT",
+			"SHIFTKEY" or "LSHIFTKEY" or "RSHIFTKEY" or "LEFTSHIFT" or "RIGHTSHIFT" or "LSHIFT" or "RSHIFT"
+				or "SHIFTLEFT" or "SHIFTRIGHT" or "LEFT_SHIFT" or "RIGHT_SHIFT" => "SHIFT",
 			"WIN" or "WINDOWS" or "CMD" or "COMMAND" or "SUPER" or "LWIN" or "RWIN" or "LEFTWINDOWS" or "RIGHTWINDOWS"
-				or "LEFTMETA" or "RIGHTMETA" => "META",
+				or "LEFTMETA" or "RIGHTMETA" or "METALEFT" or "METARIGHT" or "SUPERLEFT" or "SUPERRIGHT"
+				or "LEFTSUPER" or "RIGHTSUPER" or "OSLEFT" or "OSRIGHT" or "LEFTCOMMAND" or "RIGHTCOMMAND"
+				or "LEFT_SUPER" or "RIGHT_SUPER" => "META",
 			// Named separators and punctuation, as written in a profile or by WinForms/WPF (Keys.Oemplus, Key.OemComma).
 			// Only the main-row keys fold: numpad keys (Add, Subtract, Decimal, Multiply, Divide, NumPad0-9) stay
 			// distinct so an app can bind them separately.
