@@ -80,6 +80,10 @@ public sealed class KeybindingManager : IDisposable
 	/// <summary>
 	/// Initializes the keybinding manager and loads persisted data
 	/// </summary>
+	/// <remarks>
+	/// Call this before creating profiles. A profile that already exists with a stored profile's id keeps its own
+	/// bindings and takes in each stored binding whose command and chord it does not already use.
+	/// </remarks>
 	/// <returns>Task representing the async operation</returns>
 	public async Task InitializeAsync()
 	{
@@ -99,11 +103,16 @@ public sealed class KeybindingManager : IDisposable
 			_persistedCommandIds.UnionWith(commands.Select(c => c.Id.ToString()));
 		}
 
-		// Load profiles
+		// Load profiles. A profile with the same id may already be in memory, created before this call by app code
+		// or by a profile manager shared through dependency injection. Its stored bindings are merged into it rather
+		// than dropped, since the id is recorded as persisted below and the next save would otherwise overwrite them.
 		IReadOnlyCollection<Profile> profiles = await Repository.LoadAllProfilesAsync().ConfigureAwait(false);
 		foreach (Profile profile in profiles)
 		{
-			Profiles.CreateProfile(profile);
+			if (!Profiles.CreateProfile(profile) && Profiles.GetProfile(profile.Id) is Profile existing)
+			{
+				MergeStoredBindings(existing, profile);
+			}
 		}
 
 		lock (_persistedStateLock)
@@ -121,6 +130,26 @@ public sealed class KeybindingManager : IDisposable
 		lock (_persistedStateLock)
 		{
 			_activeProfileKnown = true;
+		}
+	}
+
+	/// <summary>
+	/// Merges the bindings of a stored profile into the in-memory profile with the same id. The in-memory profile
+	/// wins: a stored binding is skipped when the in-memory profile already binds that command, or already uses
+	/// that chord for another command, so no chord ever runs two commands.
+	/// </summary>
+	/// <param name="existing">The profile already in memory</param>
+	/// <param name="stored">The stored profile with the same id</param>
+	private static void MergeStoredBindings(Profile existing, Profile stored)
+	{
+		IReadOnlyDictionary<string, Chord> current = existing.GetAllChords();
+		HashSet<Chord> usedChords = [.. current.Values];
+		foreach ((string commandId, Chord chord) in stored.GetAllChords())
+		{
+			if (!current.ContainsKey(commandId) && usedChords.Add(chord))
+			{
+				existing.SetChord(commandId, chord);
+			}
 		}
 	}
 
