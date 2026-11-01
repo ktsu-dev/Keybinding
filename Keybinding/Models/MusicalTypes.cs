@@ -19,6 +19,11 @@ public sealed class Note : IEquatable<Note>
 	public Note(NoteName key)
 	{
 		Ensure.NotNull(key);
+		if (string.IsNullOrWhiteSpace(key.ToString()))
+		{
+			throw new ArgumentException("Key cannot be null or whitespace", nameof(key));
+		}
+
 		string canonical = NormalizeKey(key.ToString());
 		Key = canonical == key.ToString() ? key : NoteName.Create(canonical);
 	}
