@@ -270,16 +270,58 @@ public sealed class KeybindingManager : IDisposable
 	/// Sets multiple chord bindings for the active profile
 	/// </summary>
 	/// <param name="chords">Dictionary of command ID to chord mappings</param>
-	/// <returns>Number of chord bindings successfully set</returns>
-	public int SetChords(IReadOnlyDictionary<string, Chord> chords)
+	/// <returns>
+	/// Number of bindings from the batch that remain once it is applied. A chord runs only one command, so when
+	/// the batch gives one chord to two commands the later entry takes it and only that binding is counted.
+	/// Use <see cref="SetChords(IReadOnlyDictionary{string, Chord}, out IReadOnlyList{string})"/> to learn which
+	/// commands lost their chord.
+	/// </returns>
+	public int SetChords(IReadOnlyDictionary<string, Chord> chords) => SetChords(chords, out _);
+
+	/// <summary>
+	/// Sets multiple chord bindings for the active profile, and reports the commands that lost a chord to them
+	/// </summary>
+	/// <param name="chords">Dictionary of command ID to chord mappings</param>
+	/// <param name="displacedCommandIds">
+	/// The IDs of the commands whose chord was taken by a later binding: commands outside the batch that held one
+	/// of its chords, and entries of the batch whose chord a later entry took. A command that the batch itself
+	/// rebinds, and that keeps its new binding, is not listed. Each ID appears once, in the order it was displaced.
+	/// </param>
+	/// <returns>Number of bindings from the batch that remain once it is applied</returns>
+	public int SetChords(IReadOnlyDictionary<string, Chord> chords, out IReadOnlyList<string> displacedCommandIds)
 	{
 		DisposalHelper.ThrowIfDisposed(_disposed, this);
 		Ensure.NotNull(chords);
 
 		Profile activeProfile = Profiles.GetActiveProfile() ?? throw new InvalidOperationException("No active profile is set");
 
+		List<string> displaced = [];
+		Dictionary<string, Chord> bound = [];
+
 		// Bind into the profile resolved above, so a concurrent SetActiveProfile cannot split the batch
-		return OperationHelper.ExecuteWithCount(chords, (commandId, chord) => Keybindings.BindChord(activeProfile.Id, commandId, chord));
+		OperationHelper.ExecuteWithCount(chords, (commandId, chord) =>
+		{
+			string[] holders = [.. activeProfile.GetAllChords().Where(b => b.Value.Equals(chord) && b.Key != commandId.Trim()).Select(b => b.Key)];
+			if (!Keybindings.BindChord(activeProfile.Id, commandId, chord))
+			{
+				return false;
+			}
+
+			bound[commandId.Trim()] = chord;
+			foreach (string holder in holders)
+			{
+				if (!chord.Equals(activeProfile.GetChord(holder)) && !displaced.Contains(holder))
+				{
+					displaced.Add(holder);
+				}
+			}
+
+			return true;
+		});
+
+		// A command the batch rebinds after it lost its old chord is not displaced, as long as it keeps the new one
+		displacedCommandIds = [.. displaced.Where(id => !(bound.TryGetValue(id, out Chord? chord) && chord.Equals(activeProfile.GetChord(id))))];
+		return bound.Count(b => b.Value.Equals(activeProfile.GetChord(b.Key)));
 	}
 
 	/// <summary>

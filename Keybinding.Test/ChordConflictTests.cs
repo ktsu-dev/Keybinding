@@ -78,6 +78,84 @@ public class ChordConflictTests
 	}
 
 	[TestMethod]
+	public void SetChords_TwoCommandsOneChord_CountsOnlyTheBindingThatRemains()
+	{
+		using KeybindingManager manager = new(_testDataDirectory);
+		manager.Commands.RegisterCommand(new Command("a", "A"));
+		manager.Commands.RegisterCommand(new Command("b", "B"));
+		manager.CreateDefaultProfile();
+
+		int count = manager.SetChords(new Dictionary<string, Chord> { ["a"] = Chord.Parse("Ctrl+S"), ["b"] = Chord.Parse("Ctrl+S") }, out IReadOnlyList<string> displaced);
+
+		Assert.AreEqual(1, count);
+		Assert.AreEqual(manager.Profiles.GetActiveProfile()!.ChordCount, count);
+		Assert.HasCount(1, displaced);
+		Assert.AreEqual("a", displaced[0]);
+		Assert.AreEqual("b", manager.Keybindings.ExecuteChord(Chord.Parse("Ctrl+S")));
+	}
+
+	[TestMethod]
+	public void SetChords_TwoCommandsOneChord_WithoutOutParameter_ReturnsTheRemainingCount()
+	{
+		using KeybindingManager manager = new(_testDataDirectory);
+		manager.Commands.RegisterCommand(new Command("a", "A"));
+		manager.Commands.RegisterCommand(new Command("b", "B"));
+		manager.CreateDefaultProfile();
+
+		int count = manager.SetChords(new Dictionary<string, Chord> { ["a"] = Chord.Parse("Ctrl+S"), ["b"] = Chord.Parse("Ctrl+S") });
+
+		Assert.AreEqual(1, count);
+	}
+
+	[TestMethod]
+	public void SetChords_ChordHeldOutsideTheBatch_ReportsTheCommandThatLostIt()
+	{
+		using KeybindingManager manager = new(_testDataDirectory);
+		manager.Commands.RegisterCommand(new Command("save", "Save"));
+		manager.Commands.RegisterCommand(new Command("saveAll", "Save All"));
+		manager.Commands.RegisterCommand(new Command("open", "Open"));
+		manager.CreateDefaultProfile();
+		manager.Keybindings.BindChord("save", Chord.Parse("Ctrl+S"));
+
+		int count = manager.SetChords(new Dictionary<string, Chord> { ["saveAll"] = Chord.Parse("Ctrl+S"), ["open"] = Chord.Parse("Ctrl+O") }, out IReadOnlyList<string> displaced);
+
+		Assert.AreEqual(2, count);
+		Assert.HasCount(1, displaced);
+		Assert.AreEqual("save", displaced[0]);
+	}
+
+	[TestMethod]
+	public void SetChords_CommandRebindByTheSameBatch_IsNotReportedAsDisplaced()
+	{
+		using KeybindingManager manager = new(_testDataDirectory);
+		manager.Commands.RegisterCommand(new Command("a", "A"));
+		manager.Commands.RegisterCommand(new Command("b", "B"));
+		manager.CreateDefaultProfile();
+		manager.Keybindings.BindChord("a", Chord.Parse("Ctrl+S"));
+
+		// b takes Ctrl+S from a, and the same batch moves a to Ctrl+D: a swap, not a lost binding
+		int count = manager.SetChords(new Dictionary<string, Chord> { ["b"] = Chord.Parse("Ctrl+S"), ["a"] = Chord.Parse("Ctrl+D") }, out IReadOnlyList<string> displaced);
+
+		Assert.AreEqual(2, count);
+		Assert.IsEmpty(displaced);
+	}
+
+	[TestMethod]
+	public void SetChords_NoConflict_ReportsNothingDisplaced()
+	{
+		using KeybindingManager manager = new(_testDataDirectory);
+		manager.Commands.RegisterCommand(new Command("a", "A"));
+		manager.Commands.RegisterCommand(new Command("b", "B"));
+		manager.CreateDefaultProfile();
+		manager.Keybindings.BindChord("a", Chord.Parse("Ctrl+A"));
+
+		int count = manager.SetChords(new Dictionary<string, Chord> { ["a"] = Chord.Parse("Ctrl+A"), ["b"] = Chord.Parse("Ctrl+B") }, out IReadOnlyList<string> displaced);
+
+		Assert.AreEqual(2, count);
+		Assert.IsEmpty(displaced);
+	}
+
+	[TestMethod]
 	public void BindChord_SameCommandSameChord_KeepsTheBinding()
 	{
 		using KeybindingManager manager = new(_testDataDirectory);
