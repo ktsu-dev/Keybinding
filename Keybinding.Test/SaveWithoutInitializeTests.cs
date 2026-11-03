@@ -114,6 +114,75 @@ public class SaveWithoutInitializeTests
 	}
 
 	[TestMethod]
+	public async Task SaveAsync_TwiceWithoutInitialize_KeepsStoredCommands()
+	{
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			await manager.InitializeAsync().ConfigureAwait(false);
+			manager.Commands.RegisterCommand(new Command("file.save", "Save"));
+			manager.CreateDefaultProfile();
+			manager.Keybindings.BindChord("file.save", Chord.Parse("Ctrl+S"));
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			manager.Profiles.CreateProfile("other", "Other");
+			await manager.SaveAsync().ConfigureAwait(false);
+
+			// The first save carried file.save through; the second must not read it as unregistered here
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		using KeybindingManager reloaded = new(_testDataDirectory);
+		await reloaded.InitializeAsync().ConfigureAwait(false);
+		Assert.IsTrue(reloaded.Commands.IsCommandRegistered("file.save"));
+		Assert.AreEqual("file.save", reloaded.Keybindings.ExecuteChord("default", Chord.Parse("Ctrl+S")));
+	}
+
+	[TestMethod]
+	public async Task SaveAsync_TwiceAfterAnotherManagerSaved_KeepsItsCommand()
+	{
+		using KeybindingManager first = new(_testDataDirectory);
+		using KeybindingManager second = new(_testDataDirectory);
+		await first.InitializeAsync().ConfigureAwait(false);
+		await second.InitializeAsync().ConfigureAwait(false);
+
+		first.Commands.RegisterCommand(new Command("a.cmd", "A"));
+		second.Commands.RegisterCommand(new Command("b.cmd", "B"));
+		second.Profiles.CreateProfile("bprof", "B profile");
+		await second.SaveAsync().ConfigureAwait(false);
+
+		await first.SaveAsync().ConfigureAwait(false);
+		await first.SaveAsync().ConfigureAwait(false);
+
+		using KeybindingManager reloaded = new(_testDataDirectory);
+		await reloaded.InitializeAsync().ConfigureAwait(false);
+		Assert.IsTrue(reloaded.Commands.IsCommandRegistered("a.cmd"));
+		Assert.IsTrue(reloaded.Commands.IsCommandRegistered("b.cmd"));
+		Assert.IsTrue(reloaded.Profiles.ProfileExists("bprof"));
+	}
+
+	[TestMethod]
+	public async Task SaveAsync_CommandUnregisteredAfterItsFirstSave_IsRemovedOnTheNext()
+	{
+		{
+			using KeybindingManager manager = new(_testDataDirectory);
+			manager.Commands.RegisterCommand(new Command("file.save", "Save"));
+			manager.Commands.RegisterCommand(new Command("tools.legacy", "Legacy"));
+			await manager.SaveAsync().ConfigureAwait(false);
+
+			Assert.IsTrue(manager.Commands.UnregisterCommand("tools.legacy"));
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		using KeybindingManager reloaded = new(_testDataDirectory);
+		await reloaded.InitializeAsync().ConfigureAwait(false);
+		Assert.IsTrue(reloaded.Commands.IsCommandRegistered("file.save"));
+		Assert.IsFalse(reloaded.Commands.IsCommandRegistered("tools.legacy"));
+	}
+
+	[TestMethod]
 	public async Task SaveAsync_CommandUnregisteredByManagerThatLoadedIt_IsRemoved()
 	{
 		{
