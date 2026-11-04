@@ -93,6 +93,16 @@ public class ModifierAliasNormalizationTests
 	[DataRow("D7", "7")]
 	[DataRow("D8", "8")]
 	[DataRow("D9", "9")]
+	// Browser KeyboardEvent.code and Silk.NET Key names for letters and digits (ktsu-dev/Keybinding#218)
+	[DataRow("KeyA", "A")]
+	[DataRow("KeyS", "S")]
+	[DataRow("KeyZ", "Z")]
+	[DataRow("Digit0", "0")]
+	[DataRow("Digit1", "1")]
+	[DataRow("Digit9", "9")]
+	[DataRow("Number0", "0")]
+	[DataRow("Number1", "1")]
+	[DataRow("Number9", "9")]
 	public void ChordParse_KeyAliasesMatchCanonicalName(string alias, string canonical)
 	{
 		ArgumentNullException.ThrowIfNull(alias);
@@ -102,6 +112,39 @@ public class ModifierAliasNormalizationTests
 		Assert.AreEqual(expected, actual);
 		Assert.AreEqual(expected.GetHashCode(), actual.GetHashCode());
 		Assert.AreEqual(new Note(canonical), new Note(NoteName.Create(alias.ToUpperInvariant())));
+	}
+
+	[TestMethod]
+	[DataRow("ControlLeft+KeyS", "Ctrl+S")]
+	[DataRow("ControlLeft+Digit1", "Ctrl+1")]
+	[DataRow("ControlLeft+Number1", "Ctrl+1")]
+	[DataRow("ShiftLeft+MetaLeft+KeyK", "Shift+Meta+K")]
+	public void ChordParse_BrowserAndSilkKeyNames_DisplayAsCanonicalChord(string framework, string canonical)
+	{
+		Chord chord = Chord.Parse(framework);
+
+		Assert.AreEqual(Chord.Parse(canonical), chord);
+		Assert.AreEqual(canonical, chord.ToString());
+	}
+
+	[TestMethod]
+	[DataRow("Numpad1")]
+	[DataRow("NumPad1")]
+	[DataRow("Keypad1")]
+	[DataRow("Key")]
+	[DataRow("Key1")]
+	[DataRow("KeyAB")]
+	[DataRow("Digit")]
+	[DataRow("DigitA")]
+	[DataRow("Digit10")]
+	[DataRow("Number")]
+	[DataRow("NumberA")]
+	public void NoteConstructor_OtherKeyNamesStayDistinct(string key)
+	{
+		ArgumentNullException.ThrowIfNull(key);
+		Note note = new(key);
+
+		Assert.AreEqual(key.ToUpperInvariant(), note.Key.ToString());
 	}
 
 	[TestMethod]
