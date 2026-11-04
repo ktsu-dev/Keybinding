@@ -2,6 +2,8 @@
 
 Changes since v2.1.0:
 
+- Cover UpdateCommandsAsync's default implementation and its null guard (Claude)
+- Merge and write stored commands under one lock, so concurrent saves keep each other's commands [patch] (Claude)
 - Fold Spacebar, Snapshot and Scroll into Space, PrintScreen and ScrollLock [patch] (Claude)
 - Activate a remaining profile at startup when default is gone and none is active [patch] (Claude)
 - Keep numpad Add distinct from the main-row plus key [patch] (Claude)
