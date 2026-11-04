@@ -199,7 +199,10 @@ public sealed class KeybindingManager(
 		lock (_persistedStateLock)
 		{
 			_persistedCommandIds.Clear();
-			_persistedCommandIds.UnionWith(commandsToSave.Select(c => c.Id.ToString()));
+			// Only the commands registered here count as persisted by this manager. The stored ones it carried through
+			// belong to someone else; marking them too would make the next save read them as unregistered here and
+			// drop them from the file.
+			_persistedCommandIds.UnionWith(commandIds);
 		}
 
 		// Remove stored profiles that were deleted in memory, so they do not come back on the next load. Only
