@@ -2,6 +2,12 @@
 
 Changes since v2.1.0:
 
+- Track only this manager's commands as persisted after a save [patch] (#216) (matt-edmondson)
+- Count only the SetChords bindings that remain, and report the commands that lost their chord [minor] (#215) (matt-edmondson)
+- Refuse a blank NoteName in the Note constructor [patch] (#213) (matt-edmondson)
+- Merge a stored profile into one created before InitializeAsync instead of dropping it [patch] (#211) (matt-edmondson)
+- Use the registered IKeybindingService in KeybindingManager [patch] (#210) (matt-edmondson)
+- Fold browser, Silk.NET, ImGui, GLFW and macOS modifier names into Ctrl, Alt, Shift and Meta [patch] (#209) (matt-edmondson)
 - Cover UpdateCommandsAsync's default implementation and its null guard (Claude)
 - Merge and write stored commands under one lock, so concurrent saves keep each other's commands [patch] (Claude)
 - Fold Spacebar, Snapshot and Scroll into Space, PrintScreen and ScrollLock [patch] (Claude)
