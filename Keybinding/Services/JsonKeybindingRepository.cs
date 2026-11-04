@@ -15,7 +15,7 @@ using ktsu.Keybinding.Core.Models;
 /// <remarks>
 /// <para>
 /// Every read-modify-write of the data directory is serialized, across every repository in the process that
-/// uses the same directory, so concurrent saves cannot lose each other's profiles.
+/// uses the same directory, so concurrent saves cannot lose each other's profiles or commands.
 /// </para>
 /// <para>
 /// Each file is written to a temporary file beside it and then moved over it, so a crash part-way through a
@@ -200,34 +200,60 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	{
 		Ensure.NotNull(commands);
 
-		List<CommandDto> commandDtos = [.. commands.Select(c => new CommandDto
+		List<Command> commandsToSave = [.. commands];
+		return WithLockAsync(() => WriteCommandsUnlockedAsync(commandsToSave));
+	}
+
+	/// <inheritdoc/>
+	public async Task<IReadOnlyCollection<Command>> LoadCommandsAsync() =>
+		(await WithLockAsync(LoadCommandsUnlockedAsync).ConfigureAwait(false)).AsReadOnly();
+
+	/// <inheritdoc/>
+	/// <remarks>
+	/// The read, the update and the write all happen under the directory lock, so a concurrent save through any
+	/// repository over the same directory cannot land between them and be lost.
+	/// </remarks>
+	public async Task<IReadOnlyCollection<Command>> UpdateCommandsAsync(Func<IReadOnlyCollection<Command>, IEnumerable<Command>> update)
+	{
+		Ensure.NotNull(update);
+
+		return await WithLockAsync(async () =>
+		{
+			List<Command> storedCommands = await LoadCommandsUnlockedAsync().ConfigureAwait(false);
+			List<Command> commands = [.. update(storedCommands.AsReadOnly())];
+			await WriteCommandsUnlockedAsync(commands).ConfigureAwait(false);
+			return (IReadOnlyCollection<Command>)commands.AsReadOnly();
+		}).ConfigureAwait(false);
+	}
+
+	private async Task<List<Command>> LoadCommandsUnlockedAsync()
+	{
+		List<JsonElement>? entries = await ReadEntriesUnlockedAsync(CommandsFileName).ConfigureAwait(false);
+		List<Command> commands = [];
+		foreach (JsonElement entry in entries ?? [])
+		{
+			Command? command = ToCommand(entry);
+			if (command is not null)
+			{
+				commands.Add(command);
+			}
+		}
+
+		return commands;
+	}
+
+	private Task WriteCommandsUnlockedAsync(IEnumerable<Command> commands)
+	{
+		IEnumerable<CommandDto> commandDtos = commands.Select(c => new CommandDto
 		{
 			Id = c.Id,
 			Name = c.Name,
 			Description = c.Description,
 			Category = c.Category
-		})];
+		});
 
-		return WithLockAsync(() => WriteFileUnlockedAsync(CommandsFileName, JsonSerializer.Serialize(commandDtos, _jsonOptions)));
+		return WriteFileUnlockedAsync(CommandsFileName, JsonSerializer.Serialize(commandDtos, _jsonOptions));
 	}
-
-	/// <inheritdoc/>
-	public async Task<IReadOnlyCollection<Command>> LoadCommandsAsync() =>
-		await WithLockAsync(async () =>
-		{
-			List<JsonElement>? entries = await ReadEntriesUnlockedAsync(CommandsFileName).ConfigureAwait(false);
-			List<Command> commands = [];
-			foreach (JsonElement entry in entries ?? [])
-			{
-				Command? command = ToCommand(entry);
-				if (command is not null)
-				{
-					commands.Add(command);
-				}
-			}
-
-			return (IReadOnlyCollection<Command>)commands.AsReadOnly();
-		}).ConfigureAwait(false);
 
 	/// <summary>
 	/// Converts a stored command, skipping it when it is null, does not match the schema, or its id or name is
