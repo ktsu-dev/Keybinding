@@ -51,8 +51,10 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			throw new ArgumentException(Constants.ErrorMessages.DataDirectoryNullOrWhitespace, nameof(dataDirectory));
 		}
 
-		_dataDirectory = dataDirectory.Trim();
-		_lock = DirectoryLocks.GetOrAdd(Path.GetFullPath(_dataDirectory), _ => new SemaphoreSlim(1, 1));
+		// Resolve a relative directory once, so a later change of the current directory moves neither
+		// the files this repository reads and writes nor the lock that guards them.
+		_dataDirectory = Path.GetFullPath(dataDirectory.Trim());
+		_lock = DirectoryLocks.GetOrAdd(_dataDirectory, _ => new SemaphoreSlim(1, 1));
 		_jsonOptions = new JsonSerializerOptions
 		{
 			WriteIndented = true,
