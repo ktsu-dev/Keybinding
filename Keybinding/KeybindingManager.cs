@@ -10,7 +10,23 @@ using ktsu.Keybinding.Core.Services;
 /// <summary>
 /// Main facade class for managing keybindings, commands, and profiles
 /// </summary>
-public sealed class KeybindingManager : IDisposable
+/// <remarks>
+/// The primary constructor takes every service, including the keybinding service. It is the constructor dependency
+/// injection selects, so a custom or decorated <see cref="IKeybindingService"/> registered with the container is
+/// the one <see cref="Keybindings"/> returns.
+/// </remarks>
+/// <param name="commandRegistry">The command registry service</param>
+/// <param name="profileManager">The profile manager service</param>
+/// <param name="repository">The keybinding repository</param>
+/// <param name="keybindingService">
+/// The keybinding service. It should work over the same <paramref name="commandRegistry"/> and
+/// <paramref name="profileManager"/>, or bindings made through it will not be the ones the manager saves.
+/// </param>
+public sealed class KeybindingManager(
+	ICommandRegistry commandRegistry,
+	IProfileManager profileManager,
+	IKeybindingRepository repository,
+	IKeybindingService keybindingService) : IDisposable
 {
 	private bool _disposed;
 
@@ -40,7 +56,8 @@ public sealed class KeybindingManager : IDisposable
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="KeybindingManager"/> class with custom services
+	/// Initializes a new instance of the <see cref="KeybindingManager"/> class with custom services, and a
+	/// <see cref="KeybindingService"/> built over them
 	/// </summary>
 	/// <param name="commandRegistry">The command registry service</param>
 	/// <param name="profileManager">The profile manager service</param>
@@ -49,33 +66,33 @@ public sealed class KeybindingManager : IDisposable
 		ICommandRegistry commandRegistry,
 		IProfileManager profileManager,
 		IKeybindingRepository repository)
+		: this(
+			Ensure.NotNull(commandRegistry),
+			Ensure.NotNull(profileManager),
+			repository,
+			new KeybindingService(commandRegistry, profileManager))
 	{
-		Commands = Ensure.NotNull(commandRegistry);
-		Profiles = Ensure.NotNull(profileManager);
-		Repository = Ensure.NotNull(repository);
-
-		Keybindings = new KeybindingService(Commands, Profiles);
 	}
 
 	/// <summary>
 	/// Gets the command registry for managing commands
 	/// </summary>
-	public ICommandRegistry Commands { get; }
+	public ICommandRegistry Commands { get; } = Ensure.NotNull(commandRegistry);
 
 	/// <summary>
 	/// Gets the profile manager for managing profiles
 	/// </summary>
-	public IProfileManager Profiles { get; }
+	public IProfileManager Profiles { get; } = Ensure.NotNull(profileManager);
 
 	/// <summary>
 	/// Gets the keybinding service for managing keybindings
 	/// </summary>
-	public IKeybindingService Keybindings { get; }
+	public IKeybindingService Keybindings { get; } = Ensure.NotNull(keybindingService);
 
 	/// <summary>
 	/// Gets the repository for persistence operations
 	/// </summary>
-	public IKeybindingRepository Repository { get; }
+	public IKeybindingRepository Repository { get; } = Ensure.NotNull(repository);
 
 	/// <summary>
 	/// Initializes the keybinding manager and loads persisted data

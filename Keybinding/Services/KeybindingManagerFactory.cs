@@ -40,7 +40,10 @@ public sealed class KeybindingManagerFactory : IKeybindingManagerFactory
 				_serviceProvider.GetService(typeof(IProfileManager)) is IProfileManager profileManager &&
 				_serviceProvider.GetService(typeof(IKeybindingRepository)) is IKeybindingRepository repository)
 			{
-				return new KeybindingManager(commandRegistry, profileManager, repository);
+				// Use the registered keybinding service too, so a custom or decorated one takes effect
+				return _serviceProvider.GetService(typeof(IKeybindingService)) is IKeybindingService keybindingService
+					? new KeybindingManager(commandRegistry, profileManager, repository, keybindingService)
+					: new KeybindingManager(commandRegistry, profileManager, repository);
 			}
 		}
 
