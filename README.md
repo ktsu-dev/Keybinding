@@ -193,6 +193,10 @@ var chords = new Dictionary<string, Chord>
     { "edit.paste", manager.Keybindings.ParseChord("Ctrl+V") }
 };
 int set = manager.SetChords(chords);
+
+// A chord runs one command, so a later binding takes it from an earlier one.
+// The count is the bindings that remain; the out overload names the commands that lost their chord.
+int kept = manager.SetChords(chords, out IReadOnlyList<string> displaced);
 ```
 
 ### Profile Management
