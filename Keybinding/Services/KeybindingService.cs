@@ -52,6 +52,8 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public bool BindChord(string commandId, Chord chord)
 	{
+		Ensure.NotNull(chord);
+
 		Profile? activeProfile = _profileManager.GetActiveProfile();
 		return activeProfile is not null && BindChord(activeProfile.Id, commandId, chord);
 	}
@@ -59,6 +61,8 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public bool BindChord(string profileId, string commandId, Chord chord)
 	{
+		Ensure.NotNull(chord);
+
 		if (string.IsNullOrWhiteSpace(profileId))
 		{
 			return false;
@@ -68,8 +72,6 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 		{
 			return false;
 		}
-
-		Ensure.NotNull(chord);
 
 		Profile? profile = _profileManager.GetProfile(profileId);
 		if (profile is null)
@@ -201,6 +203,8 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public string? ExecuteChord(Chord chord)
 	{
+		Ensure.NotNull(chord);
+
 		Profile? activeProfile = _profileManager.GetActiveProfile();
 		return activeProfile is not null ? ExecuteChord(activeProfile.Id, chord) : null;
 	}
@@ -249,6 +253,8 @@ public sealed class KeybindingService(ICommandRegistry commandRegistry, IProfile
 	/// <inheritdoc/>
 	public string? FindCommandByChord(Chord chord)
 	{
+		Ensure.NotNull(chord);
+
 		Profile? activeProfile = _profileManager.GetActiveProfile();
 		return activeProfile is not null ? FindCommandByChord(activeProfile.Id, chord) : null;
 	}
