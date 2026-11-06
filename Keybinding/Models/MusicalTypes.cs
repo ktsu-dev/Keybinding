@@ -84,7 +84,10 @@ public sealed class Note : IEquatable<Note>
 			"CONTROL" or "CONTROLKEY" or "LCONTROLKEY" or "RCONTROLKEY" or "LEFTCTRL" or "RIGHTCTRL"
 				or "LCTRL" or "RCTRL" or "LEFTCONTROL" or "RIGHTCONTROL" or "CONTROLLEFT" or "CONTROLRIGHT"
 				or "LEFT_CONTROL" or "RIGHT_CONTROL" => "CTRL",
-			"OPTION" or "MENU" or "LMENU" or "RMENU" or "LEFTALT" or "RIGHTALT" or "LALT" or "RALT"
+			// The bare name "Menu" is not folded: it is Alt only in Win32/WinForms (VK_MENU, Keys.Menu), while GLFW,
+			// Silk.NET, ImGui and SDL use it for the application/context-menu key. Folding it would merge that key
+			// into the Alt modifier. LMenu/RMenu are unambiguous and stay Alt; a WinForms host maps Keys.Menu itself.
+			"OPTION" or "LMENU" or "RMENU" or "LEFTALT" or "RIGHTALT" or "LALT" or "RALT"
 				or "ALTLEFT" or "ALTRIGHT" or "LEFT_ALT" or "RIGHT_ALT" => "ALT",
 			"SHIFTKEY" or "LSHIFTKEY" or "RSHIFTKEY" or "LEFTSHIFT" or "RIGHTSHIFT" or "LSHIFT" or "RSHIFT"
 				or "SHIFTLEFT" or "SHIFTRIGHT" or "LEFT_SHIFT" or "RIGHT_SHIFT" => "SHIFT",
