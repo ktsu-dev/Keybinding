@@ -35,16 +35,16 @@ public sealed class Profile : IEquatable<Profile>
 		Description = description?.Trim();
 	}
 
-	// The Chords property is get-only, so the serializer can only restore the bindings through a
-	// constructor parameter of the same name and type. Without it a round-tripped profile comes back empty.
+	// The bindings are written through the get-only ChordsSnapshot, so the serializer can only restore them
+	// through a constructor parameter of the same CLR name and type. Without it a round-tripped profile comes back empty.
 	[JsonConstructor]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
-	private Profile(string? id, string? name, string? description, Dictionary<string, Chord?>? chords)
+	private Profile(string? id, string? name, string? description, Dictionary<string, Chord?>? chordsSnapshot)
 		: this(JsonArguments.RequireText(id, nameof(Profile), nameof(Id)), JsonArguments.RequireText(name, nameof(Profile), nameof(Name)), description)
 	{
-		if (chords is not null)
+		if (chordsSnapshot is not null)
 		{
-			foreach (KeyValuePair<string, Chord?> binding in chords)
+			foreach (KeyValuePair<string, Chord?> binding in chordsSnapshot)
 			{
 				Chord chord = binding.Value ?? throw new JsonException($"{nameof(Profile)} binding '{binding.Key}' has no chord.");
 				try
@@ -107,7 +107,25 @@ public sealed class Profile : IEquatable<Profile>
 	/// and <see cref="ClearChords"/> instead.
 	/// </remarks>
 	[Obsolete("Chords is not thread-safe. Use GetAllChords, SetChord, RemoveChord or ClearChords instead.")]
+	[JsonIgnore]
 	public Dictionary<string, Chord> Chords => _chords;
+
+	// What System.Text.Json writes and reads as "Chords": a copy taken under the lock, so serializing a profile
+	// while another thread changes its bindings writes one consistent set instead of enumerating the live
+	// dictionary. Its type matches the [JsonConstructor] parameter, which is how the bindings are read back.
+	[JsonInclude]
+	[JsonPropertyName("Chords")]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Read by System.Text.Json through [JsonInclude].")]
+	private Dictionary<string, Chord?> ChordsSnapshot
+	{
+		get
+		{
+			lock (_chordsLock)
+			{
+				return _chords.ToDictionary(b => b.Key, b => (Chord?)b.Value);
+			}
+		}
+	}
 
 	/// <summary>
 	/// Gets the number of chord bindings in this profile
