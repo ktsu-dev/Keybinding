@@ -150,7 +150,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			try
 			{
 				Chord chord = new((chordDto.Notes ?? []).Select(noteString => new Note(noteString)));
-				profile.SetChord(kvp.Key, chord);
+				profile.SetStoredChord(kvp.Key, chord);
 			}
 			catch (ArgumentException ex)
 			{
