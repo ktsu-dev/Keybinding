@@ -49,7 +49,7 @@ public sealed class Profile : IEquatable<Profile>
 				Chord chord = binding.Value ?? throw new JsonException($"{nameof(Profile)} binding '{binding.Key}' has no chord.");
 				try
 				{
-					SetChord(binding.Key, chord);
+					SetStoredChord(binding.Key, chord);
 				}
 				catch (ArgumentException ex)
 				{
@@ -124,13 +124,25 @@ public sealed class Profile : IEquatable<Profile>
 	}
 
 	/// <summary>
-	/// Sets a chord binding for a command in this profile
+	/// Sets a chord binding for a command in this profile. A chord runs one command per profile, so a chord
+	/// another command already uses is taken from that command, as <c>BindChord</c> does.
 	/// </summary>
 	/// <param name="commandId">The command ID</param>
 	/// <param name="chord">The chord to bind</param>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	/// <exception cref="ArgumentNullException">Thrown when chord is null</exception>
-	public void SetChord(string commandId, Chord chord)
+	public void SetChord(string commandId, Chord chord) => SetChordExclusive(commandId, chord);
+
+	/// <summary>
+	/// Sets a chord binding for a command in this profile without taking the chord from any other command.
+	/// Only for restoring stored bindings as they were saved, so data that already binds one chord to several
+	/// commands loads and copies unchanged and resolves as <see cref="FindCommand"/> describes.
+	/// </summary>
+	/// <param name="commandId">The command ID</param>
+	/// <param name="chord">The chord to bind</param>
+	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null</exception>
+	internal void SetStoredChord(string commandId, Chord chord)
 	{
 		if (string.IsNullOrWhiteSpace(commandId))
 		{
