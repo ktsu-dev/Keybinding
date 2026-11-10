@@ -67,6 +67,19 @@ public class KeyAliasEquivalenceTests
 	[DataRow("RIGHT_ALT+C", "Alt+C")]
 	[DataRow("LEFT_SUPER+C", "Meta+C")]
 	[DataRow("RIGHT_SUPER+C", "Meta+C")]
+	// ImGuiKey main-row digits and chord flags, and GLFW's multi-word key names (ktsu-dev/Keybinding#224)
+	[DataRow("LeftCtrl+Key1", "Ctrl+1")]
+	[DataRow("Key0", "0")]
+	[DataRow("Key9", "D9")]
+	[DataRow("ModCtrl+S", "Ctrl+S")]
+	[DataRow("ModShift+ModAlt+S", "Shift+Alt+S")]
+	[DataRow("ModSuper+S", "Meta+S")]
+	[DataRow("LEFT_CONTROL+PAGE_UP", "Ctrl+PageUp")]
+	[DataRow("PAGE_DOWN", "PageDown")]
+	[DataRow("CAPS_LOCK", "CapsLock")]
+	[DataRow("NUM_LOCK", "NumLock")]
+	[DataRow("SCROLL_LOCK", "ScrollLock")]
+	[DataRow("PRINT_SCREEN", "PrintScreen")]
 	public void Alias_EqualsAndHashesLikeItsCanonicalForm(string alias, string canonical)
 	{
 		Chord fromAlias = Chord.Parse(alias);
@@ -84,6 +97,7 @@ public class KeyAliasEquivalenceTests
 	[DataRow("C+ControlLeft", "Ctrl+C")]
 	[DataRow("C+SuperLeft+ShiftRight", "Shift+Meta+C")]
 	[DataRow("X+LEFT_SUPER+LEFT_ALT+LEFT_CONTROL", "Ctrl+Alt+Meta+X")]
+	[DataRow("S+ModSuper+ModShift+ModCtrl", "Ctrl+Shift+Meta+S")]
 	public void LeftAndRightModifiers_SortAndDisplayAsModifiers(string value, string expected) =>
 		Assert.AreEqual(expected, Chord.Parse(value).ToString());
 
@@ -94,6 +108,8 @@ public class KeyAliasEquivalenceTests
 	[DataRow("Ctrl+Multiply", "Ctrl+*")]
 	[DataRow("Ctrl+Divide", "Ctrl+/")]
 	[DataRow("Ctrl+NumPad1", "Ctrl+1")]
+	[DataRow("Ctrl+Keypad1", "Ctrl+1")]
+	[DataRow("Ctrl+KeypadAdd", "Ctrl++")]
 	public void NumpadKey_StaysDistinctFromTheMainRowKey(string numpad, string mainRow)
 	{
 		Chord fromNumpad = Chord.Parse(numpad);
