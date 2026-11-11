@@ -2,6 +2,14 @@
 
 Changes since v2.1.0:
 
+- Fix the two test failures on main [patch] (#243) (matt-edmondson)
+- Resolve a relative data directory once, for both the files and the lock [patch] (#220) (matt-edmondson)
+- Sort a chord's notes ordinally, so its hash doesn't change with the culture [patch] (#227) (matt-edmondson)
+- Report a missing or blank Command Id or Name in JSON as a JsonException [patch] (#228) (matt-edmondson)
+- Serialize a Profile's bindings from a locked snapshot, so another thread's edits can't break it [patch] (#232) (matt-edmondson)
+- Keep a data file's mode and symlink when a save replaces it [patch] (#233) (matt-edmondson)
+- Fold ImGui's Key0-Key9 and Mod flags, and GLFW's multi-word key names [patch] (#235) (matt-edmondson)
+- Take a chord from its other command in Profile.SetChord, as BindChord does [patch] (#239) (matt-edmondson)
 - Track only this manager's commands as persisted after a save [patch] (#216) (matt-edmondson)
 - Count only the SetChords bindings that remain, and report the commands that lost their chord [minor] (#215) (matt-edmondson)
 - Refuse a blank NoteName in the Note constructor [patch] (#213) (matt-edmondson)
