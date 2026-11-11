@@ -102,7 +102,9 @@ Key names are canonicalized, so every common spelling of a key compares equal: `
 profile.
 
 A chord runs one command per profile. Binding a chord that another command already uses moves it to the new
-command, as rebinding a shortcut does in most editors.
+command, as rebinding a shortcut does in most editors. This holds whether you bind through `BindChord` or set the chord on the
+`Profile` directly with `Profile.SetChord`. Stored data that already binds one chord to several commands still
+loads as it is; the command with the ordinally first ID runs.
 
 ### Profiles
 
