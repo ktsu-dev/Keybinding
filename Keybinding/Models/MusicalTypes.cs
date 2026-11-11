@@ -71,15 +71,15 @@ public sealed class Note : IEquatable<Note>
 	/// <returns>The canonical key name</returns>
 	private static string CanonicalizeKey(string key)
 	{
-		// Letter and main-row digit keys as UI frameworks name them: WinForms/WPF D0-D9, browser
-		// KeyboardEvent.code KeyA-KeyZ and Digit0-Digit9, and Silk.NET Key.Number0-Number9.
-		// Numpad keys (NumPad0-9, Numpad0-9, Keypad0-9) stay distinct, as an app may bind them separately.
+		// Letter and main-row digit keys as UI frameworks name them: WinForms/WPF D0-D9, ImGui
+		// ImGuiKey.Key0-Key9, browser KeyboardEvent.code KeyA-KeyZ and Digit0-Digit9, and Silk.NET
+		// Key.Number0-Number9. Numpad keys (NumPad0-9, Numpad0-9, Keypad0-9) are longer, so they stay distinct.
 		if (key.Length == 2 && key[0] == 'D' && key[1] is >= '0' and <= '9')
 		{
 			return key[1..];
 		}
 
-		if (key.Length == 4 && key.StartsWith("KEY", StringComparison.Ordinal) && key[3] is >= 'A' and <= 'Z')
+		if (key.Length == 4 && key.StartsWith("KEY", StringComparison.Ordinal) && key[3] is (>= 'A' and <= 'Z') or (>= '0' and <= '9'))
 		{
 			return key[3..];
 		}
@@ -95,18 +95,19 @@ public sealed class Note : IEquatable<Note>
 		{
 			// Modifiers, including the left and right variants and the names UI frameworks give them
 			// (WinForms Keys.ControlKey/LMenu/LWin, WPF Key.LeftCtrl/LeftAlt/LWin, browser KeyboardEvent.code
-			// ControlLeft/OSLeft, Silk.NET Key.ControlLeft/SuperLeft, ImGuiKey.LeftSuper, GLFW LEFT_CONTROL)
+			// ControlLeft/OSLeft, Silk.NET Key.ControlLeft/SuperLeft, ImGuiKey.LeftSuper and the ImGuiKey.ModCtrl
+			// chord flags, GLFW LEFT_CONTROL)
 			"CONTROL" or "CONTROLKEY" or "LCONTROLKEY" or "RCONTROLKEY" or "LEFTCTRL" or "RIGHTCTRL"
 				or "LCTRL" or "RCTRL" or "LEFTCONTROL" or "RIGHTCONTROL" or "CONTROLLEFT" or "CONTROLRIGHT"
-				or "LEFT_CONTROL" or "RIGHT_CONTROL" => "CTRL",
+				or "LEFT_CONTROL" or "RIGHT_CONTROL" or "MODCTRL" => "CTRL",
 			"OPTION" or "MENU" or "LMENU" or "RMENU" or "LEFTALT" or "RIGHTALT" or "LALT" or "RALT"
-				or "ALTLEFT" or "ALTRIGHT" or "LEFT_ALT" or "RIGHT_ALT" => "ALT",
+				or "ALTLEFT" or "ALTRIGHT" or "LEFT_ALT" or "RIGHT_ALT" or "MODALT" => "ALT",
 			"SHIFTKEY" or "LSHIFTKEY" or "RSHIFTKEY" or "LEFTSHIFT" or "RIGHTSHIFT" or "LSHIFT" or "RSHIFT"
-				or "SHIFTLEFT" or "SHIFTRIGHT" or "LEFT_SHIFT" or "RIGHT_SHIFT" => "SHIFT",
+				or "SHIFTLEFT" or "SHIFTRIGHT" or "LEFT_SHIFT" or "RIGHT_SHIFT" or "MODSHIFT" => "SHIFT",
 			"WIN" or "WINDOWS" or "CMD" or "COMMAND" or "SUPER" or "LWIN" or "RWIN" or "LEFTWINDOWS" or "RIGHTWINDOWS"
 				or "LEFTMETA" or "RIGHTMETA" or "METALEFT" or "METARIGHT" or "SUPERLEFT" or "SUPERRIGHT"
 				or "LEFTSUPER" or "RIGHTSUPER" or "OSLEFT" or "OSRIGHT" or "LEFTCOMMAND" or "RIGHTCOMMAND"
-				or "LEFT_SUPER" or "RIGHT_SUPER" => "META",
+				or "LEFT_SUPER" or "RIGHT_SUPER" or "MODSUPER" => "META",
 			// Named separators and punctuation, as written in a profile or by WinForms/WPF (Keys.Oemplus, Key.OemComma).
 			// Only the main-row keys fold: numpad keys (Add, Subtract, Decimal, Multiply, Divide, NumPad0-9) stay
 			// distinct so an app can bind them separately.
@@ -134,6 +135,13 @@ public sealed class Note : IEquatable<Note>
 			"INS" => nameof(SpecialKeys.Insert).ToUpperInvariant(),
 			"PGUP" => nameof(SpecialKeys.PageUp).ToUpperInvariant(),
 			"PGDN" => nameof(SpecialKeys.PageDown).ToUpperInvariant(),
+			// GLFW's snake_case names for the multi-word keys (GLFW_KEY_PAGE_UP and so on)
+			"PAGE_UP" => nameof(SpecialKeys.PageUp).ToUpperInvariant(),
+			"PAGE_DOWN" => nameof(SpecialKeys.PageDown).ToUpperInvariant(),
+			"CAPS_LOCK" => nameof(SpecialKeys.CapsLock).ToUpperInvariant(),
+			"NUM_LOCK" => nameof(SpecialKeys.NumLock).ToUpperInvariant(),
+			"SCROLL_LOCK" => nameof(SpecialKeys.ScrollLock).ToUpperInvariant(),
+			"PRINT_SCREEN" => nameof(SpecialKeys.PrintScreen).ToUpperInvariant(),
 			"UP" or "UPARROW" => nameof(SpecialKeys.ArrowUp).ToUpperInvariant(),
 			"DOWN" or "DOWNARROW" => nameof(SpecialKeys.ArrowDown).ToUpperInvariant(),
 			"LEFT" or "LEFTARROW" => nameof(SpecialKeys.ArrowLeft).ToUpperInvariant(),
@@ -209,7 +217,9 @@ public sealed class Chord : IEquatable<Chord>
 			throw new ArgumentException("Chord cannot contain a null note", nameof(notes));
 		}
 
-		_notes = [.. given.Distinct().OrderBy(n => n.Key.ToString())];
+		// Ordinal, so the stored order (which ToString, the saved file and GetHashCode rely on) is the same
+		// whatever the culture of the thread that built the chord.
+		_notes = [.. given.Distinct().OrderBy(n => n.Key.ToString(), StringComparer.Ordinal)];
 
 		if (_notes.Count == 0)
 		{
@@ -335,8 +345,9 @@ public sealed class Chord : IEquatable<Chord>
 	/// <inheritdoc/>
 	public override int GetHashCode()
 	{
+		// _notes is already in ordinal order, so equal chords hash their notes in the same order on any thread.
 		HashCode hashCode = new();
-		foreach (Note note in _notes.OrderBy(n => n.Key.ToString()))
+		foreach (Note note in _notes)
 		{
 			hashCode.Add(note);
 		}

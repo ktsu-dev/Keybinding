@@ -51,8 +51,10 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			throw new ArgumentException(Constants.ErrorMessages.DataDirectoryNullOrWhitespace, nameof(dataDirectory));
 		}
 
-		_dataDirectory = dataDirectory.Trim();
-		_lock = DirectoryLocks.GetOrAdd(Path.GetFullPath(_dataDirectory), _ => new SemaphoreSlim(1, 1));
+		// Resolve a relative directory once, so a later change of the current directory moves neither
+		// the files this repository reads and writes nor the lock that guards them.
+		_dataDirectory = Path.GetFullPath(dataDirectory.Trim());
+		_lock = DirectoryLocks.GetOrAdd(_dataDirectory, _ => new SemaphoreSlim(1, 1));
 		_jsonOptions = new JsonSerializerOptions
 		{
 			WriteIndented = true,
@@ -150,7 +152,7 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 			try
 			{
 				Chord chord = new((chordDto.Notes ?? []).Select(noteString => new Note(noteString)));
-				profile.SetChord(kvp.Key, chord);
+				profile.SetStoredChord(kvp.Key, chord);
 			}
 			catch (ArgumentException ex)
 			{
@@ -400,14 +402,32 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 	/// Writes a file through a temporary file in the same directory and a move over the target, so the target
 	/// is never truncated in place.
 	/// </summary>
+	/// <remarks>
+	/// A symlinked data file is written through: the temporary file goes next to the link's final target and
+	/// replaces that, so the link survives. An existing file keeps its Unix permissions and, through
+	/// <see cref="File.Replace(string, string, string?)"/>, its Windows ACL.
+	/// </remarks>
 	private async Task WriteFileUnlockedAsync(string fileName, string contents)
 	{
-		string path = Path.Combine(_dataDirectory, fileName);
-		string tempPath = Path.Combine(_dataDirectory, $"{fileName}.{Guid.NewGuid():N}.tmp");
+		string path = ResolveFinalTarget(Path.Combine(_dataDirectory, fileName));
+		string directory = Path.GetDirectoryName(path) ?? _dataDirectory;
+		string tempPath = Path.Combine(directory, $"{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
 		try
 		{
 			await File.WriteAllTextAsync(tempPath, contents).ConfigureAwait(false);
-			File.Move(tempPath, path, overwrite: true);
+			if (File.Exists(path))
+			{
+				if (!OperatingSystem.IsWindows())
+				{
+					File.SetUnixFileMode(tempPath, File.GetUnixFileMode(path));
+				}
+
+				File.Replace(tempPath, path, destinationBackupFileName: null);
+			}
+			else
+			{
+				File.Move(tempPath, path, overwrite: true);
+			}
 		}
 		finally
 		{
@@ -416,6 +436,17 @@ public sealed class JsonKeybindingRepository : IKeybindingRepository
 				File.Delete(tempPath);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Returns the file a path finally names, following every symlink, or the path itself when it is not a link.
+	/// </summary>
+	private static string ResolveFinalTarget(string path)
+	{
+		FileInfo file = new(path);
+		return file.LinkTarget is null
+			? path
+			: file.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? path;
 	}
 
 	/// <inheritdoc/>

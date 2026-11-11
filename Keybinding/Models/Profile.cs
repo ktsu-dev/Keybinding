@@ -35,21 +35,21 @@ public sealed class Profile : IEquatable<Profile>
 		Description = description?.Trim();
 	}
 
-	// The Chords property is get-only, so the serializer can only restore the bindings through a
-	// constructor parameter of the same name and type. Without it a round-tripped profile comes back empty.
+	// The bindings are written through the get-only ChordsSnapshot, so the serializer can only restore them
+	// through a constructor parameter of the same CLR name and type. Without it a round-tripped profile comes back empty.
 	[JsonConstructor]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
-	private Profile(string? id, string? name, string? description, Dictionary<string, Chord?>? chords)
+	private Profile(string? id, string? name, string? description, Dictionary<string, Chord?>? chordsSnapshot)
 		: this(JsonArguments.RequireText(id, nameof(Profile), nameof(Id)), JsonArguments.RequireText(name, nameof(Profile), nameof(Name)), description)
 	{
-		if (chords is not null)
+		if (chordsSnapshot is not null)
 		{
-			foreach (KeyValuePair<string, Chord?> binding in chords)
+			foreach (KeyValuePair<string, Chord?> binding in chordsSnapshot)
 			{
 				Chord chord = binding.Value ?? throw new JsonException($"{nameof(Profile)} binding '{binding.Key}' has no chord.");
 				try
 				{
-					SetChord(binding.Key, chord);
+					SetStoredChord(binding.Key, chord);
 				}
 				catch (ArgumentException ex)
 				{
@@ -107,7 +107,25 @@ public sealed class Profile : IEquatable<Profile>
 	/// and <see cref="ClearChords"/> instead.
 	/// </remarks>
 	[Obsolete("Chords is not thread-safe. Use GetAllChords, SetChord, RemoveChord or ClearChords instead.")]
+	[JsonIgnore]
 	public Dictionary<string, Chord> Chords => _chords;
+
+	// What System.Text.Json writes and reads as "Chords": a copy taken under the lock, so serializing a profile
+	// while another thread changes its bindings writes one consistent set instead of enumerating the live
+	// dictionary. Its type matches the [JsonConstructor] parameter, which is how the bindings are read back.
+	[JsonInclude]
+	[JsonPropertyName("Chords")]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Read by System.Text.Json through [JsonInclude].")]
+	private Dictionary<string, Chord?> ChordsSnapshot
+	{
+		get
+		{
+			lock (_chordsLock)
+			{
+				return _chords.ToDictionary(b => b.Key, b => (Chord?)b.Value);
+			}
+		}
+	}
 
 	/// <summary>
 	/// Gets the number of chord bindings in this profile
@@ -124,13 +142,25 @@ public sealed class Profile : IEquatable<Profile>
 	}
 
 	/// <summary>
-	/// Sets a chord binding for a command in this profile
+	/// Sets a chord binding for a command in this profile. A chord runs one command per profile, so a chord
+	/// another command already uses is taken from that command, as <c>BindChord</c> does.
 	/// </summary>
 	/// <param name="commandId">The command ID</param>
 	/// <param name="chord">The chord to bind</param>
 	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
 	/// <exception cref="ArgumentNullException">Thrown when chord is null</exception>
-	public void SetChord(string commandId, Chord chord)
+	public void SetChord(string commandId, Chord chord) => SetChordExclusive(commandId, chord);
+
+	/// <summary>
+	/// Sets a chord binding for a command in this profile without taking the chord from any other command.
+	/// Only for restoring stored bindings as they were saved, so data that already binds one chord to several
+	/// commands loads and copies unchanged and resolves as <see cref="FindCommand"/> describes.
+	/// </summary>
+	/// <param name="commandId">The command ID</param>
+	/// <param name="chord">The chord to bind</param>
+	/// <exception cref="ArgumentException">Thrown when commandId is null or whitespace</exception>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null</exception>
+	internal void SetStoredChord(string commandId, Chord chord)
 	{
 		if (string.IsNullOrWhiteSpace(commandId))
 		{

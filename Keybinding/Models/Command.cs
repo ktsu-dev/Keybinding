@@ -17,7 +17,6 @@ public sealed class Command : IEquatable<Command>
 	/// <param name="description">Optional description of what the command does</param>
 	/// <param name="category">Optional category for grouping commands</param>
 	/// <exception cref="ArgumentException">Thrown when id or name is null or whitespace</exception>
-	[JsonConstructor]
 	public Command(CommandId id, CommandName name, CommandDescription? description = null, CommandCategory? category = null)
 	{
 		Ensure.NotNull(id);
@@ -67,6 +66,22 @@ public sealed class Command : IEquatable<Command>
 		Name = CommandName.Create(name.Trim());
 		Description = TrimToNull(description) is string trimmedDescription ? CommandDescription.Create(trimmedDescription) : null;
 		Category = TrimToNull(category) is string trimmedCategory ? CommandCategory.Create(trimmedCategory) : null;
+	}
+
+	// The serializer binds constructor parameters by name, not position, so this takes name before id only to
+	// differ in signature from the public constructor. It reports a missing or blank id or name as malformed JSON,
+	// as Chord, Phrase and Profile do, rather than with the public constructor's ArgumentException.
+	[JsonConstructor]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Called by System.Text.Json through [JsonConstructor].")]
+	private Command(CommandName? name, CommandId? id, CommandDescription? description, CommandCategory? category)
+		: this(RequireJsonText(id, nameof(Id)), RequireJsonText(name, nameof(Name)), description, category)
+	{
+	}
+
+	private static T RequireJsonText<T>(T? value, string propertyName) where T : class
+	{
+		JsonArguments.RequireText(value?.ToString(), nameof(Command), propertyName);
+		return value!;
 	}
 
 	private static string? TrimToNull(string? value) =>
