@@ -2,6 +2,8 @@
 
 Changes since v2.1.0:
 
+- Refuse a null chord in BindChord, ExecuteChord and FindCommandByChord whatever the profile [patch] (#231) (matt-edmondson)
+- Keep a bare Menu key apart from Alt [patch] (#234) (matt-edmondson)
 - Fix the two test failures on main [patch] (#243) (matt-edmondson)
 - Resolve a relative data directory once, for both the files and the lock [patch] (#220) (matt-edmondson)
 - Sort a chord's notes ordinally, so its hash doesn't change with the culture [patch] (#227) (matt-edmondson)
