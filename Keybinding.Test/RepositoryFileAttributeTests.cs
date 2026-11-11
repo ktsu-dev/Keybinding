@@ -75,7 +75,7 @@ public class RepositoryFileAttributeTests
 			Assert.AreEqual(ownerOnly, File.GetUnixFileMode(PathOf(file)), file);
 		}
 
-		StringAssert.Contains(await File.ReadAllTextAsync(PathOf("profiles.json")).ConfigureAwait(false), "SHIFT", StringComparison.Ordinal);
+		Assert.Contains("SHIFT", await File.ReadAllTextAsync(PathOf("profiles.json")).ConfigureAwait(false), StringComparison.Ordinal);
 	}
 
 	[TestMethod]
@@ -102,7 +102,7 @@ public class RepositoryFileAttributeTests
 		await SaveWithChordAsync("Ctrl+Shift+S").ConfigureAwait(false);
 
 		Assert.IsNotNull(new FileInfo(PathOf("profiles.json")).LinkTarget, "profiles.json is still a symlink.");
-		StringAssert.Contains(await File.ReadAllTextAsync(target).ConfigureAwait(false), "SHIFT", StringComparison.Ordinal);
+		Assert.Contains("SHIFT", await File.ReadAllTextAsync(target).ConfigureAwait(false), StringComparison.Ordinal);
 		Assert.IsEmpty(Directory.GetFiles(_elsewhere, "*.tmp"));
 		Assert.IsEmpty(Directory.GetFiles(_testDataDirectory, "*.tmp"));
 	}
