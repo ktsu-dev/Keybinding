@@ -10,6 +10,12 @@ public class ProfileJsonConcurrencyTests
 {
 	private static readonly string[] ProfileJsonProperties = ["Id", "Name", "Description", "Chords", "ChordCount", "BoundCommands"];
 
+	// SetChord takes a chord from whichever command held it, so each of the 200 bindings needs a chord of its
+	// own: 25 keys under 8 modifier sets. Q is left out because the writer below binds Ctrl+Q, which would
+	// otherwise take it from one of these.
+	private const string Keys = "ABCDEFGHIJKLMNOPRSTUVWXYZ";
+	private static readonly string[] Modifiers = ["Ctrl", "Alt", "Shift", "Meta", "Ctrl+Alt", "Ctrl+Shift", "Alt+Shift", "Ctrl+Alt+Shift"];
+
 	[TestMethod]
 	[Timeout(60000, CooperativeCancellation = true)]
 	public void Serialize_WhileAnotherThreadChangesBindings_WritesASnapshot()
@@ -17,7 +23,7 @@ public class ProfileJsonConcurrencyTests
 		Profile profile = new("p", "Profile");
 		for (int i = 0; i < 200; i++)
 		{
-			profile.SetChord($"cmd{i}", Chord.Parse($"Ctrl+F{(i % 12) + 1}"));
+			profile.SetChord($"cmd{i}", Chord.Parse($"{Modifiers[i / Keys.Length]}+{Keys[i % Keys.Length]}"));
 		}
 
 		using CancellationTokenSource stop = new();
