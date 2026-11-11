@@ -17,7 +17,7 @@ public class ProfileJsonConcurrencyTests
 		Profile profile = new("p", "Profile");
 		for (int i = 0; i < 200; i++)
 		{
-			profile.SetChord($"cmd{i}", Chord.Parse($"Ctrl+F{(i % 12) + 1}"));
+			profile.SetChord($"cmd{i}", Chord.Parse($"Ctrl+X{i}"));
 		}
 
 		using CancellationTokenSource stop = new();
