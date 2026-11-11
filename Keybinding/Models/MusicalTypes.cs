@@ -209,7 +209,9 @@ public sealed class Chord : IEquatable<Chord>
 			throw new ArgumentException("Chord cannot contain a null note", nameof(notes));
 		}
 
-		_notes = [.. given.Distinct().OrderBy(n => n.Key.ToString())];
+		// Ordinal, so the stored order (which ToString, the saved file and GetHashCode rely on) is the same
+		// whatever the culture of the thread that built the chord.
+		_notes = [.. given.Distinct().OrderBy(n => n.Key.ToString(), StringComparer.Ordinal)];
 
 		if (_notes.Count == 0)
 		{
@@ -335,8 +337,9 @@ public sealed class Chord : IEquatable<Chord>
 	/// <inheritdoc/>
 	public override int GetHashCode()
 	{
+		// _notes is already in ordinal order, so equal chords hash their notes in the same order on any thread.
 		HashCode hashCode = new();
-		foreach (Note note in _notes.OrderBy(n => n.Key.ToString()))
+		foreach (Note note in _notes)
 		{
 			hashCode.Add(note);
 		}

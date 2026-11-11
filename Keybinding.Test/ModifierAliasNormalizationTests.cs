@@ -43,6 +43,7 @@ public class ModifierAliasNormalizationTests
 	[DataRow("Windows", "Meta")]
 	[DataRow("Cmd", "Meta")]
 	[DataRow("Command", "Meta")]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "The test feeds a lowercase alias on purpose.")]
 	public void EveryConstructionPath_NormalizesModifierAliases(string alias, string canonical)
 	{
 		ArgumentNullException.ThrowIfNull(alias);

@@ -6,6 +6,8 @@
     <IsTestProject>true</IsTestProject>
     <TargetFramework>net10.0</TargetFramework>
     <TargetFrameworks></TargetFrameworks>
+    <!-- Culture tests need real culture data; in invariant mode every culture sorts like the invariant one. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
