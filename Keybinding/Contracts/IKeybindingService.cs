@@ -60,6 +60,7 @@ public interface IKeybindingService
 	/// A chord runs one command per profile. Binding a chord that another command in the profile already uses
 	/// moves it: the other command loses that binding, as rebinding a shortcut does in most editors.
 	/// </remarks>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null, whether or not a profile is active and whatever the profile ID</exception>
 	public bool BindChord(string commandId, Chord chord);
 
 	/// <summary>
@@ -73,6 +74,7 @@ public interface IKeybindingService
 	/// A chord runs one command per profile. Binding a chord that another command in the profile already uses
 	/// moves it: the other command loses that binding, as rebinding a shortcut does in most editors.
 	/// </remarks>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null, whether or not a profile is active and whatever the profile ID</exception>
 	public bool BindChord(string profileId, string commandId, Chord chord);
 
 	/// <summary>
@@ -151,6 +153,7 @@ public interface IKeybindingService
 	/// </summary>
 	/// <param name="chord">The chord that was pressed</param>
 	/// <returns>The command ID that was executed, null if no binding found</returns>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null, whether or not a profile is active and whatever the profile ID</exception>
 	public string? ExecuteChord(Chord chord);
 
 	/// <summary>
@@ -159,6 +162,7 @@ public interface IKeybindingService
 	/// <param name="profileId">The profile ID</param>
 	/// <param name="chord">The chord that was pressed</param>
 	/// <returns>The command ID that was executed, null if no binding found</returns>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null, whether or not a profile is active and whatever the profile ID</exception>
 	public string? ExecuteChord(string profileId, Chord chord);
 
 	/// <summary>
@@ -182,6 +186,7 @@ public interface IKeybindingService
 	/// </summary>
 	/// <param name="chord">The chord to search for</param>
 	/// <returns>The command ID if found, null otherwise</returns>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null, whether or not a profile is active and whatever the profile ID</exception>
 	public string? FindCommandByChord(Chord chord);
 
 	/// <summary>
@@ -191,5 +196,6 @@ public interface IKeybindingService
 	/// <param name="profileId">The profile ID</param>
 	/// <param name="chord">The chord to search for</param>
 	/// <returns>The command ID if found, null otherwise</returns>
+	/// <exception cref="ArgumentNullException">Thrown when chord is null, whether or not a profile is active and whatever the profile ID</exception>
 	public string? FindCommandByChord(string profileId, Chord chord);
 }
