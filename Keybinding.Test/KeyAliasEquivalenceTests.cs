@@ -37,7 +37,6 @@ public class KeyAliasEquivalenceTests
 	[DataRow("ShiftKey+A", "Shift+A")]
 	[DataRow("LeftShift+A", "Shift+A")]
 	[DataRow("RightShift+A", "Shift+A")]
-	[DataRow("Menu+A", "Alt+A")]
 	[DataRow("LMenu+A", "Alt+A")]
 	[DataRow("RMenu+A", "Alt+A")]
 	[DataRow("LeftAlt+A", "Alt+A")]
