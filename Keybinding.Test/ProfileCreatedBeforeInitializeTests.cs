@@ -95,4 +95,124 @@ public class ProfileCreatedBeforeInitializeTests
 		Assert.AreEqual(Chord.Parse("Ctrl+C"), profile.GetChord("edit.copy"));
 		Assert.AreEqual(3, profile.ChordCount);
 	}
+
+	[TestMethod]
+	public async Task ProfileCreatedBeforeInitialize_TakesTheStoredNameAndDescription()
+	{
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			await manager.InitializeAsync().ConfigureAwait(false);
+			manager.CreateDefaultProfile();
+			Assert.IsTrue(manager.Profiles.RenameProfile("default", "My Keys", "Tuned for vim"));
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			manager.CreateDefaultProfile();
+			await manager.InitializeAsync().ConfigureAwait(false);
+
+			Profile profile = manager.Profiles.GetProfile("default")!;
+			Assert.AreEqual("My Keys", profile.Name);
+			Assert.AreEqual("Tuned for vim", profile.Description);
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		Profile reloaded = await ReloadDefaultProfileAsync().ConfigureAwait(false);
+		Assert.AreEqual("My Keys", reloaded.Name);
+		Assert.AreEqual("Tuned for vim", reloaded.Description);
+	}
+
+	[TestMethod]
+	public async Task ProfileCreatedBeforeInitialize_ResolvesDuplicateStoredChordsAsAFreshLoadDoes()
+	{
+		await File.WriteAllTextAsync(Path.Combine(_dataDirectory, "commands.json"),
+			/*lang=json,strict*/ """[{"id":"z.cmd","name":"Z"},{"id":"a.cmd","name":"A"}]""").ConfigureAwait(false);
+		await File.WriteAllTextAsync(Path.Combine(_dataDirectory, "profiles.json"),
+			/*lang=json,strict*/ """[{"id":"default","name":"Default","chords":{"z.cmd":{"notes":["CTRL","S"]},"a.cmd":{"notes":["CTRL","S"]}}}]""").ConfigureAwait(false);
+		await File.WriteAllTextAsync(Path.Combine(_dataDirectory, "active-profile.json"),
+			/*lang=json,strict*/ """{"activeProfileId":"default"}""").ConfigureAwait(false);
+
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			manager.CreateDefaultProfile();
+			await manager.InitializeAsync().ConfigureAwait(false);
+
+			Assert.AreEqual(2, manager.Profiles.GetProfile("default")!.ChordCount);
+			Assert.AreEqual("a.cmd", manager.Keybindings.FindCommandByChord(Chord.Parse("Ctrl+S")));
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		Profile reloaded = await ReloadDefaultProfileAsync().ConfigureAwait(false);
+		Assert.AreEqual(2, reloaded.ChordCount);
+		Assert.AreEqual(Chord.Parse("Ctrl+S"), reloaded.GetChord("z.cmd"));
+		Assert.AreEqual(Chord.Parse("Ctrl+S"), reloaded.GetChord("a.cmd"));
+	}
+
+	[TestMethod]
+	public async Task DefaultProfileCreatedBeforeInitialize_DoesNotBringBackADeletedDefault()
+	{
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			await manager.InitializeAsync().ConfigureAwait(false);
+			manager.CreateDefaultProfile();
+			manager.Profiles.CreateProfile("vim", "Vim");
+			Assert.IsTrue(manager.Profiles.SetActiveProfile("vim"));
+			Assert.IsTrue(manager.Profiles.DeleteProfile("default"));
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			manager.CreateDefaultProfile();
+			await manager.InitializeAsync().ConfigureAwait(false);
+
+			Assert.AreEqual("vim", string.Join(",", manager.Profiles.GetAllProfiles().Select(p => p.Id)));
+			Assert.AreEqual("vim", manager.Profiles.GetActiveProfile()?.Id);
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			await manager.InitializeAsync().ConfigureAwait(false);
+			Assert.AreEqual("vim", string.Join(",", manager.Profiles.GetAllProfiles().Select(p => p.Id)));
+		}
+	}
+
+	[TestMethod]
+	public async Task DefaultProfileCreatedBeforeInitialize_ActivatesAStoredProfileWhenItsPlaceholderIsDropped()
+	{
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			await manager.InitializeAsync().ConfigureAwait(false);
+			manager.Profiles.CreateProfile("vim", "Vim");
+			manager.Profiles.CreateProfile("emacs", "Emacs");
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		using KeybindingManager reloaded = new(_dataDirectory);
+		reloaded.CreateDefaultProfile();
+		await reloaded.InitializeAsync().ConfigureAwait(false);
+
+		Assert.IsNull(reloaded.Profiles.GetProfile("default"));
+		Assert.AreEqual("emacs", reloaded.Profiles.GetActiveProfile()?.Id);
+	}
+
+	[TestMethod]
+	public async Task DefaultProfileCreatedBeforeInitialize_IsKeptOnceTheAppHasBoundIt()
+	{
+		using (KeybindingManager manager = new(_dataDirectory))
+		{
+			await manager.InitializeAsync().ConfigureAwait(false);
+			manager.Profiles.CreateProfile("vim", "Vim");
+			await manager.SaveAsync().ConfigureAwait(false);
+		}
+
+		using KeybindingManager reloaded = new(_dataDirectory);
+		Profile seeded = reloaded.CreateDefaultProfile()!;
+		seeded.SetChord("file.save", Chord.Parse("Ctrl+S"));
+		await reloaded.InitializeAsync().ConfigureAwait(false);
+
+		Assert.AreSame(seeded, reloaded.Profiles.GetProfile("default"));
+	}
 }
