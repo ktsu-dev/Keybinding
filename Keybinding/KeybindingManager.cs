@@ -149,19 +149,7 @@ public sealed class KeybindingManager(
 			}
 		}
 
-		// A placeholder with no stored counterpart, while other profiles are stored, is a default profile the user
-		// deleted. CreateDefaultProfile would not have made it after loading them, so drop it here instead of
-		// saving it back (ktsu-dev/Keybinding#248). One that has been bound or renamed since is the app's own.
-		bool placeholderWasActive = false;
-		if (placeholder is not null
-			&& profiles.Count > 0
-			&& !profiles.Any(p => p.Id == placeholder.Id)
-			&& placeholder.ChordCount == 0
-			&& ReferenceEquals(Profiles.GetProfile(placeholder.Id), placeholder))
-		{
-			placeholderWasActive = Profiles.GetActiveProfile() is Profile active && ReferenceEquals(active, placeholder);
-			Profiles.DeleteProfile(placeholder.Id);
-		}
+		bool placeholderWasActive = DiscardDeletedPlaceholder(placeholder, profiles);
 
 		lock (_persistedStateLock)
 		{
@@ -177,18 +165,55 @@ public sealed class KeybindingManager(
 
 		// The discarded placeholder had been activated by CreateDefaultProfile. Activate what that call would have
 		// activated had it run after loading: the first profile by ordinal id.
-		if (placeholderWasActive && Profiles.GetActiveProfile() is null)
+		if (placeholderWasActive)
 		{
-			string? firstProfileId = Profiles.GetAllProfiles().Select(p => p.Id).OrderBy(id => id, StringComparer.Ordinal).FirstOrDefault();
-			if (firstProfileId is not null)
-			{
-				Profiles.SetActiveProfile(firstProfileId);
-			}
+			ActivateFirstProfileIfNoneActive();
 		}
 
 		lock (_persistedStateLock)
 		{
 			_activeProfileKnown = true;
+		}
+	}
+
+	/// <summary>
+	/// Removes the placeholder default profile when it stands in for one the user deleted: other profiles are
+	/// stored but none with its id. CreateDefaultProfile would not have made it after loading them, so it is
+	/// dropped instead of saved back (ktsu-dev/Keybinding#248). One that has been bound since is the app's own.
+	/// </summary>
+	/// <param name="placeholder">The untouched placeholder profile, if any</param>
+	/// <param name="profiles">The stored profiles just loaded</param>
+	/// <returns>True if the placeholder was removed while it was the active profile</returns>
+	private bool DiscardDeletedPlaceholder(Profile? placeholder, IReadOnlyCollection<Profile> profiles)
+	{
+		if (placeholder is null
+			|| profiles.Count == 0
+			|| profiles.Any(p => p.Id == placeholder.Id)
+			|| placeholder.ChordCount != 0
+			|| !ReferenceEquals(Profiles.GetProfile(placeholder.Id), placeholder))
+		{
+			return false;
+		}
+
+		bool wasActive = ReferenceEquals(Profiles.GetActiveProfile(), placeholder);
+		Profiles.DeleteProfile(placeholder.Id);
+		return wasActive;
+	}
+
+	/// <summary>
+	/// Activates the first profile by ordinal id when no profile is active.
+	/// </summary>
+	private void ActivateFirstProfileIfNoneActive()
+	{
+		if (Profiles.GetActiveProfile() is not null)
+		{
+			return;
+		}
+
+		string? firstProfileId = Profiles.GetAllProfiles().Select(p => p.Id).OrderBy(id => id, StringComparer.Ordinal).FirstOrDefault();
+		if (firstProfileId is not null)
+		{
+			Profiles.SetActiveProfile(firstProfileId);
 		}
 	}
 
