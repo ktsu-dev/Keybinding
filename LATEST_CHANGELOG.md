@@ -2,6 +2,7 @@
 
 Changes since v2.1.0:
 
+- Reconcile a default profile created before InitializeAsync with the stored profiles [patch] (#250) (matt-edmondson)
 - Refuse a null chord in BindChord, ExecuteChord and FindCommandByChord whatever the profile [patch] (#231) (matt-edmondson)
 - Keep a bare Menu key apart from Alt [patch] (#234) (matt-edmondson)
 - Fix the two test failures on main [patch] (#243) (matt-edmondson)
