@@ -43,6 +43,15 @@ public sealed class KeybindingManager(
 	// active profile only when one is set, so a manager that never loaded it cannot erase the user's choice.
 	private bool _activeProfileKnown;
 
+	// Whether InitializeAsync has run, and the default profile CreateDefaultProfile made before it did, with the
+	// name and description it was given. InitializeAsync reconciles that placeholder with the stored profiles: it
+	// takes the stored profile's name when the ids match, and discards it when the user has other profiles but
+	// deleted the default one (ktsu-dev/Keybinding#247, ktsu-dev/Keybinding#248). All guarded by the same lock.
+	private bool _initialized;
+	private Profile? _placeholderProfile;
+	private string? _placeholderName;
+	private string? _placeholderDescription;
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="KeybindingManager"/> class with default services
 	/// </summary>
@@ -124,13 +133,23 @@ public sealed class KeybindingManager(
 		// or by a profile manager shared through dependency injection. Its stored bindings are merged into it rather
 		// than dropped, since the id is recorded as persisted below and the next save would otherwise overwrite them.
 		IReadOnlyCollection<Profile> profiles = await Repository.LoadAllProfilesAsync().ConfigureAwait(false);
+		Profile? placeholder = TakeUntouchedPlaceholder();
 		foreach (Profile profile in profiles)
 		{
 			if (!Profiles.CreateProfile(profile) && Profiles.GetProfile(profile.Id) is Profile existing)
 			{
+				// The placeholder only stands in for the stored profile until it is loaded, so the user's name and
+				// description replace the ones CreateDefaultProfile made up, rather than being saved over.
+				if (ReferenceEquals(existing, placeholder))
+				{
+					existing.Rename(profile.Name, profile.Description);
+				}
+
 				MergeStoredBindings(existing, profile);
 			}
 		}
+
+		bool placeholderWasActive = DiscardDeletedPlaceholder(placeholder, profiles);
 
 		lock (_persistedStateLock)
 		{
@@ -144,6 +163,13 @@ public sealed class KeybindingManager(
 			Profiles.SetActiveProfile(activeProfileId);
 		}
 
+		// The discarded placeholder had been activated by CreateDefaultProfile. Activate what that call would have
+		// activated had it run after loading: the first profile by ordinal id.
+		if (placeholderWasActive)
+		{
+			ActivateFirstProfileIfNoneActive();
+		}
+
 		lock (_persistedStateLock)
 		{
 			_activeProfileKnown = true;
@@ -151,10 +177,79 @@ public sealed class KeybindingManager(
 	}
 
 	/// <summary>
+	/// Removes the placeholder default profile when it stands in for one the user deleted: other profiles are
+	/// stored but none with its id. CreateDefaultProfile would not have made it after loading them, so it is
+	/// dropped instead of saved back (ktsu-dev/Keybinding#248). One that has been bound since is the app's own.
+	/// </summary>
+	/// <param name="placeholder">The untouched placeholder profile, if any</param>
+	/// <param name="profiles">The stored profiles just loaded</param>
+	/// <returns>True if the placeholder was removed while it was the active profile</returns>
+	private bool DiscardDeletedPlaceholder(Profile? placeholder, IReadOnlyCollection<Profile> profiles)
+	{
+		if (placeholder is null
+			|| profiles.Count == 0
+			|| profiles.Any(p => p.Id == placeholder.Id)
+			|| placeholder.ChordCount != 0
+			|| !ReferenceEquals(Profiles.GetProfile(placeholder.Id), placeholder))
+		{
+			return false;
+		}
+
+		bool wasActive = ReferenceEquals(Profiles.GetActiveProfile(), placeholder);
+		Profiles.DeleteProfile(placeholder.Id);
+		return wasActive;
+	}
+
+	/// <summary>
+	/// Activates the first profile by ordinal id when no profile is active.
+	/// </summary>
+	private void ActivateFirstProfileIfNoneActive()
+	{
+		if (Profiles.GetActiveProfile() is not null)
+		{
+			return;
+		}
+
+		string? firstProfileId = Profiles.GetAllProfiles().Select(p => p.Id).OrderBy(id => id, StringComparer.Ordinal).FirstOrDefault();
+		if (firstProfileId is not null)
+		{
+			Profiles.SetActiveProfile(firstProfileId);
+		}
+	}
+
+	/// <summary>
+	/// Marks this manager as initialized and returns the default profile CreateDefaultProfile made before
+	/// <see cref="InitializeAsync"/>, if it still has the name and description it was given and was never saved.
+	/// </summary>
+	/// <returns>The untouched placeholder profile, or null if there is none</returns>
+	private Profile? TakeUntouchedPlaceholder()
+	{
+		lock (_persistedStateLock)
+		{
+			Profile? placeholder = _placeholderProfile;
+			bool untouched = placeholder is not null
+				&& placeholder.Name == _placeholderName
+				&& placeholder.Description == _placeholderDescription
+				&& !_persistedProfileIds.Contains(placeholder.Id);
+
+			_initialized = true;
+			_placeholderProfile = null;
+			_placeholderName = null;
+			_placeholderDescription = null;
+			return untouched ? placeholder : null;
+		}
+	}
+
+	/// <summary>
 	/// Merges the bindings of a stored profile into the in-memory profile with the same id. The in-memory profile
 	/// wins: a stored binding is skipped when the in-memory profile already binds that command, or already uses
-	/// that chord for another command, so no chord ever runs two commands.
+	/// that chord, so the in-memory profile's chords keep running the commands it bound them to.
 	/// </summary>
+	/// <remarks>
+	/// Every other stored binding is copied as stored, including legacy data that binds one chord to several
+	/// commands, so such a chord resolves as it would on a fresh load and the next save keeps every binding
+	/// (ktsu-dev/Keybinding#247).
+	/// </remarks>
 	/// <param name="existing">The profile already in memory</param>
 	/// <param name="stored">The stored profile with the same id</param>
 	private static void MergeStoredBindings(Profile existing, Profile stored)
@@ -163,9 +258,9 @@ public sealed class KeybindingManager(
 		HashSet<Chord> usedChords = [.. current.Values];
 		foreach ((string commandId, Chord chord) in stored.GetAllChords())
 		{
-			if (!current.ContainsKey(commandId) && usedChords.Add(chord))
+			if (!current.ContainsKey(commandId) && !usedChords.Contains(chord))
 			{
-				existing.SetChord(commandId, chord);
+				existing.SetStoredChord(commandId, chord);
 			}
 		}
 	}
@@ -292,6 +387,18 @@ public sealed class KeybindingManager(
 
 		if (Profiles.CreateProfile(profile))
 		{
+			lock (_persistedStateLock)
+			{
+				// Made before the stored profiles were loaded, so InitializeAsync decides whether it stands in for a
+				// stored profile, or for one the user deleted.
+				if (!_initialized)
+				{
+					_placeholderProfile = profile;
+					_placeholderName = profile.Name;
+					_placeholderDescription = profile.Description;
+				}
+			}
+
 			if (activation == ProfileActivation.Activate && Profiles.GetActiveProfile() is null)
 			{
 				Profiles.SetActiveProfile(profileId);
