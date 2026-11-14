@@ -71,16 +71,24 @@ public sealed class Note : IEquatable<Note>
 	/// <returns>The canonical key name</returns>
 	private static string CanonicalizeKey(string key)
 	{
-		// Main-row digits as WinForms/WPF (D1) and ImGui (ImGuiKey.Key1) name them. Numpad digits
-		// (NumPad1, Keypad1) are longer, so they stay distinct.
+		// Letter and main-row digit keys as UI frameworks name them: WinForms/WPF D0-D9, ImGui
+		// ImGuiKey.Key0-Key9, browser KeyboardEvent.code KeyA-KeyZ and Digit0-Digit9, and Silk.NET
+		// Key.Number0-Number9. Numpad keys (NumPad0-9, Numpad0-9, Keypad0-9) are longer, so they stay distinct.
 		if (key.Length == 2 && key[0] == 'D' && key[1] is >= '0' and <= '9')
 		{
 			return key[1..];
 		}
 
-		if (key.Length == 4 && key.StartsWith("KEY", StringComparison.Ordinal) && key[3] is >= '0' and <= '9')
+		if (key.Length == 4 && key.StartsWith("KEY", StringComparison.Ordinal) && key[3] is (>= 'A' and <= 'Z') or (>= '0' and <= '9'))
 		{
 			return key[3..];
+		}
+
+		if (((key.Length == 6 && key.StartsWith("DIGIT", StringComparison.Ordinal))
+			|| (key.Length == 7 && key.StartsWith("NUMBER", StringComparison.Ordinal)))
+			&& key[^1] is >= '0' and <= '9')
+		{
+			return key[^1..];
 		}
 
 		return key switch
